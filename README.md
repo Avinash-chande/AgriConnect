@@ -7,7 +7,6 @@ AgriConnect is a full-stack MERN web application designed to connect Farmers, Wo
 
 ### Authentication
 - User Registration
-- admin login
 - Login
 - JWT Authentication
 - Password Reset
