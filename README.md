@@ -16,7 +16,7 @@ AgriConnect is a full-stack MERN web application designed to connect Farmers, Wo
 - Farmer Profile
 - Worker Profile
 - Contractor Profile
-- Aadhaar Verification
+- Aadhaar Verification(OTP)
 - Skills & Experience
 - Farm Information
 - Profile Photo Upload
