@@ -1,63 +1,32 @@
-# 🌾 AgriConnect
+# React + TypeScript + Vite
 
-## Overview
-AgriConnect is a full-stack MERN web application designed to connect Farmers, Workers, and Contractors on a single platform. It streamlines agricultural workforce management by enabling secure job posting, job searching, user profiles, and real-time communication.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Features
+Currently, two official plugins are available:
 
-### Authentication 
-- User Registration
-- Login
-- JWT Authentication
-- Password Reset
-- Role-Based Access
-- Rate Limiting
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### User Profiles
-- Farmer Profile
-- Worker Profile
-- Contractor Profile
-- Aadhaar Verification(OTP)
-- Skills & Experience
-- Farm Information
-- Profile Photo Upload
+## React Compiler
 
-### Job Management
-- Create Job
-- Edit Job
-- Delete Job
-- Search Jobs
-- Filter Jobs
-- Save Jobs
-- Apply for Jobs
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Messaging
-- Real-time Chat
-- Notifications
+## Expanding the Oxlint configuration
 
-### Admin Panel
-- User Management
-- Job Moderation
-- Verification Requests
-- Analytics Dashboard
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
 
-## Tech Stack
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
 
-Frontend
-- React.js
-- Vite
-- Tailwind CSS
-- Redux Toolkit
-
-Backend
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT Authentication
-- Cloudinary
-- Multer 
-
-## Project Status
-
-🚧 Currently Under Development
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
