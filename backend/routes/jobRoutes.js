@@ -1,6 +1,8 @@
 import express from 'express';
 import { createJob, updateJob, getJobById, deleteJob, getAllJobs, autocompleteJobs, incrementJobShareCount, getFarmerJobs } from '../controllers/jobController.js';
 import { toggleSaveJob, getSavedJobs } from '../controllers/savedJobController.js';
+import { applyForJob } from '../controllers/applicationController.js';
+import { validateApplyJobInput } from '../validators/applicationValidator.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { uploadJobImages } from '../middleware/uploadMiddleware.js';
 import { validateCreateJobInput, validateUpdateJobInput, validateJobQuery } from '../validators/jobValidator.js';
@@ -88,6 +90,20 @@ router.post(
   authorize(USER_ROLES.WORKER),
   profileRateLimiter,
   toggleSaveJob
+);
+
+/**
+ * @route   POST /api/v1/jobs/:id/apply
+ * @desc    Submit Application for Job Posting (Worker Only)
+ * @access  Private (Worker Only)
+ */
+router.post(
+  '/:id/apply',
+  protect,
+  authorize(USER_ROLES.WORKER),
+  profileRateLimiter,
+  validateApplyJobInput,
+  applyForJob
 );
 
 /**

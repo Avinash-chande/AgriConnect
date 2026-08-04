@@ -47,6 +47,18 @@ const FarmerJobDashboardPage = lazy(() =>
 const WorkerJobFeedPage = lazy(() =>
   import('./pages/WorkerJobFeedPage').then((m) => ({ default: m.WorkerJobFeedPage }))
 );
+const MyApplicationsPage = lazy(() =>
+  import('./pages/MyApplicationsPage').then((m) => ({ default: m.MyApplicationsPage }))
+);
+const FarmerApplicationsPage = lazy(() =>
+  import('./pages/FarmerApplicationsPage').then((m) => ({ default: m.FarmerApplicationsPage }))
+);
+const FarmerApplicationDashboardPage = lazy(() =>
+  import('./pages/FarmerApplicationDashboardPage').then((m) => ({ default: m.FarmerApplicationDashboardPage }))
+);
+const WorkerDashboardPage = lazy(() =>
+  import('./pages/WorkerDashboardPage').then((m) => ({ default: m.WorkerDashboardPage }))
+);
 
 /**
  * Fallback Spinner for Suspense Lazy Loading
@@ -103,6 +115,22 @@ export function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/farmer/applications"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                    <FarmerApplicationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/farmer/application-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                    <FarmerApplicationDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Saved Jobs Route (Worker Only) */}
               <Route
@@ -110,6 +138,26 @@ export function App() {
                 element={
                   <ProtectedRoute allowedRoles={['Worker', 'worker']}>
                     <SavedJobsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* My Applications Route (Worker Only) */}
+              <Route
+                path="/my-applications"
+                element={
+                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                    <MyApplicationsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Worker Dashboard */}
+              <Route
+                path="/worker/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                    <WorkerDashboardPage />
                   </ProtectedRoute>
                 }
               />

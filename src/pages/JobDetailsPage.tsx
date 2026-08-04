@@ -26,6 +26,7 @@ import {
 import { jobService } from '../services/jobService';
 import type { JobData } from '../services/jobService';
 import { ShareJobModal } from '../components/common/ShareJobModal';
+import { ApplyJobModal } from '../components/applications/ApplyJobModal';
 
 export const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,7 @@ export const JobDetailsPage: React.FC = () => {
   const [reportReason, setReportReason] = useState<string>('');
   const [reportSuccess, setReportSuccess] = useState<boolean>(false);
   const [applied, setApplied] = useState<boolean>(false);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id) return;
@@ -476,16 +478,16 @@ export const JobDetailsPage: React.FC = () => {
                 )}
 
                 <button
-                  onClick={() => setApplied(!applied)}
-                  disabled={isClosed}
+                  onClick={() => setIsApplyModalOpen(true)}
+                  disabled={isClosed || applied}
                   className={`w-full py-3.5 font-bold rounded-2xl text-sm transition-all border flex items-center justify-center space-x-2 ${
                     applied
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                      : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 cursor-default'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-600/30'
                   }`}
                 >
                   <CheckCircle className="w-4 h-4" />
-                  <span>{applied ? 'Application Sent' : 'Apply for Job'}</span>
+                  <span>{applied ? 'Application Submitted' : 'Apply for Job'}</span>
                 </button>
               </div>
 
@@ -513,6 +515,14 @@ export const JobDetailsPage: React.FC = () => {
           onClose={() => setIsShareModalOpen(false)}
         />
       )}
+
+      {/* Apply Job Modal */}
+      <ApplyJobModal
+        job={job}
+        isOpen={isApplyModalOpen}
+        onClose={() => setIsApplyModalOpen(false)}
+        onSuccess={() => setApplied(true)}
+      />
 
       {/* Image Lightbox Modal */}
       {activeImage && (

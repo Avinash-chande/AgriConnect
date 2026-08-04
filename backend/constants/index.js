@@ -77,6 +77,16 @@ export const JOB_STATUS = Object.freeze({
   EXPIRED: 'Expired',
 });
 
+export const APPLICATION_STATUS = Object.freeze({
+  PENDING: 'Pending',
+  SHORTLISTED: 'Shortlisted',
+  ACCEPTED: 'Accepted',
+  REJECTED: 'Rejected',
+  WITHDRAWN: 'Withdrawn',
+  CANCELLED: 'Cancelled',
+  HIRED: 'Hired',
+});
+
 export const GENDER_PREFERENCE = Object.freeze([
   'Male',
   'Female',

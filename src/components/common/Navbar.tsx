@@ -4,6 +4,7 @@ import { Sprout, Menu, X, ArrowRight, User as UserIcon, LogOut, CheckCircle2 } f
 
 import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -77,6 +78,8 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-3">
+                <NotificationDropdown />
+
                 <div className="flex items-center space-x-2 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs">
                   <UserIcon className="w-4 h-4 text-agri-primary" />
                   <span className="font-bold text-agri-text">{user.fullName}</span>
