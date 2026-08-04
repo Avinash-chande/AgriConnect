@@ -1,0 +1,47 @@
+import dotenv from 'dotenv';
+import app from './app.js';
+import { connectDB } from './config/db.js';
+import { configureCloudinary } from './config/cloudinary.js';
+import { logger } from './utils/logger.js';
+
+// Load environment variables
+dotenv.config();
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error(`💥 UNCAUGHT EXCEPTION: ${err.message}`);
+  process.exit(1);
+});
+
+const PORT = process.env.PORT || 5000;
+
+const startServer = async () => {
+  // Connect to Database
+  await connectDB();
+
+  // Configure Cloudinary SDK
+  configureCloudinary();
+
+  const server = app.listen(PORT, () => {
+    logger.info(`🚀 AgriConnect Backend API running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`);
+    console.log(`📡 Health Check URL: http://localhost:${PORT}/api/v1/health`);
+  });
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    logger.error(`💥 UNHANDLED REJECTION: ${err.message}`);
+    server.close(() => {
+      process.exit(1);
+    });
+  });
+
+  // Handle SIGTERM signal for graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('👋 SIGTERM RECEIVED. Shutting down server gracefully...');
+    server.close(() => {
+      logger.info('💥 Process terminated!');
+    });
+  });
+};
+
+startServer();
