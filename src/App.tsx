@@ -11,7 +11,20 @@ import { OTPVerificationPage } from './pages/OTPVerificationPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
+import { PresenceProvider } from './context/PresenceContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ToastMessage } from './types';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+});
 
 // Lazy-loaded pages for optimal bundle size & initial load speed
 const CreateProfilePage = lazy(() =>
@@ -44,6 +57,9 @@ const SavedJobsPage = lazy(() =>
 const FarmerJobDashboardPage = lazy(() =>
   import('./pages/FarmerJobDashboardPage').then((m) => ({ default: m.FarmerJobDashboardPage }))
 );
+const FarmerChatDashboardPage = lazy(() =>
+  import('./pages/FarmerChatDashboardPage').then((m) => ({ default: m.FarmerChatDashboardPage }))
+);
 const WorkerJobFeedPage = lazy(() =>
   import('./pages/WorkerJobFeedPage').then((m) => ({ default: m.WorkerJobFeedPage }))
 );
@@ -58,6 +74,12 @@ const FarmerApplicationDashboardPage = lazy(() =>
 );
 const WorkerDashboardPage = lazy(() =>
   import('./pages/WorkerDashboardPage').then((m) => ({ default: m.WorkerDashboardPage }))
+);
+const WorkerCommunicationDashboardPage = lazy(() =>
+  import('./pages/WorkerCommunicationDashboardPage').then((m) => ({ default: m.WorkerCommunicationDashboardPage }))
+);
+const ChatPage = lazy(() =>
+  import('./pages/ChatPage').then((m) => ({ default: m.ChatPage }))
 );
 
 /**
@@ -86,7 +108,10 @@ export function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <SocketProvider>
+          <PresenceProvider>
+            <BrowserRouter>
         <div className="min-h-screen bg-agri-bg text-agri-text flex flex-col font-sans antialiased selection:bg-agri-light selection:text-agri-dark">
           <Suspense fallback={<PageLoadingFallback />}>
             <Routes>
@@ -131,6 +156,14 @@ export function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/farmer/chat-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                    <FarmerChatDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Saved Jobs Route (Worker Only) */}
               <Route
@@ -158,6 +191,14 @@ export function App() {
                 element={
                   <ProtectedRoute allowedRoles={['Worker', 'worker']}>
                     <WorkerDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/worker/communication-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                    <WorkerCommunicationDashboardPage />
                   </ProtectedRoute>
                 }
               />
@@ -218,6 +259,23 @@ export function App() {
                 }
               />
 
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat/:conversationId"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Fallback Catch-all Route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -227,7 +285,10 @@ export function App() {
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
         </div>
       </BrowserRouter>
-    </AuthProvider>
+    </PresenceProvider>
+  </SocketProvider>
+</QueryClientProvider>
+</AuthProvider>
   );
 }
 

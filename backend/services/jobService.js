@@ -5,6 +5,8 @@ import { AppError } from '../utils/appError.js';
 import { USER_ROLES, JOB_STATUS } from '../constants/index.js';
 import { uploadFarmImagesService, deleteCloudinaryImage } from './cloudinaryService.js';
 import { cacheService } from './cacheService.js';
+import { broadcastEvent } from '../socket/socketService.js';
+import { SOCKET_EVENTS } from '../socket/socketEvents.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -520,6 +522,9 @@ export const createJobService = async (user, rawBody, files) => {
 
   // 6. Save Job in Repository
   const createdJob = await createJobRepo(jobData);
+
+  // Broadcast real-time Socket.IO job alert
+  broadcastEvent(SOCKET_EVENTS.JOB_CREATED, createdJob);
 
   // 7. Increase Farmer Job Metrics on FarmerProfile if exists
   await FarmerProfile.findOneAndUpdate(

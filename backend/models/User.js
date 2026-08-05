@@ -59,6 +59,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+    },
     refreshToken: {
       type: String,
       select: false,

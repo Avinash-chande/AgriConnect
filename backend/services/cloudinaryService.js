@@ -43,6 +43,37 @@ export const uploadImageBuffer = (fileBuffer, folder = 'agriconnect/general', op
 };
 
 /**
+ * Upload Chat File Attachment (Images, PDFs, Word docs) to Cloudinary
+ */
+export const uploadAttachmentBuffer = (fileBuffer, mimetype, originalname, folder = 'agriconnect/chat_attachments') => {
+  return new Promise((resolve, reject) => {
+    const isImage = mimetype.startsWith('image/');
+    const resource_type = isImage ? 'image' : 'auto';
+
+    const uploadOptions = {
+      folder,
+      resource_type,
+      public_id: `${Date.now()}_${originalname.replace(/[^a-zA-Z0-9_.-]/g, '_')}`,
+    };
+
+    const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+      if (error) {
+        return reject(new AppError(`Cloudinary Attachment Upload Failure: ${error.message}`, 500));
+      }
+      resolve({
+        url: result.secure_url,
+        public_id: result.public_id,
+        fileType: isImage ? 'image' : mimetype.includes('pdf') ? 'pdf' : 'document',
+        fileName: originalname,
+        fileSize: result.bytes,
+      });
+    });
+
+    uploadStream.end(fileBuffer);
+  });
+};
+
+/**
  * Upload Profile Photo with face cropping & 400x400 thumbnail compression
  */
 export const uploadProfilePhotoService = async (fileBuffer) => {

@@ -14,6 +14,8 @@ import {
   uploadCertificatesService,
   deleteImageService,
 } from '../services/profileService.js';
+import { connectedUsersStore } from '../socket/connectedUsers.js';
+import { User } from '../models/User.js';
 
 /**
  * @desc    Get Current User's Profile
@@ -154,4 +156,29 @@ export const deleteImage = asyncHandler(async (req, res, next) => {
 
   await deleteImageService(req.user, imageUrl, imageType);
   return sendResponse(res, 200, 'Image removed from profile gallery successfully');
+});
+
+/**
+ * @desc    Get User Real-Time Presence & Last Seen Timestamp
+ * @route   GET /api/v1/profiles/presence/:userId
+ * @access  Public / Private
+ */
+export const getUserPresence = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const isOnlineInMemory = connectedUsersStore.isUserOnline(userId);
+
+  const user = await User.findById(userId).select('name isOnline lastSeen role');
+  if (!user) {
+    throw new AppError('User account not found', 404);
+  }
+
+  const isOnline = isOnlineInMemory || user.isOnline;
+
+  return sendResponse(res, 200, 'User presence status retrieved successfully', {
+    userId: user._id,
+    name: user.name,
+    role: user.role,
+    isOnline,
+    lastSeen: user.lastSeen,
+  });
 });

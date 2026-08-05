@@ -30,6 +30,8 @@ import {
   notifyApplicationCancelled,
   notifyApplicationHired,
 } from './notificationService.js';
+import { emitToUser } from '../socket/socketService.js';
+import { SOCKET_EVENTS } from '../socket/socketEvents.js';
 import { AppError } from '../utils/appError.js';
 import { HTTP_STATUS, JOB_STATUS, APPLICATION_STATUS } from '../constants/index.js';
 import { logger } from '../utils/logger.js';
@@ -114,6 +116,15 @@ export const applyForJobService = async (worker, jobId, payload) => {
       applicationId: application._id,
       jobId: job._id,
     },
+  });
+
+  // Real-time socket event to farmer
+  emitToUser(farmerId, SOCKET_EVENTS.APPLICATION_NEW, {
+    applicationId: application._id,
+    jobId: job._id,
+    jobTitle: job.title,
+    workerName,
+    status: application.status,
   });
 
   // Return full populated application document
@@ -460,6 +471,14 @@ export const acceptApplicationService = async (farmer, applicationId, options = 
         jobId: application.job?._id || application.job,
       },
     });
+
+    emitToUser(workerRecipientId, SOCKET_EVENTS.APPLICATION_STATUS_UPDATED, {
+      applicationId: application._id,
+      status: targetStatus,
+      jobTitle: application.job?.title || 'Job Posting',
+      jobId: application.job?._id || application.job,
+      farmerName,
+    });
   }
 
   // 8. Retrieve updated real-time farmer dashboard statistics
@@ -549,6 +568,14 @@ export const rejectApplicationService = async (farmer, applicationId, payload = 
         jobId: application.job?._id || application.job,
         reason: reasonText,
       },
+    });
+
+    emitToUser(workerRecipientId, SOCKET_EVENTS.APPLICATION_STATUS_UPDATED, {
+      applicationId: application._id,
+      status: APPLICATION_STATUS.REJECTED,
+      jobTitle: application.job?.title || 'Job Posting',
+      jobId: application.job?._id || application.job,
+      farmerName,
     });
   }
 
@@ -642,6 +669,14 @@ export const toggleShortlistApplicationService = async (farmer, applicationId) =
         applicationId: application._id,
         jobId: application.job?._id || application.job,
       },
+    });
+
+    emitToUser(workerRecipientId, SOCKET_EVENTS.APPLICATION_STATUS_UPDATED, {
+      applicationId: application._id,
+      status: application.status,
+      jobTitle: application.job?.title || 'Job Posting',
+      jobId: application.job?._id || application.job,
+      farmerName,
     });
   }
 

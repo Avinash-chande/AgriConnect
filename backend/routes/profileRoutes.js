@@ -11,6 +11,7 @@ import {
   uploadFarmImages,
   uploadCertificates,
   deleteImage,
+  getUserPresence,
 } from '../controllers/profileController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { uploadSingleImage, uploadMultipleImages } from '../middleware/uploadMiddleware.js';
@@ -27,8 +28,9 @@ export const publicCacheControl = (req, res, next) => {
 };
 
 /**
- * Public Search & Filter Routes
+ * Public Presence & Profile Routes
  */
+router.get('/presence/:userId', getUserPresence);
 router.get('/search', publicCacheControl, validateProfileQuery, searchProfiles);
 router.get('/filter', publicCacheControl, validateProfileQuery, filterProfiles);
 router.get('/user/:identifier', publicCacheControl, getUserProfile);
