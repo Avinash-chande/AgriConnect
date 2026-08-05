@@ -91,6 +91,7 @@ export const registerSocketHandlers = (io, socket) => {
     } else {
       socket.emit('pong', { timestamp: Date.now() });
     }
+  });
   // High-Frequency Typing Events Relay (Volatile to avoid socket buffer bottleneck)
   socket.on(SOCKET_EVENTS.CHAT_TYPING, (data) => {
     const validation = validateSocketPayload(data);

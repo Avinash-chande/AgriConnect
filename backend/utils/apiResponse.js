@@ -9,3 +9,7 @@ export const sendResponse = (res, statusCode, message, data = null, meta = null)
     ...(meta !== null && { meta }),
   });
 };
+
+export const sendSuccessResponse = (res, statusCode, message, data = null, meta = null) => {
+  return sendResponse(res, statusCode, message, data, meta);
+};
