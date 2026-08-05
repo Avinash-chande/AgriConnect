@@ -27,6 +27,10 @@ export const registerFarmerService = async (data) => {
     role: USER_ROLES.FARMER,
     profileCompleted: false,
   });
+  const { otpCode } = await generateAndSaveOTP(user);
+  await sendOTPEmail(user.email, otpCode);
+
+  return user;
 
   await FarmerProfile.create({
     owner: user._id,
@@ -64,6 +68,10 @@ export const registerWorkerService = async (data) => {
     role: USER_ROLES.WORKER,
     profileCompleted: false,
   });
+  const { otpCode } = await generateAndSaveOTP(user);
+  await sendOTPEmail(user.email, otpCode);
+
+  return user;
 
   await WorkerProfile.create({
     owner: user._id,
@@ -114,8 +122,8 @@ export const forgotPasswordService = async (email) => {
   if (!user) {
     return true; // Return true to prevent account enumeration
   }
-  const otp = await generateAndSaveOTP(user);
-  await sendOTPEmail(user.email, otp, user.name);
+  const { otpCode } = await generateAndSaveOTP(user);
+  await sendOTPEmail(user.email, otpCode);
   return true;
 };
 
