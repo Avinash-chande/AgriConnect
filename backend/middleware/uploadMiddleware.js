@@ -27,3 +27,34 @@ export const uploadJobImages = upload.fields([
   { name: 'farmImages', maxCount: 5 },
   { name: 'jobImages', maxCount: 5 },
 ]);
+
+// Attachment upload filter for Chat (Images, PDFs, Word docs up to 10MB)
+const attachmentFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Invalid file type! Only images, PDFs, Word docs (.doc/.docx), and text files up to 10MB are allowed.', 400), false);
+  }
+};
+
+export const uploadAttachmentMulter = multer({
+  storage,
+  fileFilter: attachmentFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB max file size
+  },
+});
+
+export const uploadSingleAttachment = uploadAttachmentMulter.single('file');

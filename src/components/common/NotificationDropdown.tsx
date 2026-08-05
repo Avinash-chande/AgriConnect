@@ -14,10 +14,12 @@ import {
   Ban,
   Briefcase,
   Info,
-  Clock,
   Sparkles,
-  ChevronRight,
+  MessageSquare,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
+import { useSocket } from '../../hooks/useSocket';
 import {
   getNotifications,
   getUnreadCount,
@@ -44,6 +46,12 @@ const getNotificationStyle = (type: string) => {
       return { Icon: LogOut, color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200' };
     case 'application.cancelled':
       return { Icon: Ban, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100' };
+    case 'chat.message':
+      return { Icon: MessageSquare, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100' };
+    case 'job.closed':
+      return { Icon: Lock, color: 'text-slate-600', bg: 'bg-slate-100 border-slate-200' };
+    case 'user.verified':
+      return { Icon: ShieldCheck, color: 'text-teal-600', bg: 'bg-teal-50 border-teal-100' };
     default:
       return { Icon: Info, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' };
   }
@@ -69,6 +77,7 @@ export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -99,6 +108,22 @@ export const NotificationDropdown: React.FC = () => {
       setLoading(false);
     }
   }, [activeTab]);
+
+  // Socket.IO Real-time notification listener
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (newNotif: AppNotification) => {
+      setUnreadCount((prev) => prev + 1);
+      setNotifications((prev) => [newNotif, ...prev]);
+    };
+
+    socket.on('notification:new', handleNewNotification);
+
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+    };
+  }, [socket]);
 
   // Initial load + periodic poll (every 30 seconds for live updates)
   useEffect(() => {

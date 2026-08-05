@@ -2,26 +2,34 @@ import React from 'react';
 
 interface HighlightTextProps {
   text: string;
-  query: string;
+  highlight?: string;
+  query?: string;
   className?: string;
 }
 
-export const HighlightText: React.FC<HighlightTextProps> = ({ text, query, className = '' }) => {
-  if (!query || !query.trim() || !text) {
+export const HighlightText: React.FC<HighlightTextProps> = ({
+  text,
+  highlight,
+  query: queryAlias,
+  className = '',
+}) => {
+  const activeQuery = (highlight || queryAlias || '').trim();
+  if (!text) return null;
+  if (!activeQuery) {
     return <span className={className}>{text}</span>;
   }
 
-  const trimmedQuery = query.trim();
-  const escapedQuery = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+  const escapedQuery = activeQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  const parts = text.split(regex);
 
   return (
     <span className={className}>
       {parts.map((part, index) =>
-        part.toLowerCase() === trimmedQuery.toLowerCase() ? (
+        regex.test(part) ? (
           <mark
             key={index}
-            className="bg-emerald-500/20 text-emerald-300 font-semibold px-0.5 rounded border border-emerald-500/30"
+            className="bg-emerald-400/30 text-emerald-300 font-bold px-0.5 rounded shadow-sm border border-emerald-500/20"
           >
             {part}
           </mark>

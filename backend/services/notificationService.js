@@ -8,6 +8,8 @@ import {
   deleteNotificationRepo,
 } from '../repositories/notificationRepository.js';
 import { NOTIFICATION_TYPE } from '../models/Notification.js';
+import { emitToUser } from '../socket/socketService.js';
+import { SOCKET_EVENTS } from '../socket/socketEvents.js';
 import { AppError } from '../utils/appError.js';
 import { HTTP_STATUS } from '../constants/index.js';
 import { logger } from '../utils/logger.js';
@@ -54,6 +56,24 @@ const NOTIFICATION_BUILDERS = {
     message: `Welcome aboard! ${farmerName} has officially hired you for "${jobTitle}".`,
     meta: { icon: 'briefcase', color: 'emerald', jobTitle, applicationId, jobId },
   }),
+
+  [NOTIFICATION_TYPE.CHAT_MESSAGE]: ({ senderName, messageSnippet, conversationId }) => ({
+    title: `New Message from ${senderName}`,
+    message: messageSnippet ? `"${messageSnippet}"` : 'Sent you a message.',
+    meta: { icon: 'message-square', color: 'emerald', conversationId, senderName },
+  }),
+
+  [NOTIFICATION_TYPE.JOB_CLOSED]: ({ farmerName, jobTitle, jobId }) => ({
+    title: 'Job Posting Closed',
+    message: `The job posting "${jobTitle}" has been closed by ${farmerName}.`,
+    meta: { icon: 'lock', color: 'slate', jobTitle, jobId },
+  }),
+
+  [NOTIFICATION_TYPE.USER_VERIFIED]: ({ userName }) => ({
+    title: 'Verification Approved ✔️',
+    message: `Congratulations ${userName}! Your profile verification request has been approved.`,
+    meta: { icon: 'shield-check', color: 'emerald' },
+  }),
 };
 
 export const createNotificationService = async ({
@@ -85,10 +105,8 @@ export const createNotificationService = async ({
 
     logger.info(`[Notification] ${type} → user:${recipientId}`);
 
-    // Socket.IO real-time notification dispatch hook
-    if (global.io) {
-      global.io.to(`user:${recipientId}`).emit('notification:new', notification);
-    }
+    // Socket.IO real-time notification dispatch hook via socketService
+    emitToUser(recipientId, SOCKET_EVENTS.NOTIFICATION_NEW, notification);
 
     return notification;
   } catch (err) {
@@ -171,3 +189,12 @@ export const notifyApplicationCancelled = (opts) =>
 
 export const notifyApplicationHired = (opts) =>
   createNotificationService({ type: NOTIFICATION_TYPE.APPLICATION_HIRED, ...opts });
+
+export const notifyChatMessage = (opts) =>
+  createNotificationService({ type: NOTIFICATION_TYPE.CHAT_MESSAGE, ...opts });
+
+export const notifyJobClosed = (opts) =>
+  createNotificationService({ type: NOTIFICATION_TYPE.JOB_CLOSED, ...opts });
+
+export const notifyVerificationApproved = (opts) =>
+  createNotificationService({ type: NOTIFICATION_TYPE.USER_VERIFIED, ...opts });

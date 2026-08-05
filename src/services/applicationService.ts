@@ -1,9 +1,11 @@
 import api from './api';
-import {
+import type {
   JobApplication,
   ApplyJobPayload,
   GetApplicationsQueryParams,
 } from '../types/application';
+
+export type { JobApplication, ApplyJobPayload, GetApplicationsQueryParams };
 
 /**
  * Frontend Service for Job Application Operations

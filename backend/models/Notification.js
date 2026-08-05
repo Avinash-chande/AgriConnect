@@ -11,6 +11,9 @@ export const NOTIFICATION_TYPE = Object.freeze({
   APPLICATION_WITHDRAWN:   'application.withdrawn',
   APPLICATION_CANCELLED:   'application.cancelled',
   APPLICATION_HIRED:       'application.hired',
+  CHAT_MESSAGE:            'chat.message',
+  JOB_CLOSED:              'job.closed',
+  USER_VERIFIED:           'user.verified',
   SYSTEM:                  'system',
 });
 

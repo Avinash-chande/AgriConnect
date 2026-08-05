@@ -1,7 +1,9 @@
+import http from 'http';
 import dotenv from 'dotenv';
 import app from './app.js';
 import { connectDB } from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
+import { initSocketServer } from './socket/index.js';
 import { logger } from './utils/logger.js';
 
 // Load environment variables
@@ -22,8 +24,14 @@ const startServer = async () => {
   // Configure Cloudinary SDK
   configureCloudinary();
 
-  const server = app.listen(PORT, () => {
-    logger.info(`🚀 AgriConnect Backend API running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`);
+  // Create HTTP Server
+  const httpServer = http.createServer(app);
+
+  // Initialize Socket.IO Server
+  initSocketServer(httpServer);
+
+  const server = httpServer.listen(PORT, () => {
+    logger.info(`🚀 AgriConnect Backend API & Socket Server running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`);
     console.log(`📡 Health Check URL: http://localhost:${PORT}/api/v1/health`);
   });
 
@@ -45,3 +53,4 @@ const startServer = async () => {
 };
 
 startServer();
+
