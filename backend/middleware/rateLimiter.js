@@ -55,3 +55,18 @@ export const uploadRateLimiter = rateLimit({
     message: 'Image upload rate limit exceeded. Please wait 15 minutes before uploading more images.',
   },
 });
+
+/**
+ * Location Service Rate Limiter
+ */
+export const locationRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many location requests. Please slow down and try again in a minute.',
+  },
+});
+

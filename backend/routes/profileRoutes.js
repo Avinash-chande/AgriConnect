@@ -12,10 +12,14 @@ import {
   uploadCertificates,
   deleteImage,
   getUserPresence,
+  updateFarmLocation,
+  deleteFarmLocation,
+  updateLocationPrivacy,
+  deleteSavedLocation,
 } from '../controllers/profileController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { uploadSingleImage, uploadMultipleImages } from '../middleware/uploadMiddleware.js';
-import { validateProfileQuery } from '../validators/profileValidator.js';
+import { validateProfileQuery, validateFarmLocationInput } from '../validators/profileValidator.js';
 import { USER_ROLES } from '../constants/index.js';
 import { profileRateLimiter, uploadRateLimiter } from '../middleware/rateLimiter.js';
 
@@ -42,6 +46,33 @@ router.get('/me', protect, getMyProfile);
 router.post('/me', protect, createProfile);
 router.put('/me', protect, profileRateLimiter, updateProfile);
 router.delete('/me', protect, deleteProfile);
+
+/**
+ * Location Privacy Controls & Saved Location Management
+ */
+router.put('/location-privacy', protect, profileRateLimiter, updateLocationPrivacy);
+router.delete('/saved-location', protect, profileRateLimiter, deleteSavedLocation);
+
+/**
+ * Farm Location Management Routes (Farmer Only)
+ */
+router.put(
+  '/farm-location',
+  protect,
+  authorize(USER_ROLES.FARMER),
+  profileRateLimiter,
+  validateFarmLocationInput,
+  updateFarmLocation
+);
+
+router.delete(
+  '/farm-location',
+  protect,
+  authorize(USER_ROLES.FARMER),
+  profileRateLimiter,
+  deleteFarmLocation
+);
+
 
 /**
  * Image Upload & Management Routes

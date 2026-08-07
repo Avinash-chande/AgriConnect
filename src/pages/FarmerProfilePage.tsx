@@ -10,7 +10,7 @@ import { Footer } from '../components/common/Footer';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
-import { GoogleMapPicker } from '../components/profile/GoogleMapPicker';
+import { FarmLocationManager } from '../components/farmer/FarmLocationManager';
 import { ProfileCompletionCard } from '../components/profile/ProfileCompletionCard';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -575,14 +575,33 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                   />
                 </div>
 
-                <GoogleMapPicker
-                  latitude={latitude}
-                  longitude={longitude}
-                  district={district}
-                  state={stateName}
-                  onLocationSelect={(lat, lng) => {
-                    setLatitude(lat);
-                    setLongitude(lng);
+                <FarmLocationManager
+                  farmName={farmName || 'My Farm'}
+                  cropTypes={cropTypes}
+                  isFarmer={true}
+                  locationData={{
+                    addressLine,
+                    village,
+                    district,
+                    state: stateName,
+                    pincode,
+                    latitude,
+                    longitude,
+                  }}
+                  onSaveLocation={async (updated) => {
+                    setLatitude(updated.latitude);
+                    setLongitude(updated.longitude);
+                    if (updated.addressLine) setAddressLine(updated.addressLine);
+                    if (updated.village) setVillage(updated.village);
+                    if (updated.district) setDistrict(updated.district);
+                    if (updated.state) setStateName(updated.state);
+                    if (updated.pincode) setPincode(updated.pincode);
+                  }}
+                  onRemoveLocation={async () => {
+                    setLatitude(0);
+                    setLongitude(0);
+                    setAddressLine('');
+                    setVillage('');
                   }}
                 />
               </div>

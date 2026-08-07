@@ -54,6 +54,21 @@ const JobDetailsPage = lazy(() =>
 const SavedJobsPage = lazy(() =>
   import('./pages/SavedJobsPage').then((m) => ({ default: m.SavedJobsPage }))
 );
+const NearbyJobsPage = lazy(() =>
+  import('./pages/NearbyJobsPage').then((m) => ({ default: m.NearbyJobsPage }))
+);
+const MapJobDiscoveryPage = lazy(() =>
+  import('./pages/MapJobDiscoveryPage').then((m) => ({ default: m.MapJobDiscoveryPage }))
+);
+const NearbyWorkersPage = lazy(() =>
+  import('./pages/NearbyWorkersPage').then((m) => ({ default: m.NearbyWorkersPage }))
+);
+const WorkerDiscoveryMapPage = lazy(() =>
+  import('./pages/WorkerDiscoveryMapPage').then((m) => ({ default: m.WorkerDiscoveryMapPage }))
+);
+const RouteNavigationPage = lazy(() =>
+  import('./pages/RouteNavigationPage').then((m) => ({ default: m.RouteNavigationPage }))
+);
 const FarmerJobDashboardPage = lazy(() =>
   import('./pages/FarmerJobDashboardPage').then((m) => ({ default: m.FarmerJobDashboardPage }))
 );
@@ -131,10 +146,13 @@ export function App() {
               {/* Worker Job Feed Routes */}
               <Route path="/jobs" element={<WorkerJobFeedPage />} />
               <Route path="/worker/feed" element={<WorkerJobFeedPage />} />
+              <Route path="/jobs/map" element={<MapJobDiscoveryPage />} />
+              <Route path="/jobs/map-discovery" element={<MapJobDiscoveryPage />} />
 
               {/* Public Profile & Job Details Routes */}
               <Route path="/profile/user/:identifier" element={<PublicProfilePage />} />
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/route-navigation" element={<RouteNavigationPage />} />
 
               {/* Farmer Job Management Dashboard */}
               <Route
@@ -166,6 +184,22 @@ export function App() {
                 element={
                   <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
                     <FarmerChatDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/farmer/nearby-workers"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                    <NearbyWorkersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/farmer/worker-map"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                    <WorkerDiscoveryMapPage />
                   </ProtectedRoute>
                 }
               />
@@ -207,6 +241,9 @@ export function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Nearby Jobs Route */}
+              <Route path="/jobs/nearby" element={<NearbyJobsPage />} />
 
               {/* Job Editing Route */}
               <Route

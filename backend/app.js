@@ -14,6 +14,7 @@ import applicationRoutes from './routes/applicationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { sanitizeNoSQL } from './middleware/sanitizeMiddleware.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
@@ -28,17 +29,32 @@ const app = express();
 // 1. Gzip Compression
 app.use(compression());
 
-// 2. Helmet Security Headers with Cloudinary CSP
+// 2. Helmet Security Headers with OpenStreetMap / Nominatim / OSRM CSP
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://maps.googleapis.com'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com', 'https://*.googleapis.com', 'https://*.gstatic.com'],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'blob:',
+          'https://res.cloudinary.com',
+          'https://*.tile.openstreetmap.org',
+          'https://a.tile.openstreetmap.org',
+          'https://b.tile.openstreetmap.org',
+          'https://c.tile.openstreetmap.org',
+          'https://unpkg.com',
+        ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        connectSrc: ["'self'", 'https://res.cloudinary.com', 'https://maps.googleapis.com'],
+        connectSrc: [
+          "'self'",
+          'https://res.cloudinary.com',
+          'https://nominatim.openstreetmap.org',
+          'https://router.project-osrm.org',
+        ],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -90,6 +106,8 @@ app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/location', locationRoutes);
+
 
 app.get('/', (req, res) => {
   res.status(200).json({

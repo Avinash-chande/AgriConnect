@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { FARM_SIZE_UNITS, IRRIGATION_TYPES } from '../constants/index.js';
-import { addressSchema, geoPointSchema, softDeletePlugin } from './schemas/commonSchemas.js';
+import { addressSchema, geoPointSchema, createGeoPoint, softDeletePlugin } from './schemas/commonSchemas.js';
 import { slugify } from '../utils/slugify.js';
 
 const farmerProfileSchema = new mongoose.Schema(
@@ -65,12 +65,22 @@ const farmerProfileSchema = new mongoose.Schema(
       },
       default: 'Canal / Flood',
     },
+    locationVisibility: {
+      type: String,
+      enum: {
+        values: ['private', 'approximate', 'verified_users', 'public'],
+        message: '{VALUE} is not a valid location visibility setting',
+      },
+      default: 'approximate',
+      index: true,
+    },
     farmAddress: {
       type: addressSchema,
-      required: true,
+      default: null,
     },
     location: {
       type: geoPointSchema,
+      default: null,
     },
     farmImages: {
       type: [String],
@@ -101,7 +111,7 @@ const farmerProfileSchema = new mongoose.Schema(
 farmerProfileSchema.plugin(softDeletePlugin);
 
 // Geospatial 2dsphere index for location searches
-farmerProfileSchema.index({ location: '2dsphere' });
+farmerProfileSchema.index({ location: '2dsphere' }, { sparse: true });
 
 // Compound indexes for fast location & crop filtering
 farmerProfileSchema.index({ 'farmAddress.district': 1, 'farmAddress.state': 1, isDeleted: 1 });
@@ -111,7 +121,7 @@ farmerProfileSchema.index({ cropTypes: 1, 'farmAddress.state': 1, isDeleted: 1 }
 farmerProfileSchema.index({ farmName: 'text', farmDescription: 'text', cropTypes: 'text' });
 
 /**
- * Pre-save Hook: Generate unique slug from farmName
+ * Pre-save Hook: Generate unique slug & sync GeoJSON location
  */
 farmerProfileSchema.pre('save', async function (next) {
   if (this.isModified('farmName') || !this.slug) {
@@ -126,12 +136,17 @@ farmerProfileSchema.pre('save', async function (next) {
     this.slug = uniqueSlug;
   }
 
-  // Synchronize GeoJSON location if latitude/longitude are present in farmAddress
-  if (this.farmAddress?.longitude && this.farmAddress?.latitude) {
-    this.location = {
-      type: 'Point',
-      coordinates: [this.farmAddress.longitude, this.farmAddress.latitude],
-    };
+  // Synchronize GeoJSON location if latitude & longitude are present in farmAddress
+  if (this.farmAddress) {
+    if (!this.farmAddress.country) {
+      this.farmAddress.country = 'India';
+    }
+    if (typeof this.farmAddress.longitude === 'number' && typeof this.farmAddress.latitude === 'number') {
+      const geoPoint = createGeoPoint(this.farmAddress.longitude, this.farmAddress.latitude);
+      if (geoPoint) {
+        this.location = geoPoint;
+      }
+    }
   }
 
   next();
@@ -142,8 +157,9 @@ farmerProfileSchema.pre('save', async function (next) {
  */
 farmerProfileSchema.virtual('fullAddress').get(function () {
   if (!this.farmAddress) return '';
-  const { addressLine, village, district, state, pincode } = this.farmAddress;
-  return [addressLine, village, district, state, pincode].filter(Boolean).join(', ');
+  const { addressLine, village, district, state, country, pincode } = this.farmAddress;
+  return [addressLine, village, district, state, country, pincode].filter(Boolean).join(', ');
 });
 
 export const FarmerProfile = mongoose.model('FarmerProfile', farmerProfileSchema);
+

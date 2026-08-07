@@ -6,7 +6,7 @@ import {
   GENDER_PREFERENCE,
   PREFERRED_WORK_TYPES,
 } from '../constants/index.js';
-import { addressSchema, geoPointSchema, softDeletePlugin } from './schemas/commonSchemas.js';
+import { addressSchema, geoPointSchema, createGeoPoint, softDeletePlugin } from './schemas/commonSchemas.js';
 import { slugify } from '../utils/slugify.js';
 
 const jobSchema = new mongoose.Schema(
@@ -184,6 +184,7 @@ const jobSchema = new mongoose.Schema(
     },
     location: {
       type: geoPointSchema,
+      default: null,
     },
     farmImages: {
       type: [String],
@@ -254,7 +255,7 @@ const jobSchema = new mongoose.Schema(
 jobSchema.plugin(softDeletePlugin);
 
 // 2dsphere index for location radius queries
-jobSchema.index({ location: '2dsphere' });
+jobSchema.index({ location: '2dsphere' }, { sparse: true });
 
 // Compound indexes for high-throughput searches
 jobSchema.index({ status: 1, 'jobAddress.state': 1, 'jobAddress.district': 1, isDeleted: 1 });
@@ -295,16 +296,22 @@ jobSchema.pre('save', async function (next) {
     this.expiresAt = thirtyDays;
   }
 
-  // Synchronize GeoJSON location if latitude/longitude are present in jobAddress
-  if (this.jobAddress?.longitude && this.jobAddress?.latitude) {
-    this.location = {
-      type: 'Point',
-      coordinates: [this.jobAddress.longitude, this.jobAddress.latitude],
-    };
+  // Synchronize GeoJSON location if latitude & longitude are present in jobAddress
+  if (this.jobAddress) {
+    if (!this.jobAddress.country) {
+      this.jobAddress.country = 'India';
+    }
+    if (typeof this.jobAddress.longitude === 'number' && typeof this.jobAddress.latitude === 'number') {
+      const geoPoint = createGeoPoint(this.jobAddress.longitude, this.jobAddress.latitude);
+      if (geoPoint) {
+        this.location = geoPoint;
+      }
+    }
   }
 
   next();
 });
+
 
 /**
  * Virtual: Formatted address string

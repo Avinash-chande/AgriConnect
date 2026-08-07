@@ -13,6 +13,10 @@ import {
   uploadFarmImagesService,
   uploadCertificatesService,
   deleteImageService,
+  updateFarmLocationService,
+  deleteFarmLocationService,
+  updateLocationPrivacyService,
+  deleteSavedLocationService,
 } from '../services/profileService.js';
 import { connectedUsersStore } from '../socket/connectedUsers.js';
 import { User } from '../models/User.js';
@@ -172,8 +176,6 @@ export const getUserPresence = asyncHandler(async (req, res) => {
     throw new AppError('User account not found', 404);
   }
 
-  const isOnline = isOnlineInMemory || user.isOnline;
-
   return sendResponse(res, 200, 'User presence status retrieved successfully', {
     userId: user._id,
     name: user.name,
@@ -182,3 +184,46 @@ export const getUserPresence = asyncHandler(async (req, res) => {
     lastSeen: user.lastSeen,
   });
 });
+
+/**
+ * @desc    Update Farm Location (Farmer Only)
+ * @route   PUT /api/v1/profiles/farm-location
+ * @access  Private (Farmer Only)
+ */
+export const updateFarmLocation = asyncHandler(async (req, res) => {
+  const profile = await updateFarmLocationService(req.user, req.body);
+  return sendResponse(res, 200, 'Farm location successfully updated and synced with GeoJSON.', profile);
+});
+
+/**
+ * @desc    Delete/Reset Farm Location (Farmer Only)
+ * @route   DELETE /api/v1/profiles/farm-location
+ * @access  Private (Farmer Only)
+ */
+export const deleteFarmLocation = asyncHandler(async (req, res) => {
+  const profile = await deleteFarmLocationService(req.user);
+  return sendResponse(res, 200, 'Farm location removed from profile successfully.', profile);
+});
+
+/**
+ * @desc    Update Location Privacy Preference ('private' | 'approximate' | 'verified_users' | 'public')
+ * @route   PUT /api/v1/profiles/location-privacy
+ * @access  Private
+ */
+export const updateLocationPrivacy = asyncHandler(async (req, res) => {
+  const { locationVisibility } = req.body;
+  const result = await updateLocationPrivacyService(req.user, locationVisibility);
+  return sendResponse(res, 200, 'Location privacy preference updated successfully.', result);
+});
+
+/**
+ * @desc    Delete Saved Location from Profile
+ * @route   DELETE /api/v1/profiles/saved-location
+ * @access  Private
+ */
+export const deleteSavedLocation = asyncHandler(async (req, res) => {
+  const result = await deleteSavedLocationService(req.user);
+  return sendResponse(res, 200, 'Saved location deleted from profile.', result);
+});
+
+

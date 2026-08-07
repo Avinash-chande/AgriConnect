@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { EDUCATION_LEVELS, AVAILABILITY_STATUS, PREFERRED_WORK_TYPES } from '../constants/index.js';
-import { softDeletePlugin } from './schemas/commonSchemas.js';
+import { addressSchema, geoPointSchema, createGeoPoint, softDeletePlugin } from './schemas/commonSchemas.js';
 import { slugify } from '../utils/slugify.js';
 
 const workerProfileSchema = new mongoose.Schema(
@@ -94,6 +94,23 @@ const workerProfileSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    locationVisibility: {
+      type: String,
+      enum: {
+        values: ['private', 'approximate', 'verified_users', 'public'],
+        message: '{VALUE} is not a valid location visibility setting',
+      },
+      default: 'approximate',
+      index: true,
+    },
+    address: {
+      type: addressSchema,
+      default: null,
+    },
+    location: {
+      type: geoPointSchema,
+      default: null,
+    },
     aadhaarVerified: {
       type: Boolean,
       default: false,
@@ -138,15 +155,19 @@ const workerProfileSchema = new mongoose.Schema(
 // Apply Soft Delete Plugin
 workerProfileSchema.plugin(softDeletePlugin);
 
+// Geospatial 2dsphere index for worker discovery
+workerProfileSchema.index({ location: '2dsphere' }, { sparse: true });
+
 // Compound indexes for searching workers by skills & location
 workerProfileSchema.index({ skills: 1, preferredDistrict: 1, availability: 1, isDeleted: 1 });
+workerProfileSchema.index({ 'address.district': 1, 'address.state': 1, isDeleted: 1 });
 workerProfileSchema.index({ rating: -1, totalJobsCompleted: -1, isDeleted: 1 });
 
 // Full-text search index
 workerProfileSchema.index({ title: 'text', bio: 'text', skills: 'text' });
 
 /**
- * Pre-save Hook: Generate unique slug from owner's name/skills
+ * Pre-save Hook: Generate unique slug & sync GeoJSON location
  */
 workerProfileSchema.pre('save', async function (next) {
   if (!this.slug) {
@@ -154,7 +175,31 @@ workerProfileSchema.pre('save', async function (next) {
     let baseSlug = slugify(`worker-${primarySkill}-${this._id.toString().slice(-6)}`);
     this.slug = baseSlug;
   }
+
+  // Synchronize GeoJSON location if latitude & longitude are present in address
+  if (this.address) {
+    if (!this.address.country) {
+      this.address.country = 'India';
+    }
+    if (typeof this.address.longitude === 'number' && typeof this.address.latitude === 'number') {
+      const geoPoint = createGeoPoint(this.address.longitude, this.address.latitude);
+      if (geoPoint) {
+        this.location = geoPoint;
+      }
+    }
+    if (this.address.district && !this.preferredDistrict) {
+      this.preferredDistrict = this.address.district;
+    }
+    if (this.address.state && !this.preferredState) {
+      this.preferredState = this.address.state;
+    }
+    if (this.address.village && !this.preferredVillage) {
+      this.preferredVillage = this.address.village;
+    }
+  }
+
   next();
 });
 
 export const WorkerProfile = mongoose.model('WorkerProfile', workerProfileSchema);
+
