@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">16.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/18</span>
+                <span class='fraction'>3/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/9</span>
+                <span class='fraction'>0/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">16.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/6</span>
+                <span class='fraction'>1/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64.7% </span>
+                <span class="strong">17.64% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/17</span>
+                <span class='fraction'>3/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -140,17 +140,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -171,9 +171,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -201,18 +201,18 @@ class CacheService {
   /**
    * Set cache key with optional custom TTL in seconds
    */
-  set(key, value, ttlSeconds) {
-    const ttl = ttlSeconds ? ttlSeconds * 1000 : <span class="branch-1 cbranch-no" title="branch not covered" >this.defaultTTL;</span>
-    const expiresAt = Date.now() + ttl;
-    this.cache.set(key, { value, expiresAt });
+<span class="fstat-no" title="function not covered" >  se</span>t(key, value, ttlSeconds) {
+    const ttl = <span class="cstat-no" title="statement not covered" >ttlSeconds ? ttlSeconds * 1000 : this.defaultTTL;</span>
+    const expiresAt = <span class="cstat-no" title="statement not covered" >Date.now() + ttl;</span>
+<span class="cstat-no" title="statement not covered" >    this.cache.set(key, { value, expiresAt });</span>
   }
 &nbsp;
   /**
    * Get cached value if valid and not expired
    */
-  get(key) {
-    const cached = this.cache.get(key);
-    <span class="missing-if-branch" title="else path not taken" >E</span>if (!cached) return null;
+<span class="fstat-no" title="function not covered" >  ge</span>t(key) {
+    const cached = <span class="cstat-no" title="statement not covered" >this.cache.get(key);</span>
+<span class="cstat-no" title="statement not covered" >    if (!cached) <span class="cstat-no" title="statement not covered" >return null;</span></span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (Date.now() &gt; cached.expiresAt) {</span>
 <span class="cstat-no" title="statement not covered" >      this.cache.delete(key);</span>
@@ -232,10 +232,10 @@ class CacheService {
   /**
    * Clear all cache entries matching a prefix (e.g. 'profile:')
    */
-  clearPrefix(prefix) {
-    for (const key of this.cache.keys()) {
-      <span class="missing-if-branch" title="else path not taken" >E</span>if (key.startsWith(prefix)) {
-        this.cache.delete(key);
+<span class="fstat-no" title="function not covered" >  cl</span>earPrefix(prefix) {
+<span class="cstat-no" title="statement not covered" >    for (const key of this.cache.keys()) {</span>
+<span class="cstat-no" title="statement not covered" >      if (key.startsWith(prefix)) {</span>
+<span class="cstat-no" title="statement not covered" >        this.cache.delete(key);</span>
       }
     }
   }
@@ -256,7 +256,7 @@ export const cacheService = new CacheService(300); // 5-minute default TTL
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-05T12:37:43.119Z
+                at 2026-08-07T03:46:51.659Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

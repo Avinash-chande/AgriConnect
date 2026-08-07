@@ -13,6 +13,7 @@ import jobRoutes from './routes/jobRoutes.js';
 import applicationRoutes from './routes/applicationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { sanitizeNoSQL } from './middleware/sanitizeMiddleware.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
@@ -88,6 +89,7 @@ app.use('/api/v1/jobs', jobRoutes);
 app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({

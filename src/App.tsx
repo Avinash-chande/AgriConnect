@@ -81,6 +81,11 @@ const WorkerCommunicationDashboardPage = lazy(() =>
 const ChatPage = lazy(() =>
   import('./pages/ChatPage').then((m) => ({ default: m.ChatPage }))
 );
+const AiAssistantPage = lazy(() =>
+  import('./pages/AiAssistantPage').then((m) => ({ default: m.AiAssistantPage }))
+);
+
+import { AiAssistantWidget } from './components/ai/AiAssistantWidget';
 
 /**
  * Fallback Spinner for Suspense Lazy Loading
@@ -276,10 +281,23 @@ export function App() {
                 }
               />
 
+              {/* Dedicated AgriConnect AI Workspace Route */}
+              <Route
+                path="/ai-assistant"
+                element={
+                  <ProtectedRoute>
+                    <AiAssistantPage />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Fallback Catch-all Route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+
+          {/* Floating AI Assistant Widget Accessible Anywhere */}
+          <AiAssistantWidget />
 
           {/* Toast Notification Container */}
           <ToastContainer toasts={toasts} onDismiss={removeToast} />
