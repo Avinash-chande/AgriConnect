@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+<<<<<<< HEAD
 import { aiService, AiMessageItem } from '../../services/aiService';
+=======
+import { aiService } from '../../services/aiService';
+import type { AiMessageItem } from '../../services/aiService';
+>>>>>>> cf994d4 (otp verification problem solved)
 import { useAuth } from '../../context/AuthContext';
 
 export const AiAssistantWidget: React.FC = () => {
@@ -148,6 +153,7 @@ You can ask me about:
 
           {/* Quick Suggestion Chips */}
           <div className="px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex items-center gap-2 overflow-x-auto text-xs whitespace-nowrap scrollbar-none">
+<<<<<<< HEAD
             {user.role === 'Worker' ? (
               <>
                 <button
@@ -159,6 +165,22 @@ You can ask me about:
                 <button
                   onClick={() => handlePromptChipClick('Analyze my profile and give improvement suggestions')}
                   className="px-2.5 py-1 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded-full border border-teal-500/30 transition-colors"
+=======
+            {user.role === 'worker' ? (
+              <>
+                <button
+                  onClick={() =>
+                    handlePromptChipClick('Recommend the best matching jobs for my profile')
+                  }
+                >
+                  💼 Recommend Jobs
+                </button>
+
+                <button
+                  onClick={() =>
+                    handlePromptChipClick('Analyze my profile and give improvement suggestions')
+                  }
+>>>>>>> cf994d4 (otp verification problem solved)
                 >
                   📝 Profile Suggestions
                 </button>
@@ -200,11 +222,18 @@ You can ask me about:
                   </div>
                 )}
                 <div
+<<<<<<< HEAD
                   className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${
                     msg.role === 'user'
                       ? 'bg-emerald-600 text-white rounded-br-none'
                       : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
                   }`}
+=======
+                  className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${msg.role === 'user'
+                      ? 'bg-emerald-600 text-white rounded-br-none'
+                      : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
+                    }`}
+>>>>>>> cf994d4 (otp verification problem solved)
                 >
                   {msg.content || (isStreaming && index === messages.length - 1 ? 'Thinking...' : '')}
                 </div>

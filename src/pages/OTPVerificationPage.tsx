@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sprout, ShieldCheck, CheckCircle2, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +24,14 @@ interface OTPVerificationPageProps {
 
 export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, checkSession } = useAuth();
+
+  const verificationEmail =
+    localStorage.getItem('pending_verification_email') ||
+    location.state?.email ||
+    user?.email ||
+    '';
 
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
   const [timer, setTimer] = useState<number>(60);
@@ -140,10 +147,11 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
 
     try {
       await verifyOTPApi({
-        email: user?.email,
-        phone: user?.phone,
+        email: verificationEmail,
         otpCode: data.otpCode,
       });
+
+      localStorage.removeItem('pending_verification_email');
 
       await checkSession();
 
@@ -194,7 +202,7 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="max-w-md w-full bg-white rounded-3xl border border-agri-border shadow-soft-lg p-6 sm:p-10 text-center">
-          
+
           <AnimatePresence mode="wait">
             {isSuccess ? (
               <motion.div
@@ -228,7 +236,7 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
               </motion.div>
             ) : (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                
+
                 <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-agri-primary flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
@@ -237,7 +245,12 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                   Enter 6-Digit OTP Code
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  We've sent a 6-digit security code to {user?.email ? <strong>{user.email}</strong> : 'your registered device'}.
+                  We've sent a 6-digit security code to{' '}
+                  {verificationEmail ? (
+                    <strong>{verificationEmail}</strong>
+                  ) : (
+                    'your registered email'
+                  )}.
                 </p>
 
                 {errorMessage && (
@@ -261,8 +274,8 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                         className={`
                           w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold font-heading rounded-xl border bg-slate-50 text-agri-text
                           transition-all duration-200 shadow-sm outline-none focus:bg-white
-                          ${digit 
-                            ? 'border-agri-primary ring-2 ring-agri-light bg-emerald-50/50' 
+                          ${digit
+                            ? 'border-agri-primary ring-2 ring-agri-light bg-emerald-50/50'
                             : 'border-slate-200 focus:border-agri-primary focus:ring-2 focus:ring-agri-light'
                           }
                         `}

@@ -87,19 +87,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return loggedInUser;
   };
 
-  const registerFarmer = async (payload: RegisterFarmerPayload): Promise<UserAccount> => {
+  const registerFarmer = async (
+    payload: RegisterFarmerPayload
+  ): Promise<UserAccount> => {
     const data = await registerFarmerApi(payload);
+
     const registeredUser = data.data.user;
     const token = data.data.tokens?.accessToken;
+
     setSession(registeredUser, token);
+
+    localStorage.setItem(
+      'pending_verification_email',
+      registeredUser.email
+    );
+
     return registeredUser;
   };
 
-  const registerWorker = async (payload: RegisterWorkerPayload): Promise<UserAccount> => {
+  const registerWorker = async (
+    payload: RegisterWorkerPayload
+  ): Promise<UserAccount> => {
     const data = await registerWorkerApi(payload);
+
     const registeredUser = data.data.user;
     const token = data.data.tokens?.accessToken;
+
     setSession(registeredUser, token);
+
+    localStorage.setItem(
+      'pending_verification_email',
+      registeredUser.email
+    );
+
     return registeredUser;
   };
 

@@ -1,55 +1,83 @@
 import mongoose from 'mongoose';
+import { AI_CATEGORIES, AI_ROLES } from '../constants/aiConstants.js';
 
-/**
- * AiConversation Schema
- * Maintains AI chat conversation metadata and memory session per user
- */
-const aiConversationSchema = new mongoose.Schema(
+const AIMessageSchema = new mongoose.Schema(
   {
-    user: {
+    role: {
+      type: String,
+      enum: Object.values(AI_ROLES),
+      required: true,
+    },
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    tokens: {
+      type: Number,
+      default: 0,
+    },
+    model: {
+      type: String,
+      default: null,
+    },
+    isFallback: {
+      type: Boolean,
+      default: false,
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true }
+);
+
+const AIConversationSchema = new mongoose.Schema(
+  {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
+      required: true,
+      index: true,
+    },
+    sessionId: {
+      type: String,
+      required: true,
+      unique: true,
       index: true,
     },
     title: {
       type: String,
+      default: 'Agricultural Advisory Chat',
       trim: true,
-      default: 'New AI Conversation',
-      maxlength: [150, 'Title cannot exceed 150 characters'],
     },
-    systemPromptType: {
+    category: {
       type: String,
-      default: 'AGRICULTURAL_ADVISOR',
-      enum: ['AGRICULTURAL_ADVISOR', 'JOB_RECOMMENDATION', 'CROP_RECOMMENDATION', 'WORKER_RECOMMENDATION', 'PEST_DIAGNOSIS', 'CUSTOM'],
+      enum: Object.values(AI_CATEGORIES),
+      default: AI_CATEGORIES.GENERAL_ASSISTANT,
     },
-    model: {
+    messages: [AIMessageSchema],
+    systemPrompt: {
       type: String,
-      default: 'llama-3.3-70b-versatile',
+      default: null,
     },
-    lastMessageText: {
+    summary: {
       type: String,
-      default: '',
+      default: null,
     },
-    messageCount: {
+    totalTokensUsed: {
       type: Number,
       default: 0,
     },
-    totalTokens: {
-      type: Number,
-      default: 0,
+    metadata: {
+      cropType: { type: String, default: null },
+      location: { type: String, default: null },
+      language: { type: String, default: 'English' },
     },
-    totalPromptTokens: {
-      type: Number,
-      default: 0,
-    },
-    totalCompletionTokens: {
-      type: Number,
-      default: 0,
-    },
-    isArchived: {
+    isActive: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {
@@ -57,6 +85,8 @@ const aiConversationSchema = new mongoose.Schema(
   }
 );
 
-aiConversationSchema.index({ user: 1, updatedAt: -1 });
+// Compound Indexes for fast session lookup
+AIConversationSchema.index({ userId: 1, category: 1, updatedAt: -1 });
+AIConversationSchema.index({ sessionId: 1, userId: 1 });
 
-export const AiConversation = mongoose.models.AiConversation || mongoose.model('AiConversation', aiConversationSchema);
+export const AIConversation = mongoose.model('AIConversation', AIConversationSchema);

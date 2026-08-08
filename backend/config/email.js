@@ -1,5 +1,12 @@
 import nodemailer from 'nodemailer';
 
+
+console.log('SMTP CONFIG:', {
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  user: process.env.SMTP_USER,
+  hasPassword: !!process.env.SMTP_PASS,
+});
 /**
  * Creates and verifies Nodemailer SMTP Transporter
  */

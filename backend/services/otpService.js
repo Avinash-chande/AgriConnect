@@ -18,12 +18,24 @@ export const generateAndSaveOTP = async (user) => {
  * Verify candidate OTP code against user's stored OTP and check expiration
  */
 export const verifyOTPCode = (user, candidateCode) => {
+  console.log('OTP DEBUG:', {
+    storedOTP: user.otpCode,
+    candidateOTP: candidateCode,
+    storedType: typeof user.otpCode,
+    candidateType: typeof candidateCode,
+    expiresAt: user.otpExpiresAt,
+    now: new Date(),
+  });
+
   if (!user.otpCode || user.otpCode !== candidateCode) {
     throw new AppError('Invalid OTP verification code.', 400);
   }
 
   if (new Date() > user.otpExpiresAt) {
-    throw new AppError('OTP verification code has expired. Please request a new code.', 400);
+    throw new AppError(
+      'OTP verification code has expired. Please request a new code.',
+      400
+    );
   }
 
   return true;

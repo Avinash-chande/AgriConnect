@@ -30,8 +30,6 @@ export const registerFarmerService = async (data) => {
   const { otpCode } = await generateAndSaveOTP(user);
   await sendOTPEmail(user.email, otpCode);
 
-  return user;
-
   await FarmerProfile.create({
     owner: user._id,
     farmName: farmName || `${userName}'s Organic Farm`,
@@ -71,7 +69,6 @@ export const registerWorkerService = async (data) => {
   const { otpCode } = await generateAndSaveOTP(user);
   await sendOTPEmail(user.email, otpCode);
 
-  return user;
 
   await WorkerProfile.create({
     owner: user._id,
