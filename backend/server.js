@@ -4,6 +4,7 @@ import app from './app.js';
 import { connectDB } from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
 import { initSocketServer } from './socket/index.js';
+import { startExpirationCronJob } from './jobs/expirationCron.js';
 import { logger } from './utils/logger.js';
 
 // Load environment variables
@@ -29,6 +30,9 @@ const startServer = async () => {
 
   // Initialize Socket.IO Server
   initSocketServer(httpServer);
+
+  // Initialize Server-Side Expiration Scheduler
+  startExpirationCronJob();
 
   const server = httpServer.listen(PORT, () => {
     logger.info(`🚀 AgriConnect Backend API & Socket Server running in [${process.env.NODE_ENV || 'development'}] mode on port ${PORT}`);

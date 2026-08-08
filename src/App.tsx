@@ -99,6 +99,18 @@ const ChatPage = lazy(() =>
 const AiAssistantPage = lazy(() =>
   import('./pages/AiAssistantPage').then((m) => ({ default: m.AiAssistantPage }))
 );
+const PricingPage = lazy(() =>
+  import('./pages/PricingPage').then((m) => ({ default: m.PricingPage }))
+);
+const PaymentHistoryPage = lazy(() =>
+  import('./pages/PaymentHistoryPage').then((m) => ({ default: m.PaymentHistoryPage }))
+);
+const PaymentDetailsPage = lazy(() =>
+  import('./pages/PaymentDetailsPage').then((m) => ({ default: m.PaymentDetailsPage }))
+);
+const SubscriptionManagementPage = lazy(() =>
+  import('./pages/SubscriptionManagementPage').then((m) => ({ default: m.SubscriptionManagementPage }))
+);
 
 import { AiAssistantWidget } from './components/ai/AiAssistantWidget';
 
@@ -142,6 +154,10 @@ export function App() {
               <Route path="/register-worker" element={<WorkerRegistrationPage addToast={addToast} />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage addToast={addToast} />} />
               <Route path="/verify-otp" element={<OTPVerificationPage addToast={addToast} />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/payment-history" element={<PaymentHistoryPage />} />
+              <Route path="/payment-details/:transactionId" element={<PaymentDetailsPage />} />
+              <Route path="/subscription" element={<SubscriptionManagementPage />} />
 
               {/* Worker Job Feed Routes */}
               <Route path="/jobs" element={<WorkerJobFeedPage />} />

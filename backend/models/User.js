@@ -88,6 +88,23 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    isPremium: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    subscriptionPlan: {
+      type: String,
+      default: null,
+    },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    subscriptionStatus: {
+      type: String,
+      default: 'none',
+    },
   },
   {
     timestamps: true,

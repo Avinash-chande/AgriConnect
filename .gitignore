@@ -4,7 +4,7 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-<<<<<<< HEAD
+# <<<<<<< HEAD
 pnpm-debug.log*
 lerna-debug.log*
 
@@ -23,7 +23,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-=======
+# =======
 lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
@@ -161,4 +161,4 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
->>>>>>> a478f92a9b98667c68ec4cb113091157b816b235
+# >>>>>>> a478f92a9b98667c68ec4cb113091157b816b235

@@ -234,6 +234,15 @@ const jobSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    featuredStartDate: {
+      type: Date,
+      default: null,
+    },
+    featuredEndDate: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     isUrgent: {
       type: Boolean,
       default: false,

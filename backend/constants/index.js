@@ -105,3 +105,47 @@ export const HTTP_STATUS = Object.freeze({
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
 });
+
+export const PAYMENT_STATUS = Object.freeze({
+  CREATED: 'created',
+  PENDING: 'pending',
+  AUTHORIZED: 'authorized',
+  CAPTURED: 'captured',
+  FAILED: 'failed',
+  REFUNDED: 'refunded',
+  PARTIALLY_REFUNDED: 'partially_refunded',
+  CANCELLED: 'cancelled',
+});
+
+export const SUBSCRIPTION_STATUS = Object.freeze({
+  ACTIVE: 'active',
+  EXPIRED: 'expired',
+  CANCELLED: 'cancelled',
+  PAUSED: 'paused',
+  PENDING: 'pending',
+});
+
+export const TRANSACTION_TYPE = Object.freeze({
+  PAYMENT: 'payment',
+  REFUND: 'refund',
+});
+
+export const TRANSACTION_STATUS = Object.freeze({
+  PENDING: 'pending',
+  SUCCESS: 'success',
+  FAILED: 'failed',
+  REFUNDED: 'refunded',
+});
+
+export const INVOICE_STATUS = Object.freeze({
+  ISSUED: 'issued',
+  PAID: 'paid',
+  VOID: 'void',
+});
+
+export const REFUND_STATUS = Object.freeze({
+  PENDING: 'pending',
+  PROCESSED: 'processed',
+  FAILED: 'failed',
+  REJECTED: 'rejected',
+});

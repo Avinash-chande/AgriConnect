@@ -3,32 +3,50 @@ import { HTTP_STATUS } from '../constants/index.js';
 
 /**
  * Dedicated Rate Limiter for AI Chat Endpoints
- * 30 requests per minute per IP/User
+ * Free Users: 10 requests per minute
+ * Premium Users: 100 requests per minute
  */
 export const aiChatRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute window
-  max: 30, // 30 requests per minute
+  windowMs: 60 * 1000,
+  max: (req) => (req.user?.isPremium ? 100 : 10),
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'AI chat request limit exceeded. Please wait a minute before sending more messages.',
-    statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+  handler: (req, res) => {
+    const isPremium = req.user?.isPremium;
+    return res.status(429).json({
+      success: false,
+      code: isPremium ? 'RATE_LIMIT_EXCEEDED' : 'FREE_TIER_LIMIT_REACHED',
+      message: isPremium
+        ? 'Premium AI request limit exceeded (100/min). Please wait a minute.'
+        : 'Free tier AI limit reached (10 queries/min). Upgrade to Premium for 100 queries/min.',
+      isPremium: !!isPremium,
+      statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+    });
   },
 });
 
 /**
  * Dedicated Rate Limiter for AI Recommendation Endpoints
- * 15 requests per minute per IP/User
+ * Free Users: 5 requests per minute
+ * Premium Users: 50 requests per minute
  */
 export const aiRecommendationRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute window
-  max: 15, // 15 requests per minute
+  windowMs: 60 * 1000,
+  max: (req) => (req.user?.isPremium ? 50 : 5),
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'AI recommendation request limit exceeded. Please wait a moment.',
-    statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+  handler: (req, res) => {
+    const isPremium = req.user?.isPremium;
+    return res.status(429).json({
+      success: false,
+      code: isPremium ? 'RATE_LIMIT_EXCEEDED' : 'FREE_TIER_LIMIT_REACHED',
+      message: isPremium
+        ? 'Premium AI recommendation limit exceeded (50/min). Please wait a moment.'
+        : 'Free tier AI recommendation limit reached (5 queries/min). Upgrade to Premium for higher limits.',
+      isPremium: !!isPremium,
+      statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+    });
   },
 });

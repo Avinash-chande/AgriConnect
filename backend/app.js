@@ -15,6 +15,9 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import planRoutes from './routes/planRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { sanitizeNoSQL } from './middleware/sanitizeMiddleware.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
@@ -90,6 +93,7 @@ app.use(
 
 // 5. Global Rate Limiting & Body Parsing
 app.use('/api', globalRateLimiter);
+app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser(process.env.COOKIE_SECRET || 'agriconnect_cookie_secret'));
@@ -107,6 +111,9 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/location', locationRoutes);
+app.use('/api/v1/plans', planRoutes);
+app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/invoices', invoiceRoutes);
 
 
 app.get('/', (req, res) => {
