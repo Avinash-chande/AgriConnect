@@ -1,4 +1,5 @@
 import { AppError } from '../utils/appError.js';
+import { PAYMENT_ERROR_CODES } from '../constants/paymentErrorCodes.js';
 import { logger } from '../utils/logger.js';
 
 const handleCastErrorDB = (err) => {
@@ -33,20 +34,12 @@ export const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  logger.error(`${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  // Server-side Technical Log (Never sent to client)
+  logger.error(
+    `[ErrorHandler] ${err.statusCode} - ${err.message} - Code: ${err.code || 'N/A'} - Path: ${req.originalUrl} - Method: ${req.method} - Stack: ${err.stack}`
+  );
 
-  if (process.env.NODE_ENV === 'development') {
-    return res.status(err.statusCode).json({
-      success: false,
-      status: err.status,
-      error: err,
-      message: err.message,
-      stack: err.stack,
-    });
-  }
-
-  // Production Error Handling
-  let error = { ...err, message: err.message };
+  let error = { ...err, message: err.message, code: err.code };
 
   if (err.name === 'CastError') error = handleCastErrorDB(err);
   if (err.code === 11000) error = handleDuplicateFieldsDB(err);
@@ -54,16 +47,31 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === 'JsonWebTokenError') error = handleJWTError();
   if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
+  // Determine standardized error code if missing
+  const responseCode = error.code || (error.statusCode === 403 ? 'PREMIUM_REQUIRED' : 'INTERNAL_SERVER_ERROR');
+
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(error.statusCode).json({
+      success: false,
+      message: error.message,
+      code: responseCode,
+      stack: error.stack,
+    });
+  }
+
+  // Production Response (Zero Internal Stack Traces Exposed)
   if (error.isOperational) {
     return res.status(error.statusCode).json({
       success: false,
       message: error.message,
+      code: responseCode,
     });
   }
 
-  logger.error('💥 UNHANDLED ERROR:', err);
+  // Unhandled Server Errors Fallback
   return res.status(500).json({
     success: false,
-    message: 'Something went wrong on the server.',
+    message: 'An unexpected payment system error occurred. Please try again later.',
+    code: PAYMENT_ERROR_CODES.PROVIDER_UNAVAILABLE,
   });
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, Navigation, Compass } from 'lucide-react';
+import { LocationMap } from '../map/LocationMap';
 
 interface MapCardProps {
   district: string;
@@ -18,7 +19,7 @@ export const MapCard: React.FC<MapCardProps> = ({
   longitude = 75.8573,
   className = '',
 }) => {
-  const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+  const openStreetMapDirectionsUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;${latitude}%2C${longitude}`;
 
   return (
     <div className={`bg-white rounded-3xl border border-slate-200 p-5 shadow-soft-sm text-left space-y-4 ${className}`}>
@@ -31,30 +32,28 @@ export const MapCard: React.FC<MapCardProps> = ({
         </div>
 
         <a
-          href={googleMapsDirectionsUrl}
+          href={openStreetMapDirectionsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-bold text-agri-primary hover:text-agri-hover flex items-center space-x-1"
+          className="text-xs font-bold text-agri-primary hover:text-agri-hover flex items-center space-x-1 transition-colors"
         >
           <Navigation className="w-3.5 h-3.5" />
           <span>Get Directions</span>
         </a>
       </div>
 
-      <div className="relative rounded-2xl overflow-hidden h-40 border border-slate-200 bg-slate-100">
-        <iframe
-          title="Map Location"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          scrolling="no"
-          src={`https://maps.google.com/maps?q=${latitude},${longitude}&hl=en&z=12&output=embed`}
-          className="w-full h-full border-0"
+      <div className="relative rounded-2xl overflow-hidden h-44 border border-slate-200 bg-slate-100">
+        <LocationMap
+          latitude={latitude}
+          longitude={longitude}
+          height="h-44"
+          zoom={12}
+          showControls={false}
         />
 
-        <div className="absolute bottom-2 right-2 bg-slate-900/90 text-white px-2.5 py-1 rounded-xl text-[10px] font-mono flex items-center space-x-1">
+        <div className="absolute bottom-2 right-2 z-[1000] bg-slate-900/90 text-white px-2.5 py-1 rounded-xl text-[10px] font-mono flex items-center space-x-1 shadow-sm pointer-events-none">
           <Compass className="w-3 h-3 text-emerald-400" />
-          <span>{latitude}, {longitude}</span>
+          <span>{latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
         </div>
       </div>
     </div>

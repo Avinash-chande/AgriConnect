@@ -74,6 +74,54 @@ const NOTIFICATION_BUILDERS = {
     message: `Congratulations ${userName}! Your profile verification request has been approved.`,
     meta: { icon: 'shield-check', color: 'emerald' },
   }),
+
+  [NOTIFICATION_TYPE.PAYMENT_SUCCESSFUL]: ({ amount, planName, transactionId }) => ({
+    title: 'Payment Successful 💳',
+    message: `Payment of ₹${amount} for ${planName || 'AgriConnect'} was successfully captured.`,
+    meta: { icon: 'credit-card', color: 'emerald', amount, transactionId },
+  }),
+
+  [NOTIFICATION_TYPE.PAYMENT_FAILED]: ({ amount, planName, orderId, reason }) => ({
+    title: 'Payment Failed ❌',
+    message: `Payment attempt of ₹${amount} for ${planName || 'AgriConnect'} failed.${reason ? ` Reason: ${reason}` : ' Please try again.'}`,
+    meta: { icon: 'alert-triangle', color: 'rose', amount, orderId },
+  }),
+
+  [NOTIFICATION_TYPE.PREMIUM_ACTIVATED]: ({ planName, expiryDate }) => ({
+    title: 'Premium Pro Activated! 🎉',
+    message: `Your ${planName || 'Premium Pro'} membership is now active until ${expiryDate || 'next billing period'}.`,
+    meta: { icon: 'crown', color: 'amber', planName, expiryDate },
+  }),
+
+  [NOTIFICATION_TYPE.PREMIUM_EXPIRING]: ({ daysRemaining }) => ({
+    title: 'Premium Expiring Soon ⏰',
+    message: `Your Premium subscription will expire in ${daysRemaining || 3} days. Renew now to maintain priority benefits.`,
+    meta: { icon: 'clock', color: 'amber', daysRemaining },
+  }),
+
+  [NOTIFICATION_TYPE.PREMIUM_EXPIRED]: () => ({
+    title: 'Premium Expired',
+    message: 'Your Premium subscription has expired. Upgrade anytime to restore priority placement and higher AI limits.',
+    meta: { icon: 'slash', color: 'slate' },
+  }),
+
+  [NOTIFICATION_TYPE.REFUND_REQUESTED]: ({ amount, transactionId, refundId }) => ({
+    title: 'Refund Request Submitted ↩️',
+    message: `Your refund request of ₹${amount} for request ${refundId} has been submitted for admin review.`,
+    meta: { icon: 'rotate-ccw', color: 'blue', amount, transactionId, refundId },
+  }),
+
+  [NOTIFICATION_TYPE.REFUND_PROCESSED]: ({ amount, refundId }) => ({
+    title: 'Refund Processed 💰',
+    message: `Your refund of ₹${amount} for request ${refundId} has been processed to your original payment method.`,
+    meta: { icon: 'check-circle-2', color: 'emerald', amount, refundId },
+  }),
+
+  [NOTIFICATION_TYPE.FEATURED_JOB_ACTIVATED]: ({ jobTitle, durationDays, jobId }) => ({
+    title: 'Featured Job Activated 🌟',
+    message: `Your job vacancy "${jobTitle}" has been promoted to Featured status for ${durationDays || 7} days!`,
+    meta: { icon: 'sparkles', color: 'amber', jobTitle, durationDays, jobId },
+  }),
 };
 
 export const createNotificationService = async ({

@@ -27,6 +27,7 @@ import { jobService } from '../services/jobService';
 import type { JobData } from '../services/jobService';
 import { ShareJobModal } from '../components/common/ShareJobModal';
 import { ApplyJobModal } from '../components/applications/ApplyJobModal';
+import { JobLocationMapView } from '../components/jobs/JobLocationMapView';
 
 export const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,15 +58,25 @@ export const JobDetailsPage: React.FC = () => {
       const data = await jobService.getJobById(jobId);
       setJob(data);
 
-      // Fetch similar jobs by category
-      try {
-        const response = await fetch(`/api/v1/jobs?category=${encodeURIComponent(data.category)}&limit=3`);
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          setSimilarJobs(result.data.filter((j: JobData) => j._id !== jobId));
+      // Fetch nearby jobs within 25km via MongoDB 2dsphere endpoint
+      const jobLat = data.jobAddress?.latitude;
+      const jobLng = data.jobAddress?.longitude;
+
+      if (jobLat && jobLng) {
+        try {
+          const response = await fetch(
+            `/api/v1/location/nearby-jobs?lat=${jobLat}&lng=${jobLng}&radius=25&limit=4`
+          );
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            const nearbyList = result.data
+              .map((item: any) => item.job)
+              .filter((j: any) => j && j._id !== jobId);
+            setSimilarJobs(nearbyList.slice(0, 3));
+          }
+        } catch {
+          // Fallback to category endpoint
         }
-      } catch {
-        // Fallback
       }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Failed to load job posting details.');
@@ -386,42 +397,19 @@ export const JobDetailsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Section 6: Location & Map Info */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-              <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2">
-                <MapPin className="w-5 h-5 text-emerald-400" />
-                <span>Farm Location</span>
-              </h3>
-              <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex items-start space-x-3 text-xs">
-                  <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white text-sm block">
-                      {job.jobAddress.village ? `${job.jobAddress.village}, ` : ''}
-                      {job.jobAddress.district}, {job.jobAddress.state}
-                    </span>
-                    {job.jobAddress.addressLine && (
-                      <span className="text-slate-400 mt-1 block">{job.jobAddress.addressLine}</span>
-                    )}
-                    {job.jobAddress.pincode && (
-                      <span className="text-slate-400 mt-0.5 block">PIN: {job.jobAddress.pincode}</span>
-                    )}
-                  </div>
-                </div>
-
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    `${job.jobAddress.district}, ${job.jobAddress.state}`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors pt-2"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in Google Maps</span>
-                </a>
-              </div>
-            </div>
+            {/* Section 6: Location & Leaflet Map Info */}
+            <JobLocationMapView
+              jobTitle={job.title}
+              category={job.category}
+              wageText={job.formattedWage || `₹${job.dailyWage || job.monthlySalary}`}
+              addressLine={job.jobAddress.addressLine}
+              village={job.jobAddress.village}
+              district={job.jobAddress.district}
+              state={job.jobAddress.state}
+              pincode={job.jobAddress.pincode}
+              latitude={job.jobAddress.latitude}
+              longitude={job.jobAddress.longitude}
+            />
 
             {/* Section 7: Similar Jobs Recommendations */}
             {similarJobs.length > 0 && (

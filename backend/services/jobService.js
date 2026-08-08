@@ -515,7 +515,13 @@ export const createJobService = async (user, rawBody, files) => {
     jobImages,
     contactPerson: payload.contactPerson || user.name,
     contactMobile: payload.contactMobile || user.mobile,
-    isFeatured: payload.isFeatured === true || payload.isFeatured === 'true',
+    isFeatured: (() => {
+      const requestedFeatured = payload.isFeatured === true || payload.isFeatured === 'true';
+      if (requestedFeatured && !user.isPremium) {
+        throw new AppError('Featured Job Posting is a Premium Pro feature. Please upgrade your plan to post featured jobs.', 403);
+      }
+      return requestedFeatured;
+    })(),
     isUrgent: payload.isUrgent === true || payload.isUrgent === 'true',
     expiresAt,
   };

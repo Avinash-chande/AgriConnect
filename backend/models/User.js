@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { USER_ROLES } from '../constants/index.js';
-import { softDeletePlugin } from './schemas/commonSchemas.js';
+import { addressSchema, geoPointSchema, createGeoPoint, softDeletePlugin } from './schemas/commonSchemas.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -68,6 +68,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    address: {
+      type: addressSchema,
+      default: null,
+    },
+    location: {
+      type: geoPointSchema,
+      default: null,
+    },
     refreshToken: {
       type: String,
       select: false,
@@ -80,6 +88,23 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    isPremium: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    subscriptionPlan: {
+      type: String,
+      default: null,
+    },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    subscriptionStatus: {
+      type: String,
+      default: 'none',
+    },
   },
   {
     timestamps: true,
@@ -90,6 +115,10 @@ const userSchema = new mongoose.Schema(
 
 // Apply Soft Delete Plugin
 userSchema.plugin(softDeletePlugin);
+
+// Geospatial 2dsphere index for location queries
+userSchema.index({ location: '2dsphere' }, { sparse: true });
+userSchema.index({ 'address.district': 1, 'address.state': 1 });
 
 // Alias phone to mobile for backward compatibility
 userSchema.virtual('phone')
@@ -119,9 +148,22 @@ userSchema.virtual('workerProfile', {
 userSchema.index({ role: 1, isVerified: 1 });
 
 /**
- * Pre-save Hook: Hash user password before saving if modified
+ * Pre-save Hook: Hash user password & sync GeoJSON location
  */
 userSchema.pre('save', async function (next) {
+  // Synchronize GeoJSON location if latitude & longitude are present in address
+  if (this.address) {
+    if (!this.address.country) {
+      this.address.country = 'India';
+    }
+    if (typeof this.address.longitude === 'number' && typeof this.address.latitude === 'number') {
+      const geoPoint = createGeoPoint(this.address.longitude, this.address.latitude);
+      if (geoPoint) {
+        this.location = geoPoint;
+      }
+    }
+  }
+
   if (!this.isModified('password')) {
     return next();
   }
@@ -143,3 +185,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 export const User = mongoose.model('User', userSchema);
+

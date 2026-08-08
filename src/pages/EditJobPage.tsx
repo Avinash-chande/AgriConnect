@@ -19,6 +19,7 @@ import {
 import { jobService } from '../services/jobService';
 import { JOB_CATEGORIES, WAGE_TYPES, PREFERRED_WORK_TYPES, GENDER_PREFERENCE } from '../constants/jobConstants';
 import { DeleteJobModal } from '../components/common/DeleteJobModal';
+import { JobLocationSelector, JobLocationData } from '../components/jobs/JobLocationSelector';
 
 export const EditJobPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +63,8 @@ export const EditJobPage: React.FC = () => {
   const [village, setVillage] = useState('');
   const [addressLine, setAddressLine] = useState('');
   const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState<number>(31.634);
+  const [longitude, setLongitude] = useState<number>(75.8573);
 
   // Image State
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -131,6 +134,8 @@ export const EditJobPage: React.FC = () => {
         setVillage(data.jobAddress.village || '');
         setAddressLine(data.jobAddress.addressLine || '');
         setPincode(data.jobAddress.pincode || '');
+        if (typeof data.jobAddress.latitude === 'number') setLatitude(data.jobAddress.latitude);
+        if (typeof data.jobAddress.longitude === 'number') setLongitude(data.jobAddress.longitude);
       }
 
       setExistingImages([...(data.farmImages || []), ...(data.jobImages || [])]);
@@ -221,6 +226,8 @@ export const EditJobPage: React.FC = () => {
           village,
           addressLine,
           pincode,
+          latitude,
+          longitude,
         })
       );
 
@@ -591,58 +598,29 @@ export const EditJobPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-white">Farm Location & Facilities</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">District *</label>
-                <input
-                  type="text"
-                  disabled={!isOwner || isClosed}
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  placeholder="e.g. Amritsar"
-                  required
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">State *</label>
-                <input
-                  type="text"
-                  disabled={!isOwner || isClosed}
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  placeholder="e.g. Punjab"
-                  required
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Village / Sector</label>
-                <input
-                  type="text"
-                  disabled={!isOwner || isClosed}
-                  value={village}
-                  onChange={(e) => setVillage(e.target.value)}
-                  placeholder="e.g. Rayya"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">PIN Code</label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  disabled={!isOwner || isClosed}
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="e.g. 143112"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
-                />
-              </div>
-            </div>
+            <JobLocationSelector
+              jobTitle={title}
+              category={category}
+              wageText={wageType === 'Daily' ? `₹${wageAmount}/day` : `₹${wageAmount}/month`}
+              location={{
+                district: district || 'Amritsar',
+                state: state || 'Punjab',
+                village,
+                addressLine,
+                pincode,
+                latitude,
+                longitude,
+              }}
+              onChangeLocation={(updated) => {
+                setDistrict(updated.district);
+                setState(updated.state);
+                if (updated.village) setVillage(updated.village);
+                if (updated.addressLine) setAddressLine(updated.addressLine);
+                if (updated.pincode) setPincode(updated.pincode);
+                setLatitude(updated.latitude);
+                setLongitude(updated.longitude);
+              }}
+            />
 
             {/* Checkbox Facilities */}
             <div className="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4">

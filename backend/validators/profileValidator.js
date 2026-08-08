@@ -135,3 +135,29 @@ export const validateProfileQuery = [
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   validateRequest,
 ];
+
+/**
+ * Farm Location Express Validator Chain
+ */
+export const validateFarmLocationInput = [
+  body('latitude')
+    .notEmpty()
+    .withMessage('Latitude is required')
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('Latitude must be between -90 and 90'),
+  body('longitude')
+    .notEmpty()
+    .withMessage('Longitude is required')
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('Longitude must be between -180 and 180'),
+  body('district')
+    .trim()
+    .notEmpty()
+    .withMessage('District is required'),
+  body('state')
+    .trim()
+    .notEmpty()
+    .withMessage('State is required'),
+  validateRequest,
+];
+

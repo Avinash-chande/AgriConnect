@@ -220,4 +220,34 @@ export const jobService = {
     const response = await api.delete(`/jobs/${id}`);
     return response.data;
   },
+
+  /**
+   * Get Nearby Jobs within specified radius using 2dsphere index
+   */
+  getNearbyJobs: async (params: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+    page?: number;
+    limit?: number;
+    sort?: string;
+    category?: string;
+  }) => {
+    const response = await api.get('/location/nearby-jobs', { params });
+    return response.data;
+  },
 };
+
+export interface NearbyJobItem {
+  job: JobData & { formattedWage?: string };
+  distanceKm: number;
+  location: { type: 'Point'; coordinates: [number, number] };
+  farmer: {
+    _id: string;
+    name: string;
+    avatar?: string;
+    isVerified?: boolean;
+    rating?: number;
+    totalJobsPosted?: number;
+  };
+}

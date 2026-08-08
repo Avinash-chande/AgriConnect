@@ -319,3 +319,118 @@ export const deleteProfileImageService = async (user, imageUrl, targetField = 'p
 };
 
 export const deleteImageService = deleteProfileImageService;
+
+/**
+ * Update Farm Location (Farmer Only)
+ */
+export const updateFarmLocationService = async (user, locationData) => {
+  if (user.role?.toLowerCase() !== 'farmer') {
+    throw new AppError('Unauthorized: Worker accounts cannot modify farmer farm locations.', 403);
+  }
+
+  const { addressLine, village, district, state, pincode, country = 'India', latitude, longitude } = locationData;
+
+  const farmerProfile = await FarmerProfile.findOne({ owner: user._id });
+  if (!farmerProfile) {
+    throw new AppError('Farmer profile not found. Please create a profile first.', 404);
+  }
+
+  farmerProfile.farmAddress = {
+    addressLine: addressLine || farmerProfile.farmAddress?.addressLine || '',
+    village: village || farmerProfile.farmAddress?.village || '',
+    district: district || farmerProfile.farmAddress?.district || 'Amritsar',
+    state: state || farmerProfile.farmAddress?.state || 'Punjab',
+    pincode: pincode || farmerProfile.farmAddress?.pincode || '',
+    country,
+    latitude: Number(latitude),
+    longitude: Number(longitude),
+  };
+
+  await farmerProfile.save();
+  cacheService.clearPrefix('profile:');
+
+  return farmerProfile;
+};
+
+/**
+ * Reset/Delete Farm Location (Farmer Only)
+ */
+export const deleteFarmLocationService = async (user) => {
+  if (user.role?.toLowerCase() !== 'farmer') {
+    throw new AppError('Unauthorized: Worker accounts cannot modify farmer farm locations.', 403);
+  }
+
+  const farmerProfile = await FarmerProfile.findOne({ owner: user._id });
+  if (!farmerProfile) {
+    throw new AppError('Farmer profile not found.', 404);
+  }
+
+  farmerProfile.farmAddress = {
+    addressLine: '',
+    village: '',
+    district: farmerProfile.farmAddress?.district || 'Amritsar',
+    state: farmerProfile.farmAddress?.state || 'Punjab',
+    pincode: '',
+    country: 'India',
+    latitude: undefined,
+    longitude: undefined,
+  };
+  farmerProfile.location = null;
+
+  await farmerProfile.save();
+  cacheService.clearPrefix('profile:');
+
+  return farmerProfile;
+};
+
+/**
+ * Update Location Privacy Settings ('private' | 'approximate' | 'verified_users' | 'public')
+ */
+export const updateLocationPrivacyService = async (user, locationVisibility) => {
+  const allowed = ['private', 'approximate', 'verified_users', 'public'];
+  if (!allowed.includes(locationVisibility)) {
+    throw new AppError('Invalid locationVisibility setting. Must be private, approximate, verified_users, or public.', 400);
+  }
+
+  let profile;
+  if (user.role?.toLowerCase() === 'farmer') {
+    profile = await FarmerProfile.findOne({ owner: user._id });
+  } else {
+    profile = await WorkerProfile.findOne({ owner: user._id });
+  }
+
+  if (!profile) {
+    throw new AppError('Profile not found.', 404);
+  }
+
+  profile.locationVisibility = locationVisibility;
+  await profile.save();
+  cacheService.clearPrefix('profile:');
+
+  return { locationVisibility: profile.locationVisibility };
+};
+
+/**
+ * Delete Saved Location from Profile
+ */
+export const deleteSavedLocationService = async (user) => {
+  let profile;
+  if (user.role?.toLowerCase() === 'farmer') {
+    profile = await FarmerProfile.findOne({ owner: user._id });
+    if (profile) {
+      profile.farmAddress = null;
+      profile.location = null;
+      await profile.save();
+    }
+  } else {
+    profile = await WorkerProfile.findOne({ owner: user._id });
+    if (profile) {
+      profile.address = null;
+      profile.location = null;
+      await profile.save();
+    }
+  }
+
+  cacheService.clearPrefix('profile:');
+  return { success: true, message: 'Saved location cleared from profile.' };
+};

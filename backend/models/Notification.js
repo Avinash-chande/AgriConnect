@@ -15,6 +15,14 @@ export const NOTIFICATION_TYPE = Object.freeze({
   JOB_CLOSED:              'job.closed',
   USER_VERIFIED:           'user.verified',
   SYSTEM:                  'system',
+  PAYMENT_SUCCESSFUL:     'payment.successful',
+  PAYMENT_FAILED:         'payment.failed',
+  PREMIUM_ACTIVATED:      'premium.activated',
+  PREMIUM_EXPIRING:       'premium.expiring',
+  PREMIUM_EXPIRED:        'premium.expired',
+  REFUND_REQUESTED:       'refund.requested',
+  REFUND_PROCESSED:       'refund.processed',
+  FEATURED_JOB_ACTIVATED: 'featured_job.activated',
 });
 
 /**
@@ -57,7 +65,7 @@ const notificationSchema = new mongoose.Schema(
     resource: {
       kind: {
         type: String,
-        enum: ['Application', 'Job', 'User', null],
+        enum: ['Application', 'Job', 'User', 'Payment', 'Transaction', 'Refund', null],
         default: null,
       },
       id: {

@@ -55,3 +55,60 @@ export const uploadRateLimiter = rateLimit({
     message: 'Image upload rate limit exceeded. Please wait 15 minutes before uploading more images.',
   },
 });
+
+/**
+ * Location Service Rate Limiter
+ */
+export const locationRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many location requests. Please slow down and try again in a minute.',
+  },
+});
+
+/**
+ * Payment Service Rate Limiter
+ */
+export const paymentRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many payment requests. Please try again after 15 minutes.',
+  },
+});
+
+/**
+ * Refund Operations Rate Limiter
+ */
+export const refundRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many refund requests. Please try again after 15 minutes.',
+  },
+});
+
+/**
+ * Webhook Ingestion Rate Limiter
+ */
+export const webhookRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Webhook rate limit exceeded.',
+  },
+});
+
