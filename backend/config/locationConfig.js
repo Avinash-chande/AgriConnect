@@ -34,7 +34,9 @@ export const getValidatedLocationConfig = () => {
   const osrmBaseUrl = process.env.OSRM_BASE_URL || 'https://router.project-osrm.org';
   const nominatimUserAgent = process.env.NOMINATIM_USER_AGENT || 'AgriConnect-Platform/1.0 (contact@agriconnect.com)';
 
-  const geocodingCacheTtl = Number(process.env.GEOCODING_CACHE_TTL || process.env.NOMINATIM_CACHE_TTL_MS ? Math.floor(Number(process.env.NOMINATIM_CACHE_TTL_MS) / 1000) : 3600);
+  const geocodingCacheTtl = process.env.GEOCODING_CACHE_TTL 
+    ? Number(process.env.GEOCODING_CACHE_TTL)
+    : (process.env.NOMINATIM_CACHE_TTL_MS ? Math.floor(Number(process.env.NOMINATIM_CACHE_TTL_MS) / 1000) : 3600);
   const routeCacheTtl = Number(process.env.ROUTE_CACHE_TTL || 86400);
 
   const maxSearchRadiusKm = Number(process.env.MAX_SEARCH_RADIUS_KM || 100);
