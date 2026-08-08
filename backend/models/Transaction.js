@@ -87,6 +87,9 @@ transactionSchema.plugin(softDeletePlugin);
 // Compound Indexes for query performance
 transactionSchema.index({ user: 1, createdAt: -1 });
 transactionSchema.index({ payment: 1, type: 1 });
+// Accelerate user-scoped Razorpay ID searches (used in history search)
+transactionSchema.index({ user: 1, razorpayOrderId: 1 });
+transactionSchema.index({ user: 1, razorpayPaymentId: 1 });
 
 /**
  * Pre-save sanitation to ensure PCI sensitive fields are excluded

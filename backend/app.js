@@ -38,7 +38,12 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://unpkg.com',
+          'https://checkout.razorpay.com', // Razorpay SDK
+        ],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         imgSrc: [
           "'self'",
@@ -57,7 +62,11 @@ app.use(
           'https://res.cloudinary.com',
           'https://nominatim.openstreetmap.org',
           'https://router.project-osrm.org',
+          'https://api.razorpay.com',        // Razorpay API calls
+          'https://checkout.razorpay.com',   // Razorpay checkout
+          'https://lumberjack.razorpay.com', // Razorpay analytics/logging
         ],
+        frameSrc: ['https://api.razorpay.com', 'https://checkout.razorpay.com'],
       },
     },
     crossOriginEmbedderPolicy: false,

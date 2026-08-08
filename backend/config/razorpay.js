@@ -2,11 +2,12 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger.js';
+import { paymentConfig } from './paymentConfig.js';
 
 dotenv.config();
 
-const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_agriconnect_key_2026';
-const keySecret = process.env.RAZORPAY_KEY_SECRET || 'agriconnect_rzp_secret_key_2026_dev';
+const keyId = paymentConfig.RAZORPAY_KEY_ID;
+const keySecret = paymentConfig.RAZORPAY_KEY_SECRET;
 
 /**
  * Returns configured Razorpay client instance.
@@ -97,7 +98,7 @@ export const verifyRazorpaySignature = ({ razorpay_order_id, razorpay_payment_id
  */
 export const verifyWebhookSignature = ({ rawBody, signature, webhookSecret }) => {
   if (!rawBody || !signature) return false;
-  const secret = webhookSecret || process.env.RAZORPAY_WEBHOOK_SECRET || 'agriconnect_webhook_secret_2026';
+  const secret = webhookSecret || paymentConfig.RAZORPAY_WEBHOOK_SECRET;
 
   const expectedSignature = crypto
     .createHmac('sha256', secret)

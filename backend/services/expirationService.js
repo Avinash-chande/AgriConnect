@@ -42,15 +42,19 @@ export const handleExpiredSubscriptionsService = async () => {
     { $set: { status: SUBSCRIPTION_STATUS.EXPIRED } }
   );
 
-  // 4. Send Expiration Notifications (Idempotent per user)
-  for (const user of expiredUsers) {
-    const existingNotif = await Notification.findOne({
-      recipient: user._id,
-      type: NOTIFICATION_TYPE.PREMIUM_EXPIRED,
-      createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
-    });
+  // 4. Batch check: which users already received an expiry notification in the last 24h
+  const recentNotifCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const recentNotifs = await Notification.find({
+    recipient: { $in: expiredUserIds },
+    type: NOTIFICATION_TYPE.PREMIUM_EXPIRED,
+    createdAt: { $gte: recentNotifCutoff },
+  }).select('recipient');
 
-    if (!existingNotif) {
+  const alreadyNotifiedSet = new Set(recentNotifs.map((n) => n.recipient.toString()));
+
+  // 5. Send Expiration Notifications (Idempotent per user — O(1) Set lookup)
+  for (const user of expiredUsers) {
+    if (!alreadyNotifiedSet.has(user._id.toString())) {
       await createNotificationService({
         type: NOTIFICATION_TYPE.PREMIUM_EXPIRED,
         recipientId: user._id,

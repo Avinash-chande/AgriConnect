@@ -48,10 +48,17 @@ const EVENT_HANDLERS = {
         metadata: { notes: entity.notes },
       });
     } else {
-      payment.status = PAYMENT_STATUS.CAPTURED;
-      payment.paymentId = paymentId;
-      payment.paidAt = new Date();
-      await payment.save();
+      // ATOMIC transition: only update if not already captured (prevents duplicate activation)
+      const updated = await Payment.findOneAndUpdate(
+        { _id: payment._id, status: { $ne: PAYMENT_STATUS.CAPTURED } },
+        { $set: { status: PAYMENT_STATUS.CAPTURED, paymentId, paidAt: new Date() } },
+        { new: true }
+      );
+      if (!updated) {
+        logger.info(`[WebhookService] Payment ${orderId} already captured. Skipping duplicate webhook activation.`);
+        return; // Already processed by client verify — safe to skip
+      }
+      payment = updated;
     }
 
     // Check if Transaction exists
@@ -158,43 +165,55 @@ const EVENT_HANDLERS = {
   'refund.processed': async (entity) => {
     const refundId = entity.id;
     const paymentId = entity.payment_id;
-    const amount = entity.amount ? entity.amount / 100 : 0;
+    const refundAmount = entity.amount ? entity.amount / 100 : 0;
 
     const payment = await Payment.findOne({ paymentId });
     if (!payment) return;
 
-    payment.status = PAYMENT_STATUS.REFUNDED;
-    await payment.save();
+    // Determine partial vs full refund correctly
+    const isFullRefund = refundAmount >= payment.amount;
+    const newPaymentStatus = isFullRefund ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
+
+    await Payment.findByIdAndUpdate(payment._id, { $set: { status: newPaymentStatus } });
 
     const transaction = await Transaction.findOne({ razorpayPaymentId: paymentId });
+
+    // Build refund data; transaction is optional (may not exist in recovery scenarios)
+    const refundDoc = {
+      providerRefundId: refundId,
+      payment: payment._id,
+      user: payment.user,
+      amount: refundAmount,
+      currency: payment.currency,
+      reason: entity.notes?.reason || 'Refund processed via webhook',
+      status: REFUND_STATUS.PROCESSED,
+      metadata: { entityId: entity.id, paymentId: entity.payment_id },
+    };
+    if (transaction) {
+      refundDoc.transaction = transaction._id;
+    }
 
     await Refund.findOneAndUpdate(
       { refundId },
       {
         refundId: `rfnd_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        providerRefundId: refundId,
-        payment: payment._id,
-        transaction: transaction ? transaction._id : null,
-        user: payment.user,
-        amount: amount,
-        currency: payment.currency,
-        reason: entity.notes?.reason || 'Refund processed via webhook',
-        status: REFUND_STATUS.PROCESSED,
-        metadata: entity,
+        ...refundDoc,
       },
       { upsert: true, new: true }
     );
 
-    // Cancel active subscription on full refund
-    await Subscription.findOneAndUpdate(
-      { user: payment.user, status: SUBSCRIPTION_STATUS.ACTIVE },
-      { status: SUBSCRIPTION_STATUS.CANCELLED, cancelledAt: new Date() }
-    );
+    // Cancel active subscription only on full refund
+    if (isFullRefund) {
+      await Subscription.findOneAndUpdate(
+        { user: payment.user, status: SUBSCRIPTION_STATUS.ACTIVE },
+        { status: SUBSCRIPTION_STATUS.CANCELLED, cancelledAt: new Date() }
+      );
 
-    await User.findByIdAndUpdate(payment.user, {
-      isPremium: false,
-      subscriptionStatus: SUBSCRIPTION_STATUS.CANCELLED,
-    });
+      await User.findByIdAndUpdate(payment.user, {
+        isPremium: false,
+        subscriptionStatus: SUBSCRIPTION_STATUS.CANCELLED,
+      });
+    }
   },
 
   // 4. Subscription Cancelled Event

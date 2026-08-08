@@ -69,6 +69,17 @@ subscriptionSchema.plugin(softDeletePlugin);
 subscriptionSchema.index({ user: 1, status: 1 });
 subscriptionSchema.index({ status: 1, endDate: 1 });
 
+// Partial unique index: only ONE active subscription allowed per user at the DB level.
+// Prevents race-condition dual-activation from persisting in storage.
+subscriptionSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'active' },
+    name: 'unique_active_subscription_per_user',
+  }
+);
+
 /**
  * Virtual to check if subscription is currently active
  */

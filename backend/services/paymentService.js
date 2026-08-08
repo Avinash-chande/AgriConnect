@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { getResolvedPlanPriceService } from './planService.js';
 import {
   getRazorpayInstance,
@@ -195,8 +196,12 @@ export const verifyPaymentService = async ({
   // 3. Idempotency Check: Prevent duplicate payment verification
   if (payment.status === PAYMENT_STATUS.CAPTURED || payment.status === 'paid') {
     logger.info(`[PaymentService] Payment order ${razorpay_order_id} already verified & paid.`);
-    const existingTransaction = await Transaction.findOne({ razorpayPaymentId: razorpay_payment_id });
-    const existingSubscription = await Subscription.findOne({ user: userId, status: SUBSCRIPTION_STATUS.ACTIVE });
+    const existingTransaction = await Transaction.findOne({ razorpayPaymentId: razorpay_payment_id }).select(
+      'transactionId amount currency status'
+    );
+    const existingSubscription = await Subscription.findOne({ user: userId, status: SUBSCRIPTION_STATUS.ACTIVE }).select(
+      'plan status startDate endDate'
+    );
 
     return {
       verified: true,
@@ -225,25 +230,46 @@ export const verifyPaymentService = async ({
   const planId = payment.metadata?.planId;
   const resolvedPlan = await getResolvedPlanPriceService(planId);
 
-  // 6. Update Payment Document Status
-  payment.status = PAYMENT_STATUS.CAPTURED;
-  payment.paymentId = razorpay_payment_id;
-  payment.paidAt = new Date();
-  await payment.save();
+  // 6. ATOMIC Status Transition: created → captured (race condition guard)
+  // Only proceeds if the document is still in 'created' status — prevents concurrent dual-activation.
+  const capturedPayment = await Payment.findOneAndUpdate(
+    { _id: payment._id, status: PAYMENT_STATUS.CREATED },
+    { $set: { status: PAYMENT_STATUS.CAPTURED, paymentId: razorpay_payment_id, paidAt: new Date() } },
+    { new: true }
+  );
+
+  if (!capturedPayment) {
+    // Document was already updated by a concurrent request (webhook or another verify call)
+    logger.warn(`[PaymentService] Concurrent verification detected for order ${razorpay_order_id}. Returning existing state.`);
+    const existingTransaction = await Transaction.findOne({ razorpayPaymentId: razorpay_payment_id }).select(
+      'transactionId amount currency status'
+    );
+    const existingSubscription = await Subscription.findOne({ user: userId, status: SUBSCRIPTION_STATUS.ACTIVE }).select(
+      'plan status startDate endDate'
+    );
+    return {
+      verified: true,
+      message: 'Payment already verified and subscription active.',
+      transaction: existingTransaction,
+      subscription: existingSubscription,
+    };
+  }
 
   // 7. Create Immutable Transaction Record
+  // Store a SHA-256 hash of the signature for audit purposes — never store the raw signature.
+  const signatureHash = crypto.createHash('sha256').update(razorpay_signature).digest('hex');
   const transactionId = `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
   const transaction = await createTransactionRepo({
     transactionId,
     user: userId,
     payment: payment._id,
     type: TRANSACTION_TYPE.PAYMENT,
-    amount: payment.amount,
-    currency: payment.currency,
+    amount: capturedPayment.amount,
+    currency: capturedPayment.currency,
     status: TRANSACTION_STATUS.SUCCESS,
     razorpayPaymentId: razorpay_payment_id,
     razorpayOrderId: razorpay_order_id,
-    razorpaySignature: razorpay_signature,
+    razorpaySignature: signatureHash,
     gatewayResponse: {
       orderId: razorpay_order_id,
       paymentId: razorpay_payment_id,
@@ -279,7 +305,7 @@ export const verifyPaymentService = async ({
   const invoice = await generateInvoiceService({
     user: updatedUser,
     transaction,
-    payment,
+    payment: capturedPayment,
     planDetails: resolvedPlan,
   });
 
@@ -480,7 +506,7 @@ export const getSubscriptionDetailsFullService = async (userId) => {
     throw new AppError('User not found.', 404);
   }
 
-  // Check if subscription has expired
+  // Check if subscription has expired (lazy expiry sync)
   const now = new Date();
   const isExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < now;
 
@@ -501,9 +527,15 @@ export const getSubscriptionDetailsFullService = async (userId) => {
     try {
       planInfo = await getResolvedPlanPriceService(user.subscriptionPlan);
     } catch {
-      // Fallback
+      // Fallback if plan is no longer available
     }
   }
+
+  // Fix: Query actual counts from DB (previously were undefined variables causing ReferenceError)
+  const [transactionCount, invoiceCount] = await Promise.all([
+    Transaction.countDocuments({ user: userId }),
+    Invoice.countDocuments({ user: userId }),
+  ]);
 
   return {
     user: {
@@ -663,6 +695,8 @@ export const verifyJobPromotionPaymentService = async (
   await job.save();
 
   // 5. Create Immutable Transaction Record
+  // Hash the signature for audit storage — never store raw signature.
+  const promoSignatureHash = crypto.createHash('sha256').update(razorpay_signature).digest('hex');
   const transactionId = `txn_promo_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
   const transaction = await createTransactionRepo({
     transactionId,
@@ -674,7 +708,7 @@ export const verifyJobPromotionPaymentService = async (
     status: TRANSACTION_STATUS.SUCCESS,
     razorpayPaymentId: razorpay_payment_id,
     razorpayOrderId: razorpay_order_id,
-    razorpaySignature: razorpay_signature,
+    razorpaySignature: promoSignatureHash,
   });
 
   // 6. Generate Tax Invoice

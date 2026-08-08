@@ -3,6 +3,7 @@ import http from 'http';
 import app from './app.js';
 import { connectDB } from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
+import { getValidatedPaymentConfig } from './config/paymentConfig.js';
 import { initSocketServer } from './socket/index.js';
 import { startExpirationCronJob } from './jobs/expirationCron.js';
 import { logger } from './utils/logger.js';
@@ -16,6 +17,9 @@ process.on('uncaughtException', (err) => {
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+  // Validate Phase 9 Payment Environment Configuration
+  getValidatedPaymentConfig();
+
   // Connect to Database
   await connectDB();
 

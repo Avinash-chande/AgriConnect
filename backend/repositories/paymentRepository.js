@@ -126,14 +126,16 @@ export const getTransactionsWithFiltersRepo = async ({
     ];
   }
 
-  const skip = (page - 1) * limit;
+  const skip = (page - 1) * Math.min(limit, 50);
   const sortDirection = sortOrder === 'asc' ? 1 : -1;
   const sortOptions = { [sortBy]: sortDirection };
+
+  const safeLimit = Math.min(Number(limit) || 10, 50);
 
   const transactions = await Transaction.find(query)
     .sort(sortOptions)
     .skip(skip)
-    .limit(limit)
+    .limit(safeLimit)
     .populate('payment')
     .populate('user', 'name email role mobile');
 
@@ -158,18 +160,23 @@ export const getTransactionsWithFiltersRepo = async ({
     transactions: enrichedTransactions,
     pagination: {
       page: Number(page),
-      limit: Number(limit),
+      limit: safeLimit,
       total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / safeLimit),
     },
   };
 };
 
 /**
- * Create or update user Subscription
+ * Create or update user Subscription (upsert — safe with unique partial index on active status)
  */
 export const upsertSubscriptionRepo = async (subscriptionData) => {
-  return await Subscription.create(subscriptionData);
+  const { user, ...rest } = subscriptionData;
+  return await Subscription.findOneAndUpdate(
+    { user },
+    { $set: { user, ...rest } },
+    { upsert: true, new: true, runValidators: true }
+  );
 };
 
 /**
@@ -215,12 +222,13 @@ export const updateRefundStatusRepo = async (refundId, status, updateFields = {}
  * Get User Refund Requests with Pagination
  */
 export const getUserRefundsRepo = async (userId, { page = 1, limit = 10 } = {}) => {
-  const skip = (page - 1) * limit;
+  const safeLimit = Math.min(Number(limit) || 10, 50);
+  const skip = (page - 1) * safeLimit;
   const refunds = await Refund.find({ user: userId })
     .populate('payment transaction')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit);
+    .limit(safeLimit);
 
   const total = await Refund.countDocuments({ user: userId });
   return {
@@ -228,8 +236,8 @@ export const getUserRefundsRepo = async (userId, { page = 1, limit = 10 } = {}) 
     pagination: {
       total,
       page,
-      limit,
-      totalPages: Math.ceil(total / limit) || 1,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit) || 1,
     },
   };
 };

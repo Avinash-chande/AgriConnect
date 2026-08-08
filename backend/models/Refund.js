@@ -26,7 +26,8 @@ const refundSchema = new mongoose.Schema(
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Transaction',
-      required: [true, 'Transaction reference is required for refund'],
+      // Optional: may be absent in webhook-recovery refund records
+      default: null,
       index: true,
     },
     user: {
@@ -78,5 +79,16 @@ refundSchema.plugin(softDeletePlugin);
 // Compound Indexes
 refundSchema.index({ user: 1, createdAt: -1 });
 refundSchema.index({ payment: 1, status: 1 });
+
+// Partial unique index: enforce only ONE pending refund per payment at the DB level.
+// This prevents duplicate pending refunds even under concurrent requests.
+refundSchema.index(
+  { payment: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'pending' },
+    name: 'unique_pending_refund_per_payment',
+  }
+);
 
 export const Refund = mongoose.model('Refund', refundSchema);
