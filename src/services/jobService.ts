@@ -247,7 +247,8 @@ export interface NearbyJobItem {
     name: string;
     avatar?: string;
     isVerified?: boolean;
-    rating?: number;
-    totalJobsPosted?: number;
   };
 }
+
+export const getNearbyJobsApi = jobService.getNearbyJobs;
+export default jobService;

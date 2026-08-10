@@ -88,6 +88,15 @@ const applicationSchema = new mongoose.Schema(
     cancelledDate: {
       type: Date,
     },
+    isFlagged: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    flaggedReason: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

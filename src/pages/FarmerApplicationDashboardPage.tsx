@@ -26,7 +26,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { getFarmerDashboardStats } from '../services/applicationService';
-import type { JobApplication } from '../types/application';
+import type { JobApplication, ApplicationStatus } from '../types/application';
 
 // ────────────────────────────────────────────────────────────────
 // Types

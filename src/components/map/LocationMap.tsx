@@ -3,9 +3,12 @@ import { MapContainer } from './MapContainer';
 import { MapMarker } from './MapMarker';
 import { MapControls } from './MapControls';
 import { UserLocationMarker } from './UserLocationMarker';
-import { JobMarker, JobMarkerData } from './JobMarker';
-import { WorkerMarker, WorkerMarkerData } from './WorkerMarker';
-import { FarmMarker, FarmMarkerData } from './FarmMarker';
+import { JobMarker } from "./JobMarker";
+import type { JobMarkerData } from "./JobMarker";
+import { WorkerMarker } from "./WorkerMarker";
+import type { WorkerMarkerData } from "./WorkerMarker";
+import { FarmMarker } from "./FarmMarker";
+import type { FarmMarkerData } from "./FarmMarker";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, isValidCoordinate } from './mapConfig';
 
 export interface LocationMapProps {

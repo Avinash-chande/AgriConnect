@@ -79,11 +79,21 @@ export const findApplicationsByFarmerRepo = async (
     .limit(limit)
     .populate({
       path: 'worker',
-      select: 'name email mobile role profileImage isVerified createdAt',
-      populate: {
-        path: 'workerProfile',
-        select: 'title skills experienceYears dailyRate location availability completedJobs bio',
-      },
+      select: 'name email mobile role profileImage isVerified identityVerified trustVerificationId createdAt',
+      populate: [
+        {
+          path: 'workerProfile',
+          select: 'title skills experience rating completedJobs bio',
+        },
+        {
+          path: 'trustVerificationId',
+          select: 'trustScore trustLevel completedJobs averageRating certificateVerified badges mobileVerified emailVerified',
+          populate: {
+            path: 'badges',
+            select: 'type title description issuedAt',
+          },
+        },
+      ],
     })
     .populate(
       'job',

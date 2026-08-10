@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LocationSearchInput, LocationSearchResult } from './LocationSearchInput';
+import { LocationSearchInput } from './LocationSearchInput';
+import type { LocationSearchResult } from './LocationSearchInput';
 import { LocationPicker } from '../map/LocationPicker';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
 import { isValidCoordinate, DEFAULT_MAP_CENTER } from '../map/mapConfig';

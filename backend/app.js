@@ -18,6 +18,9 @@ import locationRoutes from './routes/locationRoutes.js';
 import planRoutes from './routes/planRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import kycRoutes from './routes/kycRoutes.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { sanitizeNoSQL } from './middleware/sanitizeMiddleware.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
@@ -123,6 +126,9 @@ app.use('/api/v1/location', locationRoutes);
 app.use('/api/v1/plans', planRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/kyc', kycRoutes);
 
 
 app.get('/', (req, res) => {

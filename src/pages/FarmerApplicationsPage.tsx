@@ -15,14 +15,13 @@ import {
   Sparkles,
   Eye,
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import {
   getFarmerApplications,
   toggleShortlistApplication,
   acceptApplication,
   rejectApplication,
 } from '../services/applicationService';
-import { JobApplication, ApplicationStatus } from '../types/application';
+import type { JobApplication, ApplicationStatus } from "../types/application";
 import { ApplicationStatusTimeline } from '../components/applications/ApplicationStatusTimeline';
 import { ApplicationDetailsModal } from '../components/applications/ApplicationDetailsModal';
 import { CardSkeleton } from '../components/common/SkeletonLoader';
@@ -272,38 +271,98 @@ export const FarmerApplicationsPage: React.FC = () => {
                   </div>
 
                   {/* Worker Information Header */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-lg border border-slate-200">
-                      {app.worker?.name ? app.worker.name.charAt(0).toUpperCase() : 'W'}
-                    </div>
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900 leading-snug">
-                        {app.worker?.name || 'Worker Applicant'}
-                      </h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        {app.worker?.workerProfile?.location || 'Location Not Specified'}
-                      </p>
+                  <div className="flex items-start gap-3 mb-4">
+                    {app.worker?.profileImage ? (
+                      <img
+                        src={app.worker.profileImage}
+                        alt={app.worker.name}
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-emerald-500/20 shadow-sm shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg border border-slate-200 shrink-0">
+                        {app.worker?.name ? app.worker.name.charAt(0).toUpperCase() : 'W'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="text-base font-bold text-slate-900 leading-snug truncate">
+                          {app.worker?.name || 'Worker Applicant'}
+                        </h4>
+                      </div>
+
+                      {/* Verification Badges Row */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        {/* System B Identity Verified */}
+                        {app.worker?.identityVerified && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1 font-mono">
+                            <span>🪪</span> Identity Verified
+                          </span>
+                        )}
+
+                        {/* System A Trust Score Pill */}
+                        {(app.worker?.trustVerificationId || app.worker?.trustProfile) && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                            {app.worker?.trustVerificationId?.trustScore || app.worker?.trustProfile?.trustScore || 0}/100 Trust
+                          </span>
+                        )}
+
+                        {/* System A Trust Level */}
+                        {(app.worker?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel) && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/70 text-emerald-800 font-mono">
+                            🟢 {app.worker?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel}
+                          </span>
+                        )}
+
+                        {/* Skill Verified */}
+                        {(app.worker?.trustVerificationId?.certificateVerified || app.worker?.workerProfile?.certificateVerified) && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+                            🎓 Skill Verified
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Skills & Experience */}
+                  {/* Trust & Work History Metrics Bar */}
                   <div className="space-y-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
-                    <div className="flex justify-between text-slate-600">
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-700">
+                      <div className="flex items-center gap-1">
+                        <span>⭐</span>
+                        <span>
+                          {(
+                            app.worker?.trustVerificationId?.averageRating ||
+                            app.worker?.workerProfile?.rating ||
+                            0
+                          ).toFixed(1)} / 5.0 Rating
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>💼</span>
+                        <span>
+                          {app.worker?.trustVerificationId?.completedJobs ||
+                            app.worker?.workerProfile?.completedJobs ||
+                            0}{' '}
+                          Jobs Completed
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between text-slate-600 pt-1 border-t border-slate-200/60">
                       <span className="text-slate-400">Experience:</span>
                       <span className="font-semibold text-slate-700">
-                        {app.worker?.workerProfile?.experienceYears || 0} Years
+                        {app.worker?.workerProfile?.experience || app.worker?.workerProfile?.experienceYears || 0} Years
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span className="text-slate-400">Expected Wage:</span>
-                      <span className="font-semibold text-emerald-600">
+                      <span className="font-semibold text-emerald-600 font-mono">
                         ₹{app.expectedDailyWage || app.worker?.workerProfile?.dailyRate || 0}/day
                       </span>
                     </div>
+
                     {app.worker?.workerProfile?.skills && (
                       <div className="pt-1">
-                        <span className="text-slate-400 block mb-1">Skills:</span>
+                        <span className="text-slate-400 block mb-1 text-[11px]">Skills:</span>
                         <div className="flex flex-wrap gap-1">
                           {app.worker.workerProfile.skills.map((sk: string, i: number) => (
                             <span

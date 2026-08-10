@@ -54,3 +54,16 @@ export const DashboardSkeleton: React.FC = () => (
     </div>
   </div>
 );
+
+export const ProfileCardSkeleton: React.FC = () => (
+  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm space-y-4 animate-pulse">
+    <div className="flex items-center space-x-4">
+      <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800" />
+      <div className="space-y-2 flex-1">
+        <div className="h-5 bg-slate-300 dark:bg-slate-700 rounded-lg w-1/2" />
+        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/3" />
+      </div>
+    </div>
+    <div className="h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+  </div>
+);

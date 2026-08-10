@@ -25,7 +25,8 @@ import {
   Search,
   IndianRupee,
 } from 'lucide-react';
-import { getNearbyWorkersApi, NearbyWorkerItem } from '../services/locationService';
+import { getNearbyWorkersApi } from "../services/locationService";
+import type { NearbyWorkerItem } from "../services/locationService";
 import { getMyProfileApi } from '../services/profileService';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { LocationMap } from '../components/map/LocationMap';

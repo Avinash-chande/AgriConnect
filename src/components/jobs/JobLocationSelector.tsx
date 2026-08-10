@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LocationSearchInput, LocationSearchResult } from '../location/LocationSearchInput';
+import { LocationSearchInput } from '../location/LocationSearchInput';
+import type { LocationSearchResult } from '../location/LocationSearchInput';
 import { AgriLocationPickerModal } from '../location/AgriLocationPickerModal';
 import { LocationMap } from '../map/LocationMap';
 import { JobMarker } from '../map/JobMarker';

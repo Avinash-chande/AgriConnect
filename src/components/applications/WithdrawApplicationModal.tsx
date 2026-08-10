@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X, Loader2, Undo2 } from 'lucide-react';
-import { JobApplication } from '../../types/application';
+import type { JobApplication } from "../../types/application";
 import { withdrawApplication } from '../../services/applicationService';
 
 interface WithdrawModalProps {

@@ -121,20 +121,79 @@ export const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = (
             {/* 2. Main Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* Applicant / Candidate Info */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/60 space-y-3">
-                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <User className="w-4 h-4" /> Candidate Details
-                </p>
-
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {worker.name || 'Anonymous Worker'}
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {workerProfile.title || 'Agricultural Worker'}
+              {/* Applicant / Candidate Info with System A & B Verification Breakdown */}
+              <div className="bg-white dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/60 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                    <User className="w-4 h-4" /> Candidate & Verification Profile
                   </p>
+
+                  {/* System B Identity Badge */}
+                  {worker.identityVerified ? (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1 font-mono">
+                      <span>🪪</span> Identity Verified
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 font-mono">
+                      Identity Not Verified
+                    </span>
+                  )}
                 </div>
+
+                {/* Profile Header */}
+                <div className="flex items-center gap-3">
+                  {worker.profileImage ? (
+                    <img
+                      src={worker.profileImage}
+                      alt={worker.name}
+                      className="w-12 h-12 rounded-2xl object-cover border-2 border-emerald-500/30 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                      {worker.name?.charAt(0) || 'W'}
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                      {worker.name || 'Anonymous Worker'}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      {workerProfile.title || 'Agricultural Worker'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* System A Trust & Skills Summary Bar */}
+                {worker.trustVerificationId || worker.trustProfile ? (
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm">
+                        {worker.trustVerificationId?.trustScore || worker.trustProfile?.trustScore || 0}/100 Trust Score
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                        🟢 {worker.trustVerificationId?.trustLevel || worker.trustProfile?.trustLevel || 'BASIC'} WORKER
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 dark:text-slate-300 pt-1">
+                      <div className="flex items-center gap-1">
+                        <span>⭐</span>
+                        <span>{(worker.trustVerificationId?.averageRating || workerProfile.rating || 0).toFixed(1)} / 5.0 Rating</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>💼</span>
+                        <span>{worker.trustVerificationId?.completedJobs || workerProfile.completedJobs || 0} Jobs Completed</span>
+                      </div>
+                      {(worker.trustVerificationId?.certificateVerified || workerProfile.certificateVerified) && (
+                        <div className="col-span-2 flex items-center gap-1 text-amber-500">
+                          <span>🎓</span>
+                          <span>Skill Verified</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                   {worker.mobile && (
@@ -149,17 +208,17 @@ export const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = (
                       <span>{worker.email}</span>
                     </div>
                   )}
-                  {workerProfile.experienceYears !== undefined && (
+                  {(workerProfile.experience !== undefined || workerProfile.experienceYears !== undefined) && (
                     <div className="flex items-center gap-2">
                       <Award className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{workerProfile.experienceYears} Years Experience</span>
+                      <span>{workerProfile.experience || workerProfile.experienceYears || 0} Years Experience</span>
                     </div>
                   )}
                 </div>
 
                 {workerProfile.skills?.length > 0 && (
-                  <div className="pt-2">
-                    <p className="text-[11px] font-semibold text-slate-400 mb-1.5">Skills</p>
+                  <div className="pt-1">
+                    <p className="text-[11px] font-semibold text-slate-400 mb-1.5 font-mono">Skills</p>
                     <div className="flex flex-wrap gap-1">
                       {workerProfile.skills.map((s: string) => (
                         <span key={s} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">

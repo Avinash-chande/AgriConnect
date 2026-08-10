@@ -1,23 +1,60 @@
 import { AuditLog } from '../models/AuditLog.js';
 import { sanitizeData } from '../utils/logSanitizer.js';
 import { logger } from '../utils/logger.js';
+import { AUDIT_CATEGORY, AUDIT_SEVERITY } from '../constants/index.js';
 
 /**
- * Log Financial & Payment Audit Trail Entry
+ * Log Audit Trail Entry (supports Phase 10 extended fields)
  */
-export const logAuditEvent = async ({ actor = null, action, ipAddress = '', status = 'SUCCESS', details = {} }) => {
+export const logAuditEvent = async ({
+  actor = null,
+  admin = null,
+  action,
+  ipAddress = '',
+  IP = '',
+  userAgent = '',
+  status = 'SUCCESS',
+  details = {},
+  metadata = {},
+  resource = undefined,
+  resourceId = null,
+  category = AUDIT_CATEGORY.ADMIN,
+  severity = AUDIT_SEVERITY.INFO,
+}) => {
   try {
-    const sanitizedDetails = sanitizeData(details);
+    const actorId = actor?._id || actor || admin?._id || admin || null;
+    const clientIp = ipAddress || IP || '';
+    const mergedDetails = { ...details, ...metadata };
+    const sanitizedDetails = sanitizeData(mergedDetails);
 
-    await AuditLog.create({
-      actor: actor?._id || actor || null,
+    const logEntry = {
+      actor: actorId,
+      admin: actorId,
       action,
-      ipAddress,
+      ipAddress: clientIp,
+      IP: clientIp,
+      userAgent: userAgent || '',
       status,
       details: sanitizedDetails,
-    });
+      metadata: sanitizedDetails,
+      category,
+      severity,
+    };
 
-    logger.info(`[AuditLog] ${action} - status:${status} - actor:${actor?._id || actor || 'system'}`);
+    // Add resource linking
+    if (resource && resource.id) {
+      logEntry.resource = {
+        kind: resource.kind || null,
+        id: resource.id,
+      };
+      logEntry.resourceId = resource.id;
+    } else if (resourceId) {
+      logEntry.resourceId = resourceId;
+    }
+
+    await AuditLog.create(logEntry);
+
+    logger.info(`[AuditLog] ${action} - status:${status} - category:${category} - severity:${severity} - actor:${actorId || 'system'}`);
   } catch (err) {
     logger.warn(`[AuditLog] Failed to log audit event ${action}: ${err.message}`);
   }

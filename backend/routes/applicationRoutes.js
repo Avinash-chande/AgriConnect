@@ -9,6 +9,8 @@ import {
   toggleShortlistApplication,
   cancelHiring,
   getDashboardStats,
+  completeJob,
+  getWorkHistory,
 } from '../controllers/applicationController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
@@ -213,6 +215,29 @@ router.put(
   profileRateLimiter,
   validateCancelHiringInput,
   cancelHiring
+);
+
+/**
+ * @route   PATCH /api/v1/applications/:id/complete
+ * @desc    Mark Job Application as Completed & Record Verified Work History (Farmer Only)
+ * @access  Private (Farmer Only)
+ */
+router.patch(
+  '/:id/complete',
+  protect,
+  authorize(USER_ROLES.FARMER),
+  completeJob
+);
+
+/**
+ * @route   GET /api/v1/applications/work-history/:userId?
+ * @desc    Get Verified Work History for a Worker
+ * @access  Private
+ */
+router.get(
+  '/work-history/:userId?',
+  protect,
+  getWorkHistory
 );
 
 export default router;

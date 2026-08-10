@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-<<<<<<< HEAD
-import { aiService, AiMessageItem } from '../../services/aiService';
-=======
 import { aiService } from '../../services/aiService';
 import type { AiMessageItem } from '../../services/aiService';
->>>>>>> cf994d4 (otp verification problem solved)
 import { useAuth } from '../../context/AuthContext';
 
 export const AiAssistantWidget: React.FC = () => {
@@ -41,120 +37,118 @@ You can ask me about:
     if (!queryText || isStreaming) return;
 
     setInputMessage('');
-    const userMsg: AiMessageItem = { role: 'user', content: queryText };
-    setMessages((prev) => [...prev, userMsg]);
-
+    const userMessage: AiMessageItem = { role: 'user', content: queryText };
+    setMessages((prev) => [...prev, userMessage]);
     setIsStreaming(true);
 
-    // Placeholder assistant message for streaming chunks
-    const assistantIndex = messages.length + 1;
+    // Placeholder assistant message for streaming
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
-    let accumulatedContent = '';
-
-    await aiService.streamChatMessage(
-      queryText,
-      conversationId,
-      'AGRICONNECT_ASSISTANT',
-      (chunk) => {
-        accumulatedContent += chunk;
-        setMessages((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = { role: 'assistant', content: accumulatedContent };
-          return next;
-        });
-      },
-      (data) => {
-        setIsStreaming(false);
-        if (data.conversationId) setConversationId(data.conversationId);
-      },
-      (err) => {
-        setIsStreaming(false);
-        setMessages((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = {
-            role: 'assistant',
-            content: `⚠️ Error: ${err.message || 'Failed to connect to AI server.'}`,
-          };
-          return next;
-        });
-      }
-    );
+    try {
+      await aiService.streamChatMessage(
+        { message: queryText, conversationId },
+        (chunk) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex].role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + chunk,
+              };
+            }
+            return updated;
+          });
+        },
+        (completedResponse) => {
+          if (completedResponse?.conversationId) {
+            setConversationId(completedResponse.conversationId);
+          }
+          setIsStreaming(false);
+        },
+        (error) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0) {
+              updated[lastIndex] = {
+                role: 'assistant',
+                content: `⚠️ Sorry, an error occurred: ${error.message}`,
+              };
+            }
+            return updated;
+          });
+          setIsStreaming(false);
+        }
+      );
+    } catch (err: any) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ Error: ${err.message || 'Failed to communicate with AI'}` },
+      ]);
+      setIsStreaming(false);
+    }
   };
 
   const handlePromptChipClick = (prompt: string) => {
     handleSend(prompt);
   };
 
-  const handleClearSession = () => {
-    setConversationId(undefined);
-    setMessages([
-      {
-        role: 'assistant',
-        content: 'New chat session started. Ask me anything about AgriConnect or farming!',
-      },
-    ]);
-  };
-
-  if (!user) return null;
-
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
-      {/* Floating Action Button */}
+    <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Toggle Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-3 px-5 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 border border-emerald-400/30"
-          aria-label="Open AgriConnect AI Assistant"
+          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-full shadow-2xl border border-emerald-400/30 transition-all transform hover:scale-105"
         >
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-lg animate-pulse">
-            🤖
-          </div>
-          <span>Ask AgriConnect AI</span>
-          <span className="flex h-2.5 w-2.5 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-200"></span>
-          </span>
+          <span className="text-xl">🤖</span>
+          <span className="font-heading font-semibold text-sm">Ask AgriConnect AI</span>
         </button>
       )}
 
-      {/* Floating Chat Drawer Window */}
+      {/* Floating Drawer Widget */}
       {isOpen && (
-        <div className="w-[380px] sm:w-[420px] h-[580px] bg-slate-900 text-slate-100 rounded-2xl shadow-2xl flex flex-col border border-emerald-500/30 overflow-hidden backdrop-blur-xl transition-all">
+        <div className="w-[360px] sm:w-[420px] h-[580px] bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 animate-fadeIn">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-700 to-teal-800 p-4 flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-emerald-500/30 border border-emerald-300/40 flex items-center justify-center text-xl">
+          <div className="px-4 py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600/30 border border-emerald-400/30 flex items-center justify-center text-lg">
                 🤖
               </div>
               <div>
-                <h3 className="font-bold text-white text-base leading-tight">AgriConnect AI</h3>
-                <p className="text-xs text-emerald-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Powered by Groq LLM
-                </p>
+                <h3 className="font-heading font-semibold text-sm text-white">AgriConnect Assistant</h3>
+                <span className="text-[11px] text-emerald-400 font-mono">● Online & Ready</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
-                onClick={handleClearSession}
-                title="New Chat"
-                className="p-1.5 rounded-lg hover:bg-white/10 text-emerald-200 hover:text-white transition-colors text-xs"
+                onClick={() => {
+                  setMessages([
+                    {
+                      role: 'assistant',
+                      content: 'Namaste! New chat session started. How can I help you today?',
+                    },
+                  ]);
+                  setConversationId(undefined);
+                }}
+                title="New Chat Session"
+                className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors text-xs"
               >
-                🔄 Reset
+                🔄
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-emerald-100 hover:text-white transition-colors text-lg"
+                className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors text-xs"
               >
-                ✕
+                ✖
               </button>
             </div>
           </div>
 
           {/* Quick Suggestion Chips */}
           <div className="px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex items-center gap-2 overflow-x-auto text-xs whitespace-nowrap scrollbar-none">
-<<<<<<< HEAD
-            {user.role === 'Worker' ? (
+            {user?.role?.toLowerCase() === 'worker' ? (
               <>
                 <button
                   onClick={() => handlePromptChipClick('Recommend the best matching jobs for my profile')}
@@ -165,22 +159,6 @@ You can ask me about:
                 <button
                   onClick={() => handlePromptChipClick('Analyze my profile and give improvement suggestions')}
                   className="px-2.5 py-1 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded-full border border-teal-500/30 transition-colors"
-=======
-            {user.role === 'worker' ? (
-              <>
-                <button
-                  onClick={() =>
-                    handlePromptChipClick('Recommend the best matching jobs for my profile')
-                  }
-                >
-                  💼 Recommend Jobs
-                </button>
-
-                <button
-                  onClick={() =>
-                    handlePromptChipClick('Analyze my profile and give improvement suggestions')
-                  }
->>>>>>> cf994d4 (otp verification problem solved)
                 >
                   📝 Profile Suggestions
                 </button>
@@ -222,18 +200,11 @@ You can ask me about:
                   </div>
                 )}
                 <div
-<<<<<<< HEAD
                   className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${
                     msg.role === 'user'
                       ? 'bg-emerald-600 text-white rounded-br-none'
                       : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
                   }`}
-=======
-                  className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${msg.role === 'user'
-                      ? 'bg-emerald-600 text-white rounded-br-none'
-                      : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
-                    }`}
->>>>>>> cf994d4 (otp verification problem solved)
                 >
                   {msg.content || (isStreaming && index === messages.length - 1 ? 'Thinking...' : '')}
                 </div>

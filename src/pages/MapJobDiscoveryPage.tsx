@@ -26,7 +26,8 @@ import {
   Calendar,
   Zap,
 } from 'lucide-react';
-import { getNearbyJobsApi, NearbyJobItem } from '../services/jobService';
+import { getNearbyJobsApi } from "../services/jobService";
+import type { NearbyJobItem } from "../services/jobService";
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { LocationMap } from '../components/map/LocationMap';
 import { JobMarkerCluster } from '../components/map/JobMarkerCluster';

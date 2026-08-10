@@ -1,6 +1,18 @@
 import winston from 'winston';
 
 const SENSITIVE_KEYS = [
+  'aadhaar',
+  'aadhaarnumber',
+  'aadhaar_number',
+  'sharecode',
+  'share_code',
+  'rawxml',
+  'raw_xml',
+  'otp',
+  'otpcode',
+  'otp_code',
+  'biometric',
+  'biometrics',
   'card',
   'cardnumber',
   'card_number',

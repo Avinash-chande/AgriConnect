@@ -7,6 +7,10 @@ import { generateAndSaveOTP, verifyOTPCode, clearOTP } from './otpService.js';
 import { sendOTPEmail } from './emailService.js';
 import { verifyToken, signAccessToken, signRefreshToken } from './jwtService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
+import { TrustScoreService } from './TrustScoreService.js';
+import { VerificationHistory } from '../models/VerificationHistory.js';
+import { Notification, NOTIFICATION_TYPE } from '../models/Notification.js';
+import { createNotificationService } from './notificationService.js';
 
 export const registerFarmerService = async (data) => {
   const { fullName, name, email, phone, mobile, password, farmName, farmType, location, totalAcreage, farmDescription } = data;
@@ -114,32 +118,95 @@ export const refreshAccessTokenService = async (refreshToken) => {
 
 export const refreshTokenService = refreshAccessTokenService;
 
-export const forgotPasswordService = async (email) => {
-  const user = await User.findOne({ email: email.toLowerCase() });
+export const forgotPasswordService = async (credential) => {
+  if (!credential) return true;
+  const isEmail = credential.includes('@');
+  const query = isEmail ? { email: credential.toLowerCase() } : { mobile: credential };
+  const user = await User.findOne(query);
   if (!user) {
     return true; // Return true to prevent account enumeration
   }
   const { otpCode } = await generateAndSaveOTP(user);
-  await sendOTPEmail(user.email, otpCode);
-  return true;
+  if (isEmail) {
+    await sendOTPEmail(user.email, otpCode);
+  }
+  return { otpCode, otpExpiresAt: user.otpExpiresAt };
 };
 
 export const sendOTPService = forgotPasswordService;
 
-export const verifyOTPService = async (email, otp) => {
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+otpCode +otpExpiresAt');
+export const verifyOTPService = async (credential, otp) => {
+  if (!credential || !otp) {
+    throw new AppError('Please provide mobile number/email and OTP code.', 400);
+  }
+
+  const isEmail = credential.includes('@');
+  const query = isEmail ? { email: credential.toLowerCase() } : { mobile: credential };
+
+  const user = await User.findOne(query).select('+otpCode +otpExpiresAt');
   if (!user) throw new AppError('User account not found.', 404);
 
   const isValid = await verifyOTPCode(user, otp);
   if (!isValid) throw new AppError('Invalid or expired OTP code.', 400);
 
+  const now = new Date();
   user.isVerified = true;
+
+  if (isEmail) {
+    user.emailVerifiedAt = now;
+  } else {
+    user.mobileVerifiedAt = now;
+  }
+
+  if (user.mobile && !user.mobileVerifiedAt) user.mobileVerifiedAt = now;
+  if (user.email && !user.emailVerifiedAt) user.emailVerifiedAt = now;
+
   await user.save({ validateBeforeSave: false });
-  return true;
+
+  // 1. Recalculate System A Trust Score & Badges via TrustScoreService
+  const trustProfile = await TrustScoreService.updateTrustScore(
+    user._id,
+    'OTP_VERIFICATION_SUCCESS',
+    { kind: 'User', id: user._id }
+  );
+
+  // 2. Create VerificationHistory entry
+  await VerificationHistory.create({
+    user: user._id,
+    verificationSystem: 'SYSTEM_A_TRUST',
+    entityId: trustProfile._id,
+    previousState: { isVerified: false },
+    newState: {
+      isVerified: true,
+      emailVerifiedAt: user.emailVerifiedAt,
+      mobileVerifiedAt: user.mobileVerifiedAt,
+      trustScore: trustProfile.trustScore,
+      trustLevel: trustProfile.trustLevel,
+    },
+    changedBy: user._id,
+    changeReason: `OTP verification successful for ${isEmail ? 'email' : 'mobile'}`,
+  });
+
+  // 3. Notify user of successful verification and trust score update via Socket.IO
+  try {
+    const notifType = isEmail ? NOTIFICATION_TYPE.EMAIL_VERIFIED : NOTIFICATION_TYPE.MOBILE_VERIFIED;
+    await createNotificationService({
+      type: notifType,
+      recipientId: user._id,
+      payload: { trustScore: trustProfile.trustScore, trustLevel: trustProfile.trustLevel },
+    });
+  } catch (err) {
+    // Non-blocking notification error handling
+  }
+
+  return { isVerified: true, trustProfile };
 };
 
-export const resetPasswordService = async (email, otp, newPassword) => {
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+otpCode +otpExpiresAt');
+export const resetPasswordService = async (credential, otp, newPassword) => {
+  const isEmail = credential.includes('@');
+  const query = isEmail ? { email: credential.toLowerCase() } : { mobile: credential };
+
+  const user = await User.findOne(query).select('+otpCode +otpExpiresAt');
   if (!user) throw new AppError('User account not found.', 404);
 
   const isValid = await verifyOTPCode(user, otp);

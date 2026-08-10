@@ -24,7 +24,8 @@ import {
   Search,
   IndianRupee,
 } from 'lucide-react';
-import { getNearbyWorkersApi, NearbyWorkerItem } from '../services/locationService';
+import { getNearbyWorkersApi } from "../services/locationService";
+import type { NearbyWorkerItem } from "../services/locationService";
 import { getMyProfileApi } from '../services/profileService';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { LocationMap } from '../components/map/LocationMap';
@@ -130,7 +131,7 @@ export const NearbyWorkersPage: React.FC = () => {
       }
     } catch {
       setError('Failed to fetch farm profile location.');
-    } font-sans finally {
+    } finally {
       setLoadingFarmLoc(false);
     }
   };

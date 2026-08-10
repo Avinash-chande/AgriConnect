@@ -18,9 +18,13 @@ export interface UserAccount {
   fullName: string;
   email: string;
   phone: string;
-  role: 'farmer' | 'worker' | 'admin';
+  role: 'farmer' | 'worker' | 'admin' | 'Farmer' | 'Worker' | 'Admin';
   isVerified: boolean;
   isPhoneVerified: boolean;
+  isPremium?: boolean;
+  subscriptionPlan?: string | null;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: string | Date | null;
   farmerProfile?: any;
   workerProfile?: any;
 }

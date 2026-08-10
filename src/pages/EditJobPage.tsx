@@ -19,7 +19,8 @@ import {
 import { jobService } from '../services/jobService';
 import { JOB_CATEGORIES, WAGE_TYPES, PREFERRED_WORK_TYPES, GENDER_PREFERENCE } from '../constants/jobConstants';
 import { DeleteJobModal } from '../components/common/DeleteJobModal';
-import { JobLocationSelector, JobLocationData } from '../components/jobs/JobLocationSelector';
+import { JobLocationSelector } from "../components/jobs/JobLocationSelector";
+import type { JobLocationData } from "../components/jobs/JobLocationSelector";
 
 export const EditJobPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

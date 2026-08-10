@@ -51,6 +51,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    mobileVerifiedAt: {
+      type: Date,
+      default: null,
+    },
     profileCompleted: {
       type: Boolean,
       default: false,
@@ -104,6 +112,33 @@ const userSchema = new mongoose.Schema(
     subscriptionStatus: {
       type: String,
       default: 'none',
+    },
+    // Phase 10 — Admin Panel Extensions
+    adminRole: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AdminRole',
+      default: null,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    trustVerificationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TrustVerification',
+      default: null,
+    },
+    // System B — Aadhaar Offline e-KYC: ONLY set true when Aadhaar verification passes
+    // This is NOT the same as Trust Verification (System A)
+    identityVerified: {
+      type: Boolean,
+      default: false,
+    },
+    aadhaarKycId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AadhaarKyc',
+      default: null,
     },
   },
   {

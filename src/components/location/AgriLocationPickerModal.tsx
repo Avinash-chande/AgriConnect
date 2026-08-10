@@ -1,5 +1,6 @@
 import React from 'react';
-import { AgriLocationPicker, AgriLocationPickerProps, SelectedLocationData } from './AgriLocationPicker';
+import { AgriLocationPicker } from './AgriLocationPicker';
+import type { AgriLocationPickerProps, SelectedLocationData } from './AgriLocationPicker';
 import { X } from 'lucide-react';
 
 export interface AgriLocationPickerModalProps extends AgriLocationPickerProps {

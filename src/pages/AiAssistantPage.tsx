@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { aiService, AiConversationSession, AiMessageItem } from '../services/aiService';
+import { aiService } from "../services/aiService";
+import type { AiConversationSession, AiMessageItem } from "../services/aiService";
 import { useAuth } from '../context/AuthContext';
 
 export const AiAssistantPage: React.FC = () => {

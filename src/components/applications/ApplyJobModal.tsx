@@ -12,7 +12,8 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { applyForJob } from '../../services/applicationService';
-import { applyJobSchema, ApplyJobFormValues } from '../../validators/applicationValidator';
+import { applyJobSchema } from "../../validators/applicationValidator";
+import type { ApplyJobFormValues } from "../../validators/applicationValidator";
 import type { JobApplication, ApplyJobPayload } from '../../types/application';
 import type { JobData } from '../../services/jobService';
 

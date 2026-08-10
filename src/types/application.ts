@@ -16,6 +16,21 @@ export interface UserSummary {
   role?: string;
   profileImage?: string;
   isVerified?: boolean;
+  identityVerified?: boolean;
+  trustProfile?: {
+    trustScore: number;
+    trustLevel: string;
+    completedJobs: number;
+    averageRating: number;
+    certificateVerified: boolean;
+    badges: any[];
+  };
+  workerProfile?: {
+    title?: string;
+    skills?: string[];
+    experience?: number;
+    rating?: number;
+  };
 }
 
 export interface JobSummary {

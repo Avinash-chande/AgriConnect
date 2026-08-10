@@ -122,6 +122,73 @@ const NOTIFICATION_BUILDERS = {
     message: `Your job vacancy "${jobTitle}" has been promoted to Featured status for ${durationDays || 7} days!`,
     meta: { icon: 'sparkles', color: 'amber', jobTitle, durationDays, jobId },
   }),
+
+  // Verification Event Notification Builders (PRIVACY SANITIZED)
+  [NOTIFICATION_TYPE.MOBILE_VERIFIED]: () => ({
+    title: 'Mobile Verified 📱',
+    message: 'Your mobile phone number has been successfully verified on AgriConnect.',
+    meta: { icon: 'smartphone', color: 'emerald' },
+  }),
+
+  [NOTIFICATION_TYPE.EMAIL_VERIFIED]: () => ({
+    title: 'Email Verified ✉️',
+    message: 'Your email address has been successfully verified on AgriConnect.',
+    meta: { icon: 'mail', color: 'emerald' },
+  }),
+
+  [NOTIFICATION_TYPE.CERTIFICATE_SUBMITTED]: ({ title }) => ({
+    title: 'Skill Certificate Submitted 📄',
+    message: `Your certificate "${title || 'Skill Certificate'}" has been submitted for admin review.`,
+    meta: { icon: 'file-text', color: 'blue', title },
+  }),
+
+  [NOTIFICATION_TYPE.CERTIFICATE_APPROVED]: ({ title }) => ({
+    title: 'Skill Certificate Approved! 🎓',
+    message: `Your certificate "${title || 'Skill Certificate'}" was approved! SKILL_VERIFIED badge awarded.`,
+    meta: { icon: 'award', color: 'emerald', title },
+  }),
+
+  [NOTIFICATION_TYPE.CERTIFICATE_REJECTED]: ({ title, reason }) => ({
+    title: 'Skill Certificate Update ❌',
+    message: `Your certificate "${title || 'Skill Certificate'}" was not approved.${reason ? ` Reason: "${reason}"` : ''}`,
+    meta: { icon: 'x-circle', color: 'rose', title, reason },
+  }),
+
+  [NOTIFICATION_TYPE.CERTIFICATE_RESUBMISSION_REQUIRED]: ({ title, reason }) => ({
+    title: 'Certificate Resubmission Required ⚠️',
+    message: `Please resubmit your certificate "${title || 'Skill Certificate'}".${reason ? ` Notes: "${reason}"` : ''}`,
+    meta: { icon: 'alert-triangle', color: 'amber', title, reason },
+  }),
+
+  [NOTIFICATION_TYPE.IDENTITY_VERIFICATION_SUBMITTED]: () => ({
+    title: 'Aadhaar e-KYC Received 🛡️',
+    message: 'Your official UIDAI Offline e-KYC submission has been received for processing.',
+    meta: { icon: 'shield-check', color: 'blue' },
+  }),
+
+  [NOTIFICATION_TYPE.IDENTITY_VERIFICATION_PASSED]: ({ referenceId }) => ({
+    title: 'Identity Verified! 🪪',
+    message: 'Your official UIDAI Paperless Offline e-KYC digital signature match passed.',
+    meta: { icon: 'id-card', color: 'emerald', referenceId },
+  }),
+
+  [NOTIFICATION_TYPE.IDENTITY_VERIFICATION_FAILED]: ({ reason }) => ({
+    title: 'Identity Verification Update ⚠️',
+    message: `Your identity verification request could not be processed.${reason ? ` Reason: "${reason}"` : ''}`,
+    meta: { icon: 'alert-circle', color: 'rose', reason },
+  }),
+
+  [NOTIFICATION_TYPE.TRUST_BADGE_EARNED]: ({ badgeTitle }) => ({
+    title: 'New Trust Badge Earned! 🛡️',
+    message: `Congratulations! You have been awarded the "${badgeTitle || 'Trust'}" badge.`,
+    meta: { icon: 'shield-check', color: 'emerald', badgeTitle },
+  }),
+
+  [NOTIFICATION_TYPE.TRUST_SCORE_CHANGED]: ({ score, trustLevel }) => ({
+    title: 'Trust Score Updated 📈',
+    message: `Your AgriConnect Trust Score is now ${score}/100 (Level: ${trustLevel || 'VERIFIED'}).`,
+    meta: { icon: 'trending-up', color: 'emerald', score, trustLevel },
+  }),
 };
 
 export const createNotificationService = async ({

@@ -45,6 +45,9 @@ const FarmerProfilePage = lazy(() =>
 const WorkerProfilePage = lazy(() =>
   import('./pages/WorkerProfilePage').then((m) => ({ default: m.WorkerProfilePage }))
 );
+const WorkerVerificationPage = lazy(() =>
+  import('./pages/WorkerVerificationPage').then((m) => ({ default: m.WorkerVerificationPage }))
+);
 const EditJobPage = lazy(() =>
   import('./pages/EditJobPage').then((m) => ({ default: m.EditJobPage }))
 );
@@ -111,6 +114,23 @@ const PaymentDetailsPage = lazy(() =>
 const SubscriptionManagementPage = lazy(() =>
   import('./pages/SubscriptionManagementPage').then((m) => ({ default: m.SubscriptionManagementPage }))
 );
+
+// Phase 10 — Lazy Loaded Admin Panel Pages
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
+const AdminUserManagementPage = lazy(() => import('./pages/admin/AdminUserManagementPage').then((m) => ({ default: m.AdminUserManagementPage })));
+const AdminJobModerationPage = lazy(() => import('./pages/admin/AdminJobModerationPage').then((m) => ({ default: m.AdminJobModerationPage })));
+const AdminApplicationMonitorPage = lazy(() => import('./pages/admin/AdminApplicationMonitorPage').then((m) => ({ default: m.AdminApplicationMonitorPage })));
+const AdminTrustVerificationPage = lazy(() => import('./pages/admin/AdminTrustVerificationPage').then((m) => ({ default: m.AdminTrustVerificationPage })));
+const AdminCertificateVerificationPage = lazy(() => import('./pages/admin/AdminCertificateVerificationPage').then((m) => ({ default: m.AdminCertificateVerificationPage })));
+const AdminAadhaarKycPage = lazy(() => import('./pages/admin/AdminAadhaarKycPage').then((m) => ({ default: m.AdminAadhaarKycPage })));
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })));
+const AdminPaymentManagementPage = lazy(() => import('./pages/admin/AdminPaymentManagementPage').then((m) => ({ default: m.AdminPaymentManagementPage })));
+const AdminPremiumManagementPage = lazy(() => import('./pages/admin/AdminPremiumManagementPage').then((m) => ({ default: m.AdminPremiumManagementPage })));
+const AdminRoleManagementPage = lazy(() => import('./pages/admin/AdminRoleManagementPage').then((m) => ({ default: m.AdminRoleManagementPage })));
+const AdminPlatformSettingsPage = lazy(() => import('./pages/admin/AdminPlatformSettingsPage').then((m) => ({ default: m.AdminPlatformSettingsPage })));
+const AdminAuditLogsPage = lazy(() => import('./pages/admin/AdminAuditLogsPage').then((m) => ({ default: m.AdminAuditLogsPage })));
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })));
+const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
 
 import { AiAssistantWidget } from './components/ai/AiAssistantWidget';
 
@@ -240,6 +260,16 @@ export function App() {
                 }
               />
 
+              {/* Worker Verification Profile Route */}
+              <Route
+                path="/verification"
+                element={
+                  <ProtectedRoute>
+                    <WorkerVerificationPage />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Worker Dashboard */}
               <Route
                 path="/worker/dashboard"
@@ -343,6 +373,24 @@ export function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Phase 10 — Admin Panel Routes */}
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminDashboardPage /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminUserManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/jobs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminJobModerationPage /></ProtectedRoute>} />
+              <Route path="/admin/applications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminApplicationMonitorPage /></ProtectedRoute>} />
+              <Route path="/admin/trust" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminTrustVerificationPage /></ProtectedRoute>} />
+              <Route path="/admin/certificates" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminCertificateVerificationPage /></ProtectedRoute>} />
+              <Route path="/admin/aadhaar-kyc" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAadhaarKycPage /></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminReportsPage /></ProtectedRoute>} />
+              <Route path="/admin/payments" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPaymentManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/premium" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPremiumManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminRoleManagementPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPlatformSettingsPage /></ProtectedRoute>} />
+              <Route path="/admin/audit-logs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAuditLogsPage /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAnalyticsPage /></ProtectedRoute>} />
+              <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminNotificationsPage /></ProtectedRoute>} />
 
               {/* Fallback Catch-all Route */}
               <Route path="*" element={<Navigate to="/" replace />} />

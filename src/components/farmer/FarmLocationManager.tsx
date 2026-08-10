@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AgriLocationPickerModal } from '../location/AgriLocationPickerModal';
 import { LocationMap } from '../map/LocationMap';
 import { FarmMarker } from '../map/FarmMarker';
-import { SelectedLocationData } from '../location/AgriLocationPicker';
+import type { SelectedLocationData } from '../location/AgriLocationPicker';
 import { MapPin, Edit3, Trash2, Plus, Compass, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { isValidCoordinate } from '../map/mapConfig';
 

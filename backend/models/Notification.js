@@ -23,6 +23,18 @@ export const NOTIFICATION_TYPE = Object.freeze({
   REFUND_REQUESTED:       'refund.requested',
   REFUND_PROCESSED:       'refund.processed',
   FEATURED_JOB_ACTIVATED: 'featured_job.activated',
+  // Verification Event Notification Types
+  MOBILE_VERIFIED:                    'verification.mobile_verified',
+  EMAIL_VERIFIED:                     'verification.email_verified',
+  CERTIFICATE_SUBMITTED:              'verification.certificate_submitted',
+  CERTIFICATE_APPROVED:               'verification.certificate_approved',
+  CERTIFICATE_REJECTED:               'verification.certificate_rejected',
+  CERTIFICATE_RESUBMISSION_REQUIRED:  'verification.certificate_resubmission_required',
+  IDENTITY_VERIFICATION_SUBMITTED:    'verification.identity_submitted',
+  IDENTITY_VERIFICATION_PASSED:       'verification.identity_passed',
+  IDENTITY_VERIFICATION_FAILED:       'verification.identity_failed',
+  TRUST_BADGE_EARNED:                 'verification.trust_badge_earned',
+  TRUST_SCORE_CHANGED:                'verification.trust_score_changed',
 });
 
 /**

@@ -13,7 +13,7 @@ import {
   Loader2,
   Eye,
 } from 'lucide-react';
-import { JobApplication, ApplicationStatus } from '../types/application';
+import type { JobApplication, ApplicationStatus } from "../types/application";
 import { getMyApplications } from '../services/applicationService';
 import { WithdrawApplicationModal } from '../components/applications/WithdrawApplicationModal';
 import { ApplicationStatusTimeline } from '../components/applications/ApplicationStatusTimeline';

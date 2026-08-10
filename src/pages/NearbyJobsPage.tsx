@@ -23,7 +23,8 @@ import {
   Search,
   Sparkles,
 } from 'lucide-react';
-import { jobService, NearbyJobItem } from '../services/jobService';
+import { jobService } from "../services/jobService";
+import type { NearbyJobItem } from "../services/jobService";
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { LocationMap } from '../components/map/LocationMap';
 import { JobMarker } from '../components/map/JobMarker';
