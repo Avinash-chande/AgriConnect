@@ -1,5 +1,4 @@
 import { AppError } from '../utils/appError.js';
-import { PAYMENT_ERROR_CODES } from '../constants/paymentErrorCodes.js';
 import { logger } from '../utils/logger.js';
 
 const handleCastErrorDB = (err) => {
@@ -14,7 +13,7 @@ const handleDuplicateFieldsDB = (err) => {
 };
 
 const handleValidationErrorDB = (err) => {
-  const errors = Object.values(err.errors).map((el) => el.message);
+  const errors = Object.values(err.errors || {}).map((el) => el.message);
   const message = `Invalid input data: ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
@@ -48,7 +47,7 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
   // Determine standardized error code if missing
-  const responseCode = error.code || (error.statusCode === 403 ? 'PREMIUM_REQUIRED' : 'INTERNAL_SERVER_ERROR');
+  const responseCode = error.code || (error.statusCode === 403 ? 'FORBIDDEN' : 'INTERNAL_SERVER_ERROR');
 
   if (process.env.NODE_ENV === 'development') {
     return res.status(error.statusCode).json({
@@ -71,7 +70,7 @@ export const errorHandler = (err, req, res, next) => {
   // Unhandled Server Errors Fallback
   return res.status(500).json({
     success: false,
-    message: 'An unexpected payment system error occurred. Please try again later.',
-    code: PAYMENT_ERROR_CODES.PROVIDER_UNAVAILABLE,
+    message: 'An internal server error occurred. Please try again later.',
+    code: 'INTERNAL_SERVER_ERROR',
   });
 };

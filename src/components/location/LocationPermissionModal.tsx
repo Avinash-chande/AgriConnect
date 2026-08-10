@@ -55,7 +55,7 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
     try {
       const coords = await refetchLocation();
       if (coords) {
-        if (onAllowLocation) onAllowLocation(coords);
+        if (onAllowLocation) onAllowLocation(coords as any);
         setFeedbackMsg({ type: 'success', text: 'GPS Location detected successfully.' });
         setTimeout(() => onClose(), 1200);
       }

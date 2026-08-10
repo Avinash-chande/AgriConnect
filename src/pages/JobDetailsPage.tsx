@@ -401,7 +401,7 @@ export const JobDetailsPage: React.FC = () => {
             <JobLocationMapView
               jobTitle={job.title}
               category={job.category}
-              wageText={job.formattedWage || `₹${job.dailyWage || job.monthlySalary}`}
+              wageText={(job as any).formattedWage || `₹${job.dailyWage || job.monthlySalary}`}
               addressLine={job.jobAddress.addressLine}
               village={job.jobAddress.village}
               district={job.jobAddress.district}

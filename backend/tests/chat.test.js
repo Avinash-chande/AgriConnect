@@ -11,14 +11,12 @@ import chatRoutes from '../routes/chatRoutes.js';
 const app = express();
 app.use(express.json());
 
-// Mock Auth Middleware for testing
-app.use((req, res, next) => {
+app.use('/api/v1/chat', (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
 
-  // Simulated Test User Context
   if (authHeader.includes('farmer_token')) {
     req.user = { _id: '64d1f2e9a1b2c3d4e5f6a7b1', id: '64d1f2e9a1b2c3d4e5f6a7b1', role: 'Farmer', name: 'Ramesh Farmer' };
   } else if (authHeader.includes('worker_token')) {
@@ -27,9 +25,7 @@ app.use((req, res, next) => {
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
   next();
-});
-
-app.use('/api/v1/chat', chatRoutes);
+}, chatRoutes);
 
 describe('AgriConnect Chat REST API Integration Tests', () => {
   describe('Authentication & Authorization Guards', () => {

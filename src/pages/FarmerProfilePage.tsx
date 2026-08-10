@@ -589,8 +589,8 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                     longitude,
                   }}
                   onSaveLocation={async (updated) => {
-                    setLatitude(updated.latitude);
-                    setLongitude(updated.longitude);
+                    if (updated.latitude !== null && updated.latitude !== undefined) setLatitude(updated.latitude);
+                    if (updated.longitude !== null && updated.longitude !== undefined) setLongitude(updated.longitude);
                     if (updated.addressLine) setAddressLine(updated.addressLine);
                     if (updated.village) setVillage(updated.village);
                     if (updated.district) setDistrict(updated.district);

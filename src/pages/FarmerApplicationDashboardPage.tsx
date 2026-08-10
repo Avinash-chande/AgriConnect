@@ -32,16 +32,7 @@ import type { JobApplication, ApplicationStatus } from '../types/application';
 // Types
 // ────────────────────────────────────────────────────────────────
 interface DashboardData {
-  overview: {
-    total: number;
-    pending: number;
-    shortlisted: number;
-    accepted: number;
-    hired: number;
-    rejected: number;
-    withdrawn: number;
-    cancelled: number;
-  };
+  overview: Record<string, number>;
   perJob: Array<{
     jobId: string;
     jobTitle: string;

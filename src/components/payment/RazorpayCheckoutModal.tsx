@@ -120,14 +120,17 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
         const rzp = new window.Razorpay(options);
         rzp.open();
-      } else {
+      } else if (import.meta.env.DEV) {
         // Dev fallback for offline testing
-        console.warn('Razorpay SDK not available. Executing simulated verification for testing.');
+        console.warn('Razorpay SDK not available. Executing simulated verification for dev testing.');
         handleVerification({
           razorpay_order_id: order.orderId,
           razorpay_payment_id: `pay_simulated_${Date.now()}`,
           razorpay_signature: 'valid_mock_signature',
         });
+      } else {
+        setStatus('failed');
+        setErrorMessage('Payment gateway SDK failed to load. Please check your network connection.');
       }
     } catch (err: any) {
       console.error('Checkout error:', err);

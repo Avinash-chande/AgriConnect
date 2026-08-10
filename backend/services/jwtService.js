@@ -21,9 +21,10 @@ export const signAccessToken = (payload) => {
  * Sign JWT Refresh Token
  */
 export const signRefreshToken = (payload) => {
+  const nonce = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   const sanitizedPayload = typeof payload === 'object' && payload.id
-    ? { ...payload, id: payload.id.toString() }
-    : payload;
+    ? { ...payload, id: payload.id.toString(), nonce }
+    : { payload, nonce };
   return jwt.sign(sanitizedPayload, jwtConfig.refreshSecret, {
     expiresIn: jwtConfig.refreshExpiresIn,
   });

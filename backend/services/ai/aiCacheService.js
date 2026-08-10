@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 import { aiConfig } from '../../config/aiConfig.js';
 import { aiLogger } from './aiLogger.js';
+import { redisCacheService } from '../redisCacheService.js';
 
 /**
- * In-Memory LRU & SHA-256 Key Hashing Cache Service for AI Completions
+ * Resilient Redis & In-Memory Cache Service for AI Completions
  */
 class AICacheService {
   constructor() {
@@ -21,7 +22,7 @@ class AICacheService {
       model: model || aiConfig.model,
       systemPrompt,
       category,
-      messages: messages.map(m => ({ role: m.role, content: m.content?.trim() })),
+      messages: messages.map((m) => ({ role: m.role, content: m.content?.trim() })),
       prompt: prompt?.trim(),
     });
 
@@ -31,8 +32,14 @@ class AICacheService {
   /**
    * Gets a cached item if present and not expired
    */
-  get(key) {
+  async getAsync(key) {
     if (!aiConfig.enableCache) return null;
+
+    const redisVal = await redisCacheService.get(`ai:recommendation:${key}`);
+    if (redisVal !== null) {
+      this.hits++;
+      return redisVal;
+    }
 
     const entry = this.cache.get(key);
     if (!entry) {
@@ -52,12 +59,37 @@ class AICacheService {
   }
 
   /**
+   * Synchronous get fallback
+   */
+  get(key) {
+    if (!aiConfig.enableCache) return null;
+
+    const entry = this.cache.get(key);
+    if (!entry) {
+      this.misses++;
+      return null;
+    }
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      this.misses++;
+      return null;
+    }
+
+    this.hits++;
+    return entry.value;
+  }
+
+  /**
    * Stores an item in the cache with a specified TTL in seconds
    */
-  set(key, value, ttlSeconds = aiConfig.cacheTtlSeconds) {
+  async set(key, value, ttlSeconds = aiConfig.cacheTtlSeconds) {
     if (!aiConfig.enableCache || !key || !value) return;
 
-    // Maintain max size limit by deleting oldest entry (Map maintains insertion order)
+    // Async write to Redis cache layer
+    redisCacheService.set(`ai:recommendation:${key}`, value, ttlSeconds).catch(() => {});
+
+    // Maintain max size limit in memory
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) this.cache.delete(firstKey);
@@ -73,8 +105,10 @@ class AICacheService {
   clear(key = null) {
     if (key) {
       this.cache.delete(key);
+      redisCacheService.del(`ai:recommendation:${key}`).catch(() => {});
     } else {
       this.cache.clear();
+      redisCacheService.delPattern('ai:recommendation:*').catch(() => {});
       this.hits = 0;
       this.misses = 0;
     }

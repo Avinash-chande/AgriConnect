@@ -93,15 +93,10 @@ app.use(
   })
 );
 
-// 4. Request Logging
-const morganStream = {
-  write: (message) => logger.info(message.trim()),
-};
-app.use(
-  morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
-    stream: morganStream,
-  })
-);
+import { requestLoggingMiddleware } from './middleware/loggingMiddleware.js';
+
+// 4. Structured Production Request Logging & Metrics Middleware
+app.use(requestLoggingMiddleware);
 
 // 5. Global Rate Limiting & Body Parsing
 app.use('/api', globalRateLimiter);
@@ -113,7 +108,8 @@ app.use(cookieParser(process.env.COOKIE_SECRET || 'agriconnect_cookie_secret'));
 // 6. NoSQL Operator Sanitization
 app.use(sanitizeNoSQL);
 
-// 7. API Routes
+// 7. API Routes & Health Endpoints
+app.use('/', healthRoutes);
 app.use('/api/v1', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profiles', profileRoutes);

@@ -34,7 +34,7 @@ export const getFarmerJobsService = async (user, queryParams = {}) => {
   }
 
   // 1. Fetch All Farmer Jobs for Overall Dashboard Metrics
-  const allFarmerJobs = await Job.find({ farmer: farmerId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
+  const allFarmerJobs = await Job.find({ farmer: farmerId, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).lean();
 
   const totalJobs = allFarmerJobs.length;
   const openJobs = allFarmerJobs.filter((j) => j.status === JOB_STATUS.ACTIVE).length;

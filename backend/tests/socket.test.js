@@ -3,6 +3,7 @@
  * @description Real-time Socket.IO Connection, Room Join, Typing, and Read Receipts Test Suite
  */
 
+import { jest } from '@jest/globals';
 import { registerSocketHandlers } from '../socket/socketHandler.js';
 import { SOCKET_EVENTS } from '../socket/socketEvents.js';
 

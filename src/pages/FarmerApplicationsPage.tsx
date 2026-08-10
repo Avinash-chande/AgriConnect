@@ -300,21 +300,21 @@ export const FarmerApplicationsPage: React.FC = () => {
                         )}
 
                         {/* System A Trust Score Pill */}
-                        {(app.worker?.trustVerificationId || app.worker?.trustProfile) && (
+                        {((app.worker as any)?.trustVerificationId || app.worker?.trustProfile) && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                            {app.worker?.trustVerificationId?.trustScore || app.worker?.trustProfile?.trustScore || 0}/100 Trust
+                            {(app.worker as any)?.trustVerificationId?.trustScore || app.worker?.trustProfile?.trustScore || 0}/100 Trust
                           </span>
                         )}
 
                         {/* System A Trust Level */}
-                        {(app.worker?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel) && (
+                        {((app.worker as any)?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel) && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/70 text-emerald-800 font-mono">
-                            🟢 {app.worker?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel}
+                            🟢 {(app.worker as any)?.trustVerificationId?.trustLevel || app.worker?.trustProfile?.trustLevel}
                           </span>
                         )}
 
                         {/* Skill Verified */}
-                        {(app.worker?.trustVerificationId?.certificateVerified || app.worker?.workerProfile?.certificateVerified) && (
+                        {((app.worker as any)?.trustVerificationId?.certificateVerified || app.worker?.workerProfile?.certificateVerified) && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
                             🎓 Skill Verified
                           </span>
@@ -330,7 +330,7 @@ export const FarmerApplicationsPage: React.FC = () => {
                         <span>⭐</span>
                         <span>
                           {(
-                            app.worker?.trustVerificationId?.averageRating ||
+                            (app.worker as any)?.trustVerificationId?.averageRating ||
                             app.worker?.workerProfile?.rating ||
                             0
                           ).toFixed(1)} / 5.0 Rating
@@ -339,7 +339,7 @@ export const FarmerApplicationsPage: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <span>💼</span>
                         <span>
-                          {app.worker?.trustVerificationId?.completedJobs ||
+                          {(app.worker as any)?.trustVerificationId?.completedJobs ||
                             app.worker?.workerProfile?.completedJobs ||
                             0}{' '}
                           Jobs Completed

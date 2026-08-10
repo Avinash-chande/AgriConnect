@@ -504,8 +504,8 @@ export const NearbyWorkersPage: React.FC = () => {
                         <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
 
                         {workers.map((item) => {
-                          const wLat = item.worker.address?.latitude || item.location?.coordinates[1];
-                          const wLng = item.worker.address?.longitude || item.location?.coordinates[0];
+                          const wLat = (item.worker.address as any)?.latitude || item.location?.coordinates[1];
+                          const wLng = (item.worker.address as any)?.longitude || item.location?.coordinates[0];
                           if (!isValidCoordinate(wLat, wLng)) return null;
 
                           return (
@@ -546,8 +546,8 @@ export const NearbyWorkersPage: React.FC = () => {
                     <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
 
                     {workers.map((item) => {
-                      const wLat = item.worker.address?.latitude || item.location?.coordinates[1];
-                      const wLng = item.worker.address?.longitude || item.location?.coordinates[0];
+                      const wLat = (item.worker.address as any)?.latitude || item.location?.coordinates[1];
+                      const wLng = (item.worker.address as any)?.longitude || item.location?.coordinates[0];
                       if (!isValidCoordinate(wLat, wLng)) return null;
 
                       return (

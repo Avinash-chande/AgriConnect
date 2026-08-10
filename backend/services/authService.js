@@ -100,23 +100,43 @@ export const loginUserService = async (email, password) => {
 export const refreshAccessTokenService = async (refreshToken) => {
   if (!refreshToken) throw new AppError('Refresh token is required.', 400);
 
-  const decoded = verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET || 'agriconnect_refresh_secret');
-  const user = await User.findById(decoded.id);
-
-  if (!user || user.refreshToken !== refreshToken) {
+  let decoded;
+  try {
+    decoded = verifyToken(refreshToken, true);
+  } catch (err) {
     throw new AppError('Invalid or expired refresh token. Please log in again.', 401);
   }
 
+  const user = await User.findById(decoded.id).select('+refreshToken');
+
+  if (!user) {
+    throw new AppError('The user belonging to this token no longer exists.', 401);
+  }
+
+  // REUSE DETECTION GUARD: If token signature is valid but doesn't match active stored token
+  if (user.refreshToken !== refreshToken) {
+    // Invalidate all tokens for this user to protect against token theft
+    user.refreshToken = null;
+    await user.save({ validateBeforeSave: false });
+    throw new AppError('Security alert: Refresh token reuse detected. All sessions invalidated. Please log in again.', 401);
+  }
+
+  // TOKEN ROTATION: Issue brand new access token AND new refresh token
   const newAccessToken = signAccessToken({ id: user._id, role: user.role });
   const newRefreshToken = signRefreshToken({ id: user._id, role: user.role });
 
   user.refreshToken = newRefreshToken;
   await user.save({ validateBeforeSave: false });
 
-  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken, user };
 };
 
 export const refreshTokenService = refreshAccessTokenService;
+
+export const logoutUserService = async (userId) => {
+  if (!userId) return;
+  await User.findByIdAndUpdate(userId, { $set: { refreshToken: null } });
+};
 
 export const forgotPasswordService = async (credential) => {
   if (!credential) return true;

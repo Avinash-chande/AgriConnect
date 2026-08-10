@@ -2,11 +2,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
 import { AppError } from '../utils/appError.js';
 import { setAuthCookies, clearAuthCookies } from '../services/jwtService.js';
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../config/jwt.js';
 import {
   registerFarmerService,
   registerWorkerService,
   loginUserService,
   refreshTokenService,
+  logoutUserService,
   forgotPasswordService,
   resetPasswordService,
   sendOTPService,
@@ -72,8 +74,9 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
   }
 
   const result = await refreshTokenService(incomingRefreshToken);
-  res.cookie('accessToken', result.accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-  res.cookie('refreshToken', result.refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+
+  res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
+  res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
 
   return sendResponse(res, 200, 'Access token refreshed successfully', {
     tokens: {
@@ -84,6 +87,9 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
+  if (req.user?._id) {
+    await logoutUserService(req.user._id);
+  }
   clearAuthCookies(res);
   return sendResponse(res, 200, 'Logged out successfully');
 });

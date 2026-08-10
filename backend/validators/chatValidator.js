@@ -30,7 +30,8 @@ export const isValidObjectId = (id) => {
  * Validate Send Message Request Body
  */
 export const validateSendMessageInput = (req, res, next) => {
-  const { conversationId, text, attachments } = req.body;
+  const conversationId = req.body?.conversationId || req.params?.id;
+  const { text, attachments } = req.body || {};
 
   // 1. Validate Conversation ID
   if (!conversationId || !isValidObjectId(conversationId)) {
