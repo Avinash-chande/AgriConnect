@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { logger } from '../utils/logger.js';
 
 /**
  * Configure Cloudinary SDK for media & document uploads
@@ -11,7 +12,7 @@ export const configureCloudinary = () => {
     secure: true,
   });
 
-  console.log('☁️ Cloudinary SDK Configured Successfully');
+  logger.info('☁️ Cloudinary SDK Configured Successfully');
   return cloudinary;
 };
 

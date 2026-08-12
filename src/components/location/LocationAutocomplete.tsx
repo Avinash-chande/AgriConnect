@@ -47,7 +47,7 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load recent searches from localStorage
   useEffect(() => {

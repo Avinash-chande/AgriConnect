@@ -126,12 +126,12 @@ export const AdminCertificateVerificationPage: React.FC = () => {
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">Loading certificate review queue...</td>
                   </tr>
-                ) : !data?.records || data.records.length === 0 ? (
+                ) : !(data?.certificates || (data as any)?.records) || (data?.certificates || (data as any)?.records).length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-slate-500">No skill certificates matching query criteria.</td>
                   </tr>
                 ) : (
-                  data.records.map((c: CertificateData) => (
+                  (data?.certificates || (data as any)?.records).map((c: CertificateData) => (
                     <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="p-4">
                         <p className="font-semibold text-white">{c.user?.name || 'Worker'}</p>

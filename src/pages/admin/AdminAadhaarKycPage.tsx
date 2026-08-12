@@ -90,8 +90,8 @@ export const AdminAadhaarKycPage: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <StatusBadge
-                          status={r.status === 'verified' ? 'Identity Verified' : r.status}
-                          type={r.status === 'verified' ? 'success' : 'warning'}
+                          status={r.status === ('VERIFIED' as any) ? 'Identity Verified' : r.status}
+                          type={r.status === ('VERIFIED' as any) ? 'success' : 'warning'}
                         />
                       </td>
                       <td className="p-4 text-right">

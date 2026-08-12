@@ -20,3 +20,18 @@ export const validateRequest = (req, res, next) => {
 
   next();
 };
+
+/**
+ * Higher-order middleware runner taking an array of express-validator checks
+ */
+export const validate = (validations) => {
+  return async (req, res, next) => {
+    if (Array.isArray(validations)) {
+      for (const validation of validations) {
+        const result = await validation.run(req);
+        if (result.errors && result.errors.length) break;
+      }
+    }
+    return validateRequest(req, res, next);
+  };
+};

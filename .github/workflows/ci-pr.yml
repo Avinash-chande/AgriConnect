@@ -1,0 +1,124 @@
+name: CI - Pull Request Verification Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  # ==========================================
+  # JOB 1: Backend Lint & Unit/Integration Tests
+  # ==========================================
+  test-backend:
+    name: Test & Audit Backend
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7-jammy
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run Backend Tests (Deployment Fails If Tests Fail)
+        env:
+          NODE_ENV: test
+          MONGODB_TEST_URI: mongodb://localhost:27017/agriconnect_ci_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_ACCESS_SECRET: agriconnect_ci_access_secret_key_test_2026
+          JWT_REFRESH_SECRET: agriconnect_ci_refresh_secret_key_test_2026
+        run: |
+          cd backend
+          npm test
+
+      - name: Backend Security Audit
+        run: |
+          cd backend
+          npm audit --audit-level=high --production || true
+
+  # ==========================================
+  # JOB 2: Frontend Typecheck & Production Build
+  # ==========================================
+  build-frontend:
+    name: Build & Check Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Build Frontend Application
+        env:
+          VITE_API_URL: http://localhost:5000/api/v1
+        run: npm run build
+
+  # ==========================================
+  # JOB 3: Docker Multi-Stage Image Build Verification
+  # ==========================================
+  docker-check:
+    name: Verify Docker Builds
+    needs: [test-backend, build-frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: false
+          tags: agriconnect-backend:ci
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: false
+          tags: agriconnect-frontend:ci

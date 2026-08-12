@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, CheckCircle2, ShieldCheck, X, Zap, Crown, Loader2, ArrowRight } from 'lucide-react';
 import { createJobPromotionOrderApi, verifyJobPromotionPaymentApi } from '../../services/paymentService';
-import { loadRazorpayCheckoutScript } from '../../utils/razorpay';
+import { loadRazorpayScript } from '../../utils/razorpay';
 
 interface PromoteJobModalProps {
   job: {
@@ -63,7 +63,7 @@ export const PromoteJobModal: React.FC<PromoteJobModalProps> = ({
 
     try {
       // 1. Load Razorpay Checkout Script
-      const isLoaded = await loadRazorpayCheckoutScript();
+      const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         setErrorMessage('Razorpay payment gateway failed to load. Check internet connection.');
         setLoading(false);

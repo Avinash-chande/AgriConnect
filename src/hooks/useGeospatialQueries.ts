@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getNearbyJobsApi, NearbyJobItem } from '../services/jobService';
-import { getNearbyWorkersApi, calculateRouteApi, geocodeAddressApi, NearbyWorkerItem } from '../services/locationService';
+import { getNearbyJobsApi, type NearbyJobItem } from '../services/jobService';
+import { getNearbyWorkersApi, calculateRouteApi, geocodeAddressApi, type NearbyWorkerItem } from '../services/locationService';
 
 export interface NearbyJobsQueryParams {
   latitude: number;

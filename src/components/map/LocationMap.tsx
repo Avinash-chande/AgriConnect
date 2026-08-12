@@ -14,6 +14,7 @@ import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, isValidCoordinate } from './mapCo
 export interface LocationMapProps {
   latitude?: number | null;
   longitude?: number | null;
+  center?: [number, number] | number[] | null;
   zoom?: number;
   height?: string;
   className?: string;
@@ -31,6 +32,7 @@ export interface LocationMapProps {
 export const LocationMap: React.FC<LocationMapProps> = React.memo(({
   latitude,
   longitude,
+  center: centerProp,
   zoom = DEFAULT_MAP_ZOOM,
   height = 'h-96',
   className = '',
@@ -47,7 +49,9 @@ export const LocationMap: React.FC<LocationMapProps> = React.memo(({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const center: [number, number] =
-    isValidCoordinate(latitude, longitude) && latitude && longitude
+    centerProp && Array.isArray(centerProp) && centerProp.length >= 2 && isValidCoordinate(centerProp[0], centerProp[1])
+      ? [centerProp[0], centerProp[1]]
+      : isValidCoordinate(latitude, longitude) && latitude && longitude
       ? [latitude, longitude]
       : userGps && isValidCoordinate(userGps.lat, userGps.lng)
       ? [userGps.lat, userGps.lng]

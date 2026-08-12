@@ -6,7 +6,6 @@ dotenv.config();
 
 /**
  * Groq API Configuration & OpenAI SDK Client Initialization
- * Standard OpenAI SDK client configured for Groq API endpoint:
  * Base URL: https://api.groq.com/openai/v1
  */
 
@@ -14,17 +13,17 @@ const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
-if (!GROQ_API_KEY) {
-  logger.warn('⚠️ GROQ_API_KEY environment variable is not set. AI features will fail until configured.');
+if (!GROQ_API_KEY && process.env.NODE_ENV === 'production') {
+  logger.error('❌ GROQ_API_KEY environment variable is missing in production environment.');
 }
 
 /**
  * Singleton OpenAI client instance pointed at Groq base URL
  */
 export const groqClient = new OpenAI({
-  apiKey: GROQ_API_KEY || 'placeholder-key-for-dev',
+  apiKey: GROQ_API_KEY || 'unconfigured_groq_api_key',
   baseURL: GROQ_BASE_URL,
-  maxRetries: 0, // Handled dynamically by custom exponential backoff retry utility
+  maxRetries: 0,
 });
 
 export const groqConfig = {

@@ -17,6 +17,7 @@ export interface UserSummary {
   profileImage?: string;
   isVerified?: boolean;
   identityVerified?: boolean;
+  trustVerificationId?: string;
   trustProfile?: {
     trustScore: number;
     trustLevel: string;
@@ -29,7 +30,11 @@ export interface UserSummary {
     title?: string;
     skills?: string[];
     experience?: number;
+    experienceYears?: number;
     rating?: number;
+    certificateVerified?: boolean;
+    completedJobs?: number;
+    dailyRate?: number;
   };
 }
 
@@ -84,4 +89,5 @@ export interface GetApplicationsQueryParams {
   jobId?: string;
   page?: number;
   limit?: number;
+  search?: string;
 }

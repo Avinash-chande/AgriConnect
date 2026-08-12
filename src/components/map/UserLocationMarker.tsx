@@ -6,20 +6,28 @@ import { createCustomDivIcon, isValidCoordinate } from './mapConfig';
 import { Navigation, Compass } from 'lucide-react';
 
 export interface UserLocationMarkerProps {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  position?: [number, number] | number[] | null;
+  popupText?: string;
   accuracy?: number;
   label?: string;
   showAccuracyCircle?: boolean;
 }
 
 export const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({
-  latitude,
-  longitude,
+  latitude: latProp,
+  longitude: lngProp,
+  position,
+  popupText,
   accuracy = 50,
-  label = 'Your Live GPS Location',
+  label: labelProp,
   showAccuracyCircle = true,
 }) => {
+  const latitude = typeof latProp === 'number' ? latProp : position && Array.isArray(position) ? position[0] : 0;
+  const longitude = typeof lngProp === 'number' ? lngProp : position && Array.isArray(position) ? position[1] : 0;
+  const label = popupText || labelProp || 'Your Live GPS Location';
+
   const isPosValid = isValidCoordinate(latitude, longitude);
 
   const customIcon = useMemo(() => {

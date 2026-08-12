@@ -25,12 +25,12 @@ export const AdminDashboardPage: React.FC = () => {
 
   const { data: dashData, isLoading, error } = useQuery({
     queryKey: ['adminDashboard', auditPage],
-    queryFn: () => getAdminDashboardApi({ page: auditPage, limit: 10 }),
+    queryFn: () => getAdminDashboardApi(),
     refetchInterval: 30000,
   });
 
-  const m = dashData?.metrics;
-  const charts = dashData?.charts;
+  const m = (dashData as any)?.metrics || (dashData as any)?.kpis || dashData;
+  const charts = (dashData as any)?.charts;
 
   return (
     <AdminLayout>
@@ -79,7 +79,7 @@ export const AdminDashboardPage: React.FC = () => {
                 value={m.verifiedWorkers.toLocaleString()}
                 subtitle={`${m.trustedWorkers} Trusted Workers (80+ Score)`}
                 icon={ShieldCheck}
-                color="teal"
+                color="emerald"
               />
 
               <StatCard
@@ -119,7 +119,7 @@ export const AdminDashboardPage: React.FC = () => {
                 value={(m.pendingCertificates + m.pendingIdentityVerifications).toString()}
                 subtitle={`${m.pendingCertificates} Certs • ${m.pendingIdentityVerifications} Aadhaar KYC`}
                 icon={FileText}
-                color="warning"
+                color="amber"
               />
 
               <StatCard

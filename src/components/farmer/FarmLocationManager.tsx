@@ -189,12 +189,16 @@ export const FarmLocationManager: React.FC<FarmLocationManagerProps> = ({
           <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-inner h-72 relative">
             <LocationMap center={[lat, lng]} zoom={14} height="h-72">
               <FarmMarker
-                position={[lat, lng]}
-                farmName={farmName}
-                cropTypes={cropTypes}
-                district={locationData.district}
-                state={locationData.state}
-                pincode={locationData.pincode}
+                farm={{
+                  id: 'current-farm',
+                  latitude: lat,
+                  longitude: lng,
+                  farmName: farmName,
+                  farmSize: 5,
+                  cropTypes: cropTypes,
+                  district: locationData.district || 'Unknown District',
+                  state: locationData.state || 'Unknown State',
+                }}
               />
             </LocationMap>
           </div>

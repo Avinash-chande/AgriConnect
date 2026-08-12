@@ -1,0 +1,121 @@
+name: CD - Production Deployment Pipeline
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'production'
+
+jobs:
+  # ==========================================
+  # MANDATORY GATE: Deployment Fails If Tests Fail
+  # ==========================================
+  verify-tests:
+    name: Mandatory Quality & Security Gate
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7-jammy
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Execute Full Test Suite
+        env:
+          NODE_ENV: test
+          MONGODB_TEST_URI: mongodb://localhost:27017/agriconnect_deploy_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+        run: |
+          cd backend
+          npm test
+
+  # ==========================================
+  # PRODUCTION DEPLOYMENT (Executes ONLY if tests pass)
+  # ==========================================
+  deploy-production:
+    name: Deploy to Production Environment
+    needs: [verify-tests]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY || 'docker.io' }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/agriconnect-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/agriconnect-backend:${{ github.sha }}
+
+      - name: Build & Push Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          build-args: |
+            VITE_API_URL=${{ secrets.PROD_VITE_API_URL }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/agriconnect-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/agriconnect-frontend:${{ github.sha }}
+
+      - name: Deploy Services via SSH / Production Cluster
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.PROD_SERVER_HOST }}
+          USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          echo "🚀 Deploying AgriConnect production containers to ${HOST}..."
+          # Secure SSH deployment step placeholder using production GitHub Secrets

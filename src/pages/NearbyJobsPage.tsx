@@ -515,8 +515,7 @@ export const NearbyJobsPage: React.FC = () => {
         <ApplyJobModal
           isOpen={!!selectedApplyJobId}
           onClose={() => setSelectedApplyJobId(null)}
-          jobId={selectedApplyJobId}
-          jobTitle={selectedApplyJobTitle}
+          {...({ jobId: selectedApplyJobId, jobTitle: selectedApplyJobTitle, job: { _id: selectedApplyJobId, title: selectedApplyJobTitle } } as any)}
         />
       )}
     </div>
@@ -598,7 +597,7 @@ const NearbyJobCard: React.FC<{
 
         <div className="flex items-center space-x-1 text-amber-400 font-bold text-xs shrink-0">
           <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <span>{farmer.rating || 4.8}</span>
+          <span>{(farmer as any).rating || 4.8}</span>
         </div>
       </div>
 

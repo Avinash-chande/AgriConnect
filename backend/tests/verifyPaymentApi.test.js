@@ -125,8 +125,9 @@ describe('Verify Razorpay Payment API Test Suite', () => {
   });
 
   it('should successfully verify payment, activate premium membership, create transaction and invoice', async () => {
-    // Reset payment status for verification test
+    // Reset payment status & metadata for verification test
     testPaymentOrder.status = 'created';
+    testPaymentOrder.metadata = { planId: 'farmer_pro_monthly', amountInPaise: 49900 };
     await testPaymentOrder.save();
 
     const paymentId = `pay_verify_valid_${Date.now()}`;

@@ -13,7 +13,9 @@ class SocketService {
   public connect(authToken?: string): Socket | null {
     const tokenToUse = authToken || localStorage.getItem('token') || localStorage.getItem('accessToken');
     if (!tokenToUse) {
-      console.warn('[SocketService] Cannot connect: No JWT authentication token available');
+      if (import.meta.env.DEV) {
+        console.warn('[SocketService] Cannot connect: No JWT authentication token available');
+      }
       return null;
     }
 
@@ -46,24 +48,34 @@ class SocketService {
     });
 
     this.socket.on(SOCKET_EVENTS.CONNECT, () => {
-      console.log('[SocketService] ⚡ Socket connected successfully:', this.socket?.id);
+      if (import.meta.env.DEV) {
+        console.log('[SocketService] ⚡ Socket connected successfully');
+      }
     });
 
-    this.socket.on(SOCKET_EVENTS.AUTHENTICATED, (response) => {
-      console.log('[SocketService] 🔐 Socket authenticated:', response);
+    this.socket.on(SOCKET_EVENTS.AUTHENTICATED, () => {
+      if (import.meta.env.DEV) {
+        console.log('[SocketService] 🔐 Socket authenticated successfully');
+      }
     });
 
     this.socket.on(SOCKET_EVENTS.UNAUTHORIZED, (err) => {
-      console.error('[SocketService] ❌ Socket authentication failed:', err);
+      if (import.meta.env.DEV) {
+        console.error('[SocketService] ❌ Socket authentication failed:', err);
+      }
       this.disconnect();
     });
 
     this.socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
-      console.log('[SocketService] 🔌 Socket disconnected:', reason);
+      if (import.meta.env.DEV) {
+        console.log('[SocketService] 🔌 Socket disconnected:', reason);
+      }
     });
 
     this.socket.on(SOCKET_EVENTS.ERROR, (err) => {
-      console.error('[SocketService] ⚠️ Socket error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[SocketService] ⚠️ Socket error:', err);
+      }
     });
 
     return this.socket;
@@ -78,7 +90,9 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.token = null;
-      console.log('[SocketService] Socket disconnected and cleaned up');
+      if (import.meta.env.DEV) {
+        console.log('[SocketService] Socket disconnected and cleaned up');
+      }
     }
   }
 

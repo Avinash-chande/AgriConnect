@@ -3,11 +3,14 @@ import { Marker } from 'react-leaflet';
 import type { MarkerProps } from 'react-leaflet';
 import L from 'leaflet';
 import { isValidCoordinate, DEFAULT_MAP_CENTER } from './mapConfig';
+import { MapPopup } from './MapPopup';
 
 export interface MapMarkerProps extends Omit<MarkerProps, 'position'> {
-  position?: [number, number] | { lat: number; lng: number } | null;
+  position?: [number, number] | number[] | { lat: number; lng: number } | null;
   latitude?: number | null;
   longitude?: number | null;
+  title?: string;
+  popupContent?: React.ReactNode;
   children?: React.ReactNode;
   onDragEndEnd?: (lat: number, lng: number) => void;
   icon?: L.Icon | L.DivIcon;
@@ -17,6 +20,8 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
   position,
   latitude,
   longitude,
+  title,
+  popupContent,
   children,
   onDragEndEnd,
   eventHandlers,
@@ -47,15 +52,16 @@ export const MapMarker: React.FC<MapMarkerProps> = ({
           }
         }
         if (eventHandlers && typeof eventHandlers.dragend === 'function') {
-          eventHandlers.dragend(e);
+          eventHandlers.dragend(e as any);
         }
       },
     };
   }, [eventHandlers, onDragEndEnd]);
 
   return (
-    <Marker position={markerPos} eventHandlers={mergedEventHandlers} {...props}>
+    <Marker position={markerPos} title={title} eventHandlers={mergedEventHandlers} {...props}>
       {children}
+      {popupContent && <MapPopup>{popupContent}</MapPopup>}
     </Marker>
   );
 };

@@ -46,8 +46,10 @@ You can ask me about:
 
     try {
       await aiService.streamChatMessage(
-        { message: queryText, conversationId },
-        (chunk) => {
+        queryText,
+        conversationId,
+        'AGRICONNECT_ASSISTANT',
+        (chunk: string) => {
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -60,20 +62,20 @@ You can ask me about:
             return updated;
           });
         },
-        (completedResponse) => {
+        (completedResponse: any) => {
           if (completedResponse?.conversationId) {
             setConversationId(completedResponse.conversationId);
           }
           setIsStreaming(false);
         },
-        (error) => {
+        (error: any) => {
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
             if (lastIndex >= 0) {
               updated[lastIndex] = {
                 role: 'assistant',
-                content: `⚠️ Sorry, an error occurred: ${error.message}`,
+                content: `⚠️ Sorry, an error occurred: ${error.message || error}`,
               };
             }
             return updated;

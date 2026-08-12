@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { logger } from '../utils/logger.js';
 
 /**
  * Connects to MongoDB database using Mongoose with event listeners & index cleanup
@@ -13,25 +14,25 @@ export const connectDB = async () => {
     mongoose.set('strictQuery', true);
 
     mongoose.connection.on('connected', () => {
-      console.log('🌱 MongoDB Connection: Established successfully');
+      logger.info('🌱 MongoDB Connection: Established successfully');
     });
 
     mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB Connection Error:', err.message);
+      logger.error(`❌ MongoDB Connection Error: ${err.message}`);
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️ MongoDB Connection: Disconnected');
+      logger.warn('⚠️ MongoDB Connection: Disconnected');
     });
 
     const conn = await mongoose.connect(connStr);
-    console.log(`✅ MongoDB Connected Host: ${conn.connection.host} [DB: ${conn.connection.name}]`);
+    logger.info(`✅ MongoDB Connected Host: ${conn.connection.host} [DB: ${conn.connection.name}]`);
 
     // Drop legacy conflicting indexes from prototype schemas
     const cleanIndexes = async (collectionName, indexName) => {
       try {
         await mongoose.connection.collection(collectionName).dropIndex(indexName);
-        console.log(`🧹 Cleaned legacy ${indexName} index from ${collectionName} collection`);
+        logger.info(`🧹 Cleaned legacy ${indexName} index from ${collectionName} collection`);
       } catch {
         // Index did not exist or already dropped
       }
@@ -43,7 +44,7 @@ export const connectDB = async () => {
 
     return conn;
   } catch (error) {
-    console.error('💥 Database Connection Fatal Error:', error.message);
+    logger.error(`💥 Database Connection Fatal Error: ${error.message}`);
     process.exit(1);
   }
 };

@@ -1,5 +1,4 @@
-import React from 'react';
-import { useCurrentLocation, UseCurrentLocationOptions } from '../../hooks/useCurrentLocation';
+import { useCurrentLocation, type UseCurrentLocationOptions } from '../../hooks/useCurrentLocation';
 import { Navigation, ShieldCheck, AlertTriangle, RefreshCw, XCircle, Compass } from 'lucide-react';
 
 export interface LocationPermissionCardProps {

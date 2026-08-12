@@ -199,7 +199,7 @@ function isStepCompleted(stepKey: string, currentStatus: ApplicationStatus): boo
 
 function isCurrentStep(stepKey: string, status: ApplicationStatus): boolean {
   if (stepKey === 'Applied' && status === 'Pending') return false;
-  if (stepKey === 'Applied') return status === 'Applied';
+  if (stepKey === 'Applied') return (status as string) === 'Applied';
   return stepKey === status;
 }
 

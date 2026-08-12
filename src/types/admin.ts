@@ -28,6 +28,13 @@ export interface AdminDashboardKpis {
   };
   openReports: number;
   recentSignups: Array<{ _id: string; count: number }>;
+  charts?: any;
+  recentAuditLogs?: AuditLogData[];
+  auditPagination?: {
+    total: number;
+    page: number;
+    pages: number;
+  };
 }
 
 export interface AdminUser {
@@ -81,6 +88,7 @@ export interface TrustProfileData {
   trustScore: number;
   trustLevel: 'BASIC' | 'VERIFIED' | 'SKILLED' | 'TRUSTED' | 'TOP_RATED';
   badges: any[];
+  isFlagged?: boolean;
   status: string;
   updatedAt: string;
 }

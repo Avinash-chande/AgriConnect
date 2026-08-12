@@ -26,7 +26,7 @@ export const applyJobSchema = z.object({
       { message: 'Expected joining date must be today or a future date' }
     ),
   expectedDailyWage: z
-    .number({ invalid_type_error: 'Expected daily wage must be a valid number' })
+    .number({ message: 'Expected daily wage must be a valid number' })
     .positive({ message: 'Expected daily wage must be greater than 0' })
     .max(100000, { message: 'Expected daily wage cannot exceed ₹1,00,000/day' })
     .optional()

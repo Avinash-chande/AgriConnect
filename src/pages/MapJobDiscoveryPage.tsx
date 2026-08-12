@@ -85,7 +85,7 @@ export const MapJobDiscoveryPage: React.FC = () => {
   const [selectedJobForApply, setSelectedJobForApply] = useState<any | null>(null);
 
   // Debounce Ref for Map Movement
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // GPS Location Hook
   const { coordinates: userGps, refetchLocation: getGpsLocation, loading: isGpsLoading } = useCurrentLocation({
@@ -135,7 +135,7 @@ export const MapJobDiscoveryPage: React.FC = () => {
         sort,
         page,
         limit: 10,
-      });
+      } as any);
 
       if (response?.data && Array.isArray(response.data)) {
         setJobs(response.data);
@@ -505,7 +505,7 @@ export const MapJobDiscoveryPage: React.FC = () => {
                       <LocationMap center={[latitude, longitude]} zoom={11} height="h-[560px]">
                         <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
                         <JobMarkerCluster
-                          jobs={jobs}
+                          jobs={jobs as any}
                           onJobSelect={(jobId) => navigate(`/jobs/${jobId}`)}
                         />
                       </LocationMap>
@@ -535,7 +535,7 @@ export const MapJobDiscoveryPage: React.FC = () => {
                   <LocationMap center={[latitude, longitude]} zoom={11} height="h-[640px]">
                     <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
                     <JobMarkerCluster
-                      jobs={jobs}
+                      jobs={jobs as any}
                       onJobSelect={(jobId) => navigate(`/jobs/${jobId}`)}
                     />
                   </LocationMap>
