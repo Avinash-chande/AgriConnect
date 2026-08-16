@@ -5,7 +5,8 @@ export type ApplicationStatus =
   | 'Rejected'
   | 'Withdrawn'
   | 'Cancelled'
-  | 'Hired';
+  | 'Hired'
+  | 'Completed';
 
 export interface UserSummary {
   _id: string;

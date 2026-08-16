@@ -21,19 +21,19 @@ export const WorkerVerificationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-agri-bg text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Page Title Header */}
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
-            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-200 text-agri-primary">
               <ShieldCheck size={28} />
             </div>
             <div>
-              <h1 className="text-2xl font-heading font-extrabold text-white">
+              <h1 className="text-2xl font-heading font-extrabold text-slate-900">
                 Worker Verification Profile
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 View your AgriConnect Trust Score, Skill Verification, and Official Aadhaar e-KYC status.
               </p>
             </div>
@@ -42,7 +42,7 @@ export const WorkerVerificationPage: React.FC = () => {
 
         {/* Verification Card Component */}
         {isProfileLoading || isKycLoading ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 animate-pulse font-mono text-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 animate-pulse font-mono text-xs shadow-soft-sm">
             Loading verification profile...
           </div>
         ) : (

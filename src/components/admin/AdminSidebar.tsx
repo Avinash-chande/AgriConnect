@@ -46,35 +46,35 @@ export const NAV_ITEMS = [
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggleCollapse }) => {
   return (
     <aside
-      className={`fixed left-0 top-0 bottom-0 z-40 bg-slate-950 border-r border-slate-800 transition-all duration-300 flex flex-col ${
+      className={`fixed left-0 top-0 bottom-0 z-40 bg-white border-r border-slate-200 transition-all duration-300 flex flex-col shadow-soft-sm ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* Brand Header */}
-      <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-900/50">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-slate-200 bg-slate-50">
         {!collapsed ? (
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20">
+            <div className="w-9 h-9 rounded-xl bg-agri-primary flex items-center justify-center text-white font-bold text-lg shadow-agri-glow">
               A
             </div>
             <div>
-              <span className="font-heading font-bold text-white text-base tracking-wide">
-                Agri<span className="text-emerald-400">Admin</span>
+              <span className="font-heading font-bold text-slate-900 text-base tracking-wide">
+                Agri<span className="text-agri-primary">Admin</span>
               </span>
-              <span className="block text-[10px] text-slate-400 uppercase tracking-widest font-mono">
+              <span className="block text-[10px] text-slate-500 uppercase tracking-widest font-mono">
                 Control Panel
               </span>
             </div>
           </div>
         ) : (
-          <div className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-lg">
+          <div className="w-10 h-10 mx-auto rounded-xl bg-agri-primary flex items-center justify-center text-white font-bold text-lg shadow-agri-glow">
             A
           </div>
         )}
 
         <button
           onClick={onToggleCollapse}
-          className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="hidden md:flex p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
           title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -92,8 +92,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggleC
               className={({ isActive }) =>
                 `flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm shadow-emerald-500/10'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+                    ? 'bg-emerald-50 text-agri-primary border border-emerald-200 font-bold shadow-soft-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 } ${collapsed ? 'justify-center' : 'space-x-3'}`
               }
               title={collapsed ? item.label : undefined}

@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Sprout, Menu, X, ArrowRight, User as UserIcon, LogOut, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Sprout, Menu, X, ArrowRight, User as UserIcon, LogOut, CheckCircle2, MessageSquare } from 'lucide-react';
 
 import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationDropdown } from './NotificationDropdown';
+import { checkChatEligibility } from '../../services/chatService';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { data: chatEligibility } = useQuery({
+    queryKey: ['chatEligibility', user?._id || (user as any)?.id],
+    queryFn: checkChatEligibility,
+    enabled: !!isAuthenticated && !!user,
+    staleTime: 10000,
+  });
+
+  const canChat = chatEligibility?.canChat ?? false;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +40,52 @@ export const Navbar: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const isActive = (pathKey: 'home' | 'jobs' | 'about' | 'profile' | 'dashboard' | 'chat') => {
+    const currentPath = location.pathname;
+    switch (pathKey) {
+      case 'home':
+        return currentPath === '/';
+      case 'jobs':
+        return (
+          currentPath === '/jobs' ||
+          currentPath.startsWith('/jobs/') ||
+          currentPath === '/worker/feed' ||
+          currentPath === '/nearby-jobs' ||
+          currentPath === '/map-discovery'
+        );
+      case 'about':
+        return currentPath === '/' && location.hash === '#how-it-works';
+      case 'profile':
+        return (
+          currentPath === '/farmer/profile' ||
+          currentPath === '/worker/profile' ||
+          currentPath.startsWith('/profile/')
+        );
+      case 'dashboard':
+        return (
+          (currentPath.startsWith('/farmer/dashboard') ||
+            currentPath.startsWith('/farmer/applications') ||
+            currentPath.startsWith('/farmer/nearby') ||
+            currentPath.startsWith('/farmer/worker-map') ||
+            currentPath.startsWith('/worker/dashboard') ||
+            currentPath.startsWith('/worker/applications') ||
+            currentPath.startsWith('/saved-jobs') ||
+            currentPath.startsWith('/my-applications') ||
+            currentPath.startsWith('/worker/verification')) &&
+          currentPath !== '/farmer/profile' &&
+          currentPath !== '/worker/profile'
+        );
+      case 'chat':
+        return (
+          currentPath.startsWith('/chat') ||
+          currentPath.startsWith('/farmer/chat') ||
+          currentPath.startsWith('/worker/communication')
+        );
+      default:
+        return false;
+    }
   };
 
   return (
@@ -57,22 +115,91 @@ export const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-700">
-            <a href="#how-it-works" className="hover:text-agri-primary transition-colors">
-              How It Works
+          <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
+            <Link
+              to="/"
+              className={`transition-colors py-1 ${
+                isActive('home')
+                  ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                  : 'text-slate-700 hover:text-agri-primary font-medium'
+              }`}
+            >
+              Home
+            </Link>
+
+            <Link
+              to="/jobs"
+              className={`transition-colors py-1 ${
+                isActive('jobs')
+                  ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                  : 'text-slate-700 hover:text-agri-primary font-medium'
+              }`}
+            >
+              Jobs
+            </Link>
+
+            <a
+              href="/#how-it-works"
+              className={`transition-colors py-1 ${
+                isActive('about')
+                  ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                  : 'text-slate-700 hover:text-agri-primary font-medium'
+              }`}
+            >
+              About
             </a>
-            <a href="#ai-matching" className="hover:text-agri-primary transition-colors flex items-center gap-1">
-              <span>AgriMatch AI</span>
-              <span className="bg-emerald-100 text-agri-dark text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                PRO
-              </span>
-            </a>
-            <a href="#worker-directory" className="hover:text-agri-primary transition-colors">
-              Find Labor
-            </a>
-            <a href="#categories" className="hover:text-agri-primary transition-colors">
-              Farm Services
-            </a>
+
+            {isAuthenticated && user && (
+              <>
+                <Link
+                  to={user.role.toLowerCase() === 'farmer' ? '/farmer/profile' : '/worker/profile'}
+                  className={`transition-colors py-1 ${
+                    isActive('profile')
+                      ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                      : 'text-slate-700 hover:text-agri-primary font-medium'
+                  }`}
+                >
+                  Profile
+                </Link>
+
+                {user.role.toLowerCase() === 'farmer' ? (
+                  <Link
+                    to="/farmer/dashboard"
+                    className={`transition-colors py-1 ${
+                      isActive('dashboard')
+                        ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                        : 'text-slate-700 hover:text-agri-primary font-medium'
+                    }`}
+                  >
+                    Farmer Hub
+                  </Link>
+                ) : user.role.toLowerCase() === 'worker' ? (
+                  <Link
+                    to="/worker/dashboard"
+                    className={`transition-colors py-1 ${
+                      isActive('dashboard')
+                        ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                        : 'text-slate-700 hover:text-agri-primary font-medium'
+                    }`}
+                  >
+                    Worker Hub
+                  </Link>
+                ) : null}
+
+                {canChat && (
+                  <Link
+                    to={user.role.toLowerCase() === 'farmer' ? '/farmer/chat-dashboard' : '/chat'}
+                    className={`transition-colors py-1 ${
+                      isActive('chat')
+                        ? 'text-agri-primary font-bold border-b-2 border-agri-primary'
+                        : 'text-slate-700 hover:text-agri-primary font-medium'
+                    }`}
+                  >
+                    Chat
+                  </Link>
+                )}
+              </>
+            )}
           </div>
 
           <div className="hidden md:flex items-center space-x-3">
@@ -82,7 +209,7 @@ export const Navbar: React.FC = () => {
 
                 <div className="flex items-center space-x-2 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs">
                   <UserIcon className="w-4 h-4 text-agri-primary" />
-                  <span className="font-bold text-agri-text">{user.fullName}</span>
+                  <span className="font-bold text-agri-text">{user.fullName || user.email}</span>
                   <span className="text-[10px] uppercase font-bold text-slate-500 bg-white px-1.5 py-0.5 rounded border">
                     {user.role}
                   </span>
@@ -102,7 +229,7 @@ export const Navbar: React.FC = () => {
               <>
                 <Link to="/login">
                   <Button variant="ghost" size="sm" className="font-semibold text-agri-text">
-                    Sign In
+                    Login
                   </Button>
                 </Link>
 
@@ -134,41 +261,101 @@ export const Navbar: React.FC = () => {
 
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-agri-border px-4 pt-2 pb-6 space-y-3 shadow-soft-lg animate-in slide-in-from-top-2">
-          <a
-            href="#how-it-works"
+          <Link
+            to="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-700 hover:text-agri-primary"
+            className={`block py-2 text-sm transition-colors ${
+              isActive('home')
+                ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                : 'font-medium text-slate-700 hover:text-agri-primary'
+            }`}
           >
-            How It Works
-          </a>
-          <a
-            href="#ai-matching"
+            Home
+          </Link>
+          <Link
+            to="/jobs"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-700 hover:text-agri-primary"
+            className={`block py-2 text-sm transition-colors ${
+              isActive('jobs')
+                ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                : 'font-medium text-slate-700 hover:text-agri-primary'
+            }`}
           >
-            AgriMatch AI
-          </a>
+            Jobs
+          </Link>
           <a
-            href="#worker-directory"
+            href="/#how-it-works"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-700 hover:text-agri-primary"
+            className={`block py-2 text-sm transition-colors ${
+              isActive('about')
+                ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                : 'font-medium text-slate-700 hover:text-agri-primary'
+            }`}
           >
-            Find Labor
+            About
           </a>
-          <a
-            href="#categories"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-slate-700 hover:text-agri-primary"
-          >
-            Farm Services
-          </a>
+
+          {isAuthenticated && user && (
+            <>
+              <Link
+                to={user.role.toLowerCase() === 'farmer' ? '/farmer/profile' : '/worker/profile'}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block py-2 text-sm transition-colors ${
+                  isActive('profile')
+                    ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                    : 'font-medium text-slate-700 hover:text-agri-primary'
+                }`}
+              >
+                Profile
+              </Link>
+              {user.role.toLowerCase() === 'farmer' ? (
+                <Link
+                  to="/farmer/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block py-2 text-sm transition-colors ${
+                    isActive('dashboard')
+                      ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                      : 'font-medium text-slate-700 hover:text-agri-primary'
+                  }`}
+                >
+                  Farmer Hub
+                </Link>
+              ) : user.role.toLowerCase() === 'worker' ? (
+                <Link
+                  to="/worker/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block py-2 text-sm transition-colors ${
+                    isActive('dashboard')
+                      ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                      : 'font-medium text-slate-700 hover:text-agri-primary'
+                  }`}
+                >
+                  Worker Hub
+                </Link>
+              ) : null}
+
+              {canChat && (
+                <Link
+                  to={user.role.toLowerCase() === 'farmer' ? '/farmer/chat-dashboard' : '/chat'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block py-2 text-sm transition-colors ${
+                    isActive('chat')
+                      ? 'font-bold text-agri-primary bg-emerald-50 px-3 rounded-lg border border-emerald-200'
+                      : 'font-medium text-slate-700 hover:text-agri-primary'
+                  }`}
+                >
+                  Chat
+                </Link>
+              )}
+            </>
+          )}
 
           <div className="pt-4 border-t border-slate-100 flex flex-col space-y-2.5">
             {isAuthenticated && user ? (
               <>
                 <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 pb-2">
                   <UserIcon className="w-4 h-4 text-agri-primary" />
-                  <span>{user.fullName} ({user.role})</span>
+                  <span>{user.fullName || user.email} ({user.role})</span>
                 </div>
                 <Button variant="outline" size="sm" fullWidth onClick={handleLogout} leftIcon={<LogOut className="w-4 h-4" />}>
                   Logout
@@ -178,7 +365,7 @@ export const Navbar: React.FC = () => {
               <>
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="outline" size="sm" fullWidth>
-                    Sign In
+                    Login
                   </Button>
                 </Link>
                 <Link to="/register-farmer" onClick={() => setMobileMenuOpen(false)}>

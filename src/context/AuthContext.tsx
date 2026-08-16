@@ -46,8 +46,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const normalizeUser = (userData: any): UserAccount => {
+    const nameVal = userData.fullName || userData.name || 'User';
+    return {
+      ...userData,
+      fullName: nameVal,
+      role: userData.role || 'farmer',
+    };
+  };
+
   const setSession = (userData: UserAccount, token?: string) => {
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
+    localStorage.setItem('agri_user', JSON.stringify(normalized));
     if (token) {
       localStorage.setItem('agri_access_token', token);
     }
@@ -56,6 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearSession = () => {
     setUser(null);
     localStorage.removeItem('agri_access_token');
+    localStorage.removeItem('agri_user');
   };
 
   const checkSession = async () => {
@@ -68,7 +80,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const data = await getCurrentUserApi();
       if (data.data && data.data.user) {
-        setUser(data.data.user);
+        const normalized = normalizeUser(data.data.user);
+        setUser(normalized);
+        localStorage.setItem('agri_user', JSON.stringify(normalized));
       } else {
         clearSession();
       }

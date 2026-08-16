@@ -244,6 +244,88 @@ export const JobLocationSelector: React.FC<JobLocationSelectorProps> = ({
       {/* Debounced OpenStreetMap Search Input */}
       <LocationSearchInput onSelectResult={handleSearchSelect} />
 
+      {/* Explicit District, State, Village & Address Input Fields */}
+      <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-4">
+        <h4 className="text-xs font-bold font-heading uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+          <span>District & State Location Details</span>
+        </h4>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+          {/* District Input */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
+              District *
+            </label>
+            <input
+              type="text"
+              required
+              value={location.district || ''}
+              onChange={(e) => onChangeLocation({ ...location, district: e.target.value })}
+              placeholder="e.g. Amritsar, Ludhiana, Karnal..."
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* State Input */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
+              State *
+            </label>
+            <input
+              type="text"
+              required
+              value={location.state || ''}
+              onChange={(e) => onChangeLocation({ ...location, state: e.target.value })}
+              placeholder="e.g. Punjab, Haryana, Uttar Pradesh..."
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Village / Tehsil */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
+              Village / Town
+            </label>
+            <input
+              type="text"
+              value={location.village || ''}
+              onChange={(e) => onChangeLocation({ ...location, village: e.target.value })}
+              placeholder="e.g. Ajnala, Jandiala..."
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Address Line & PIN Code */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
+                Address Line
+              </label>
+              <input
+                type="text"
+                value={location.addressLine || ''}
+                onChange={(e) => onChangeLocation({ ...location, addressLine: e.target.value })}
+                placeholder="e.g. GT Road Farm #4"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
+                PIN Code
+              </label>
+              <input
+                type="text"
+                value={location.pincode || ''}
+                onChange={(e) => onChangeLocation({ ...location, pincode: e.target.value })}
+                placeholder="e.g. 143001"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Feedback Banner */}
       {statusMsg && (
         <div

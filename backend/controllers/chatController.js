@@ -8,6 +8,7 @@ import {
   markConversationReadService,
   getUnreadChatCountService,
   searchChatService,
+  checkUserChatEligibilityService,
 } from '../services/chatService.js';
 import { uploadAttachmentBuffer } from '../services/cloudinaryService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -77,4 +78,9 @@ export const uploadAttachment = asyncHandler(async (req, res) => {
 export const searchChat = asyncHandler(async (req, res) => {
   const result = await searchChatService(req.user, req.query);
   sendSuccessResponse(res, HTTP_STATUS.OK, 'Search results retrieved successfully', result);
+});
+
+export const checkUserChatEligibility = asyncHandler(async (req, res) => {
+  const result = await checkUserChatEligibilityService(req.user._id);
+  sendSuccessResponse(res, HTTP_STATUS.OK, 'Chat eligibility checked successfully', result);
 });

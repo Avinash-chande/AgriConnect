@@ -36,13 +36,13 @@ export const AdminDashboardPage: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Welcome Hero Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl">
+        <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary border border-emerald-600 rounded-3xl p-6 relative overflow-hidden shadow-soft-lg text-white">
           <div className="relative z-10 max-w-2xl space-y-2">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono border border-emerald-500/20">
+            <span className="px-3 py-1 rounded-full bg-white/10 text-emerald-100 text-xs font-mono border border-white/20 backdrop-blur-sm">
               AgriConnect Production Telemetry Engine
             </span>
             <h2 className="text-2xl font-bold font-heading text-white">Platform Command Center</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-emerald-100 leading-relaxed">
               Real-time operational metrics across Users, Jobs, Applications, System A Trust Verification, System B Aadhaar e-KYC, Financial Revenue, and Security Audits.
             </p>
           </div>
@@ -52,7 +52,7 @@ export const AdminDashboardPage: React.FC = () => {
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-28 bg-slate-900 rounded-2xl animate-pulse border border-slate-800" />
+              <div key={i} className="h-28 bg-white rounded-2xl animate-pulse border border-slate-200 shadow-soft-sm" />
             ))}
           </div>
         )}

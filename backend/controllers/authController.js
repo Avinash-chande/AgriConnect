@@ -16,10 +16,13 @@ import {
 } from '../services/authService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
 
-const sendAuthTokenResponse = (user, statusCode, message, res) => {
+const sendAuthTokenResponse = async (user, statusCode, message, res) => {
   const tokens = setAuthCookies(res, user);
 
-  const userObject = user.toObject ? user.toObject() : user;
+  user.refreshToken = tokens.refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  const userObject = user.toObject ? user.toObject() : { ...user };
   delete userObject.password;
   delete userObject.otpCode;
   delete userObject.otpExpiresAt;
@@ -44,7 +47,7 @@ export const registerFarmer = asyncHandler(async (req, res, next) => {
   }
 
   const user = await registerFarmerService(req.body);
-  return sendAuthTokenResponse(user, 201, 'Farmer registered successfully', res);
+  return await sendAuthTokenResponse(user, 201, 'Farmer registered successfully', res);
 });
 
 export const registerWorker = asyncHandler(async (req, res, next) => {
@@ -54,7 +57,7 @@ export const registerWorker = asyncHandler(async (req, res, next) => {
   }
 
   const user = await registerWorkerService(req.body);
-  return sendAuthTokenResponse(user, 201, 'Worker registered successfully', res);
+  return await sendAuthTokenResponse(user, 201, 'Worker registered successfully', res);
 });
 
 export const login = asyncHandler(async (req, res, next) => {
@@ -64,7 +67,7 @@ export const login = asyncHandler(async (req, res, next) => {
   }
 
   const user = await loginUserService(email, password);
-  return sendAuthTokenResponse(user, 200, 'Sign in successful', res);
+  return await sendAuthTokenResponse(user, 200, 'Sign in successful', res);
 });
 
 export const refreshToken = asyncHandler(async (req, res, next) => {

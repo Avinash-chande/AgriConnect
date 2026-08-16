@@ -49,6 +49,9 @@ const WorkerProfilePage = lazy(() =>
 const WorkerVerificationPage = lazy(() =>
   import('./pages/WorkerVerificationPage').then((m) => ({ default: m.WorkerVerificationPage }))
 );
+const CreateJobPage = lazy(() =>
+  import('./pages/CreateJobPage').then((m) => ({ default: m.CreateJobPage }))
+);
 const EditJobPage = lazy(() =>
   import('./pages/EditJobPage').then((m) => ({ default: m.EditJobPage }))
 );
@@ -291,6 +294,24 @@ export function App() {
 
               {/* Nearby Jobs Route */}
               <Route path="/jobs/nearby" element={<NearbyJobsPage />} />
+
+              {/* Job Creation Routes */}
+              <Route
+                path="/farmer/jobs/create"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
+                    <CreateJobPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/jobs/create"
+                element={
+                  <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
+                    <CreateJobPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Job Editing Route */}
               <Route

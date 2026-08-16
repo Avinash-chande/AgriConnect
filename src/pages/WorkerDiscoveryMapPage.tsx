@@ -189,33 +189,33 @@ export const WorkerDiscoveryMapPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans pb-16">
+    <div className="min-h-screen bg-agri-bg text-slate-800 font-sans pb-16">
       {/* Top Banner Header */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/60 border-b border-slate-800 pt-8 pb-10 px-4 sm:px-6 lg:px-8">
+      <header className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary border-b border-emerald-600 pt-8 pb-10 px-4 sm:px-6 lg:px-8 text-white shadow-soft-sm">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-sky-500/10 border border-sky-500/30 rounded-full text-sky-400 font-bold text-xs mb-2">
-                <Users className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-emerald-100 font-bold text-xs mb-2 backdrop-blur-sm">
+                <Users className="w-3.5 h-3.5 text-emerald-300" />
                 <span>Farmer Talent Sourcing Suite</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white tracking-tight">
                 Worker Discovery Map
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-emerald-100 mt-1">
                 Locate available agricultural workers near your farm with privacy-protected spatial clustering
               </p>
             </div>
 
             {/* View Mode Switcher */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 self-start md:self-auto">
+            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 self-start md:self-auto">
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'split'
-                    ? 'bg-sky-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <Layers className="w-4 h-4" />
@@ -227,8 +227,8 @@ export const WorkerDiscoveryMapPage: React.FC = () => {
                 onClick={() => setViewMode('grid')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-sky-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <List className="w-4 h-4" />
@@ -240,8 +240,8 @@ export const WorkerDiscoveryMapPage: React.FC = () => {
                 onClick={() => setViewMode('map')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'map'
-                    ? 'bg-sky-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <MapIcon className="w-4 h-4" />
@@ -251,12 +251,12 @@ export const WorkerDiscoveryMapPage: React.FC = () => {
           </div>
 
           {/* Search Center Bar & Radius Controls */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-soft-sm space-y-4 text-slate-800">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
               {/* Location Bar */}
-              <div className="md:col-span-6 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div className="md:col-span-6 bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-3 truncate">
-                  <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-agri-primary flex items-center justify-center shrink-0">
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div className="truncate">

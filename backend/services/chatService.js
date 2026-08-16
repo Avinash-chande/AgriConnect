@@ -26,12 +26,18 @@ import { emitToUser } from '../socket/socketService.js';
 import { SOCKET_EVENTS } from '../socket/socketEvents.js';
 import { connectedUsersStore } from '../socket/connectedUsers.js';
 import { AppError } from '../utils/appError.js';
-import { HTTP_STATUS, USER_ROLES } from '../constants/index.js';
+import { HTTP_STATUS, USER_ROLES, APPLICATION_STATUS } from '../constants/index.js';
 import { logger } from '../utils/logger.js';
+
+const ALLOWED_CHAT_APPLICATION_STATUSES = [
+  APPLICATION_STATUS.ACCEPTED,
+  APPLICATION_STATUS.HIRED,
+  APPLICATION_STATUS.COMPLETED,
+];
 
 /**
  * Service: Get or Create 1-to-1 Conversation between Farmer & Worker
- * Enforces strict business rule: Worker must have applied to Farmer's job.
+ * Enforces strict business rule: Application MUST be accepted/approved.
  */
 export const getOrCreateConversationService = async (currentUser, { workerId, farmerId, jobId }) => {
   const currentUserId = (currentUser._id || currentUser.id).toString();
@@ -65,7 +71,7 @@ export const getOrCreateConversationService = async (currentUser, { workerId, fa
     throw new AppError('Invalid job posting for this farmer.', HTTP_STATUS.BAD_REQUEST);
   }
 
-  // 2. Strict Requirement: Verify Worker Application exists for this Job
+  // 2. Strict Requirement: Verify Worker Application exists for this Job AND status is Accepted
   const application = await Application.findOne({
     job: jobId,
     worker: targetWorkerId,
@@ -74,7 +80,14 @@ export const getOrCreateConversationService = async (currentUser, { workerId, fa
 
   if (!application) {
     throw new AppError(
-      'Chat permission denied: A worker can only chat with a farmer after submitting a job application.',
+      'Chat permission denied: Application not found.',
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
+  if (!ALLOWED_CHAT_APPLICATION_STATUSES.includes(application.status)) {
+    throw new AppError(
+      'Chat permission denied: Chat is only available after the farmer approves/accepts the job application.',
       HTTP_STATUS.FORBIDDEN
     );
   }
@@ -102,16 +115,55 @@ export const getOrCreateConversationService = async (currentUser, { workerId, fa
 };
 
 /**
- * Service: Fetch user's active conversations list
+ * Service: Check if logged in user has any approved application eligible for chat
+ */
+export const checkUserChatEligibilityService = async (userId) => {
+  const count = await Application.countDocuments({
+    $or: [{ worker: userId }, { farmer: userId }],
+    status: { $in: ALLOWED_CHAT_APPLICATION_STATUSES },
+  });
+
+  return {
+    canChat: count > 0,
+    eligibleCount: count,
+  };
+};
+
+/**
+ * Service: Fetch user's active conversations list (Only accepted application conversations)
  */
 export const getUserConversationsService = async (userId, queryParams = {}) => {
   const page = Math.max(1, parseInt(queryParams.page, 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(queryParams.limit, 10) || 20));
   const skip = (page - 1) * limit;
 
+  // Find accepted application IDs for this user
+  const acceptedApps = await Application.find({
+    $or: [{ worker: userId }, { farmer: userId }],
+    status: { $in: ALLOWED_CHAT_APPLICATION_STATUSES },
+  }).select('_id');
+
+  const acceptedAppIds = acceptedApps.map((a) => a._id);
+
+  if (acceptedAppIds.length === 0) {
+    return {
+      conversations: [],
+      pagination: {
+        page: 1,
+        limit,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
+  }
+
+  const filter = { application: { $in: acceptedAppIds } };
+
   const [conversations, total] = await Promise.all([
-    findUserConversationsRepo(userId, {}, skip, limit),
-    countUserConversationsRepo(userId, {}),
+    findUserConversationsRepo(userId, filter, skip, limit),
+    countUserConversationsRepo(userId, filter),
   ]);
 
   const totalPages = Math.ceil(total / limit) || 1;
@@ -194,6 +246,12 @@ export const sendMessageService = async (user, conversationId, payload) => {
   );
   if (!isParticipant) {
     throw new AppError('Access denied: You cannot send messages in this conversation.', HTTP_STATUS.FORBIDDEN);
+  }
+
+  // Verify underlying application status is Accepted
+  const applicationDoc = await Application.findById(conversation.application);
+  if (!applicationDoc || !ALLOWED_CHAT_APPLICATION_STATUSES.includes(applicationDoc.status)) {
+    throw new AppError('Chat is not available until the application is approved.', HTTP_STATUS.FORBIDDEN);
   }
 
   if (conversation.isBlocked) {

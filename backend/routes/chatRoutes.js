@@ -10,6 +10,7 @@ import {
   getUnreadChatCount,
   uploadAttachment,
   searchChat,
+  checkUserChatEligibility,
 } from '../controllers/chatController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { uploadSingleAttachment } from '../middleware/uploadMiddleware.js';
@@ -21,6 +22,7 @@ const router = express.Router();
 // Protect all chat routes with JWT Authentication
 router.use(protect);
 
+router.get('/eligibility', checkUserChatEligibility);
 router.get('/search', searchChat);
 router.post(
   '/upload-attachment',
