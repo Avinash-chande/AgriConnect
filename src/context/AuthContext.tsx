@@ -66,7 +66,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-<<<<<<< Updated upstream
   const normalizeUser = (userData: any): UserAccount => {
     const nameVal = userData.fullName || userData.name || 'User';
     return {
@@ -80,11 +79,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const normalized = normalizeUser(userData);
     setUser(normalized);
     localStorage.setItem('agri_user', JSON.stringify(normalized));
-=======
-  const setSession = (userData: any, token?: string) => {
-    const normalized = normalizeUser(userData);
-    setUser(normalized);
->>>>>>> Stashed changes
     if (token) {
       localStorage.setItem('agri_access_token', token);
     }
@@ -107,13 +101,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const data = await getCurrentUserApi();
       if (data.data && data.data.user) {
-<<<<<<< Updated upstream
         const normalized = normalizeUser(data.data.user);
         setUser(normalized);
         localStorage.setItem('agri_user', JSON.stringify(normalized));
-=======
-        setUser(normalizeUser(data.data.user));
->>>>>>> Stashed changes
       } else {
         clearSession();
       }
@@ -130,9 +120,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (payload: LoginPayload): Promise<UserAccount> => {
     const data = await loginApi(payload);
+
     const loggedInUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
+
+    console.log('🔐 Login response:', data);
+    console.log('🔑 Access token received:', !!token);
+
     setSession(loggedInUser, token);
+
     return normalizeUser(loggedInUser);
   };
 
@@ -142,7 +142,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const data = await registerFarmerApi(payload);
 
     const registeredUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
 
     setSession(registeredUser, token);
 
@@ -160,7 +163,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const data = await registerWorkerApi(payload);
 
     const registeredUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
 
     setSession(registeredUser, token);
 

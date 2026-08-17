@@ -9,7 +9,7 @@ export const createAiConversationRepo = async (userId, data = {}) => {
     user: userId,
     title: data.title || 'New AI Consultation',
     systemPromptType: data.systemPromptType || 'AGRICULTURAL_ADVISOR',
-    model: data.model || 'llama-3.3-70b-versatile',
+    model: data.model || 'openai/gpt-oss-120b',
   });
   return conversation;
 };

@@ -11,7 +11,7 @@ dotenv.config();
 
 const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 if (!GROQ_API_KEY && process.env.NODE_ENV === 'production') {
   logger.error('❌ GROQ_API_KEY environment variable is missing in production environment.');
