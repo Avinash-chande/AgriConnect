@@ -60,7 +60,8 @@ export const requireAdmin = () => {
       return next(new AppError('Authentication required.', 401));
     }
 
-    if (req.user.role !== USER_ROLES.ADMIN) {
+    const roleNormalized = (req.user.role || '').trim().toLowerCase();
+    if (roleNormalized !== 'admin') {
       return next(
         new AppError('Access denied. Admin privileges required.', 403)
       );
@@ -92,7 +93,8 @@ export const requirePermission = (...requiredPermissions) => {
       return next(new AppError('Authentication required.', 401));
     }
 
-    if (req.user.role !== USER_ROLES.ADMIN) {
+    const roleNormalized = (req.user.role || '').trim().toLowerCase();
+    if (roleNormalized !== 'admin') {
       return next(
         new AppError('Access denied. Admin privileges required.', 403)
       );

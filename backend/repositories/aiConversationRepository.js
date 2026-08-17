@@ -1,12 +1,11 @@
-import { AiConversation } from '../models/AiConversation.js';
+import { AIConversation } from '../models/AiConversation.js';
 import { AiMessage } from '../models/AiMessage.js';
-
-/**
+/** 
  * AI Conversation Repository - Data Access Layer
  */
 
 export const createAiConversationRepo = async (userId, data = {}) => {
-  const conversation = await AiConversation.create({
+  const conversation = await AIConversation.create({
     user: userId,
     title: data.title || 'New AI Consultation',
     systemPromptType: data.systemPromptType || 'AGRICULTURAL_ADVISOR',
@@ -16,18 +15,18 @@ export const createAiConversationRepo = async (userId, data = {}) => {
 };
 
 export const findAiConversationByIdRepo = async (conversationId, userId) => {
-  return await AiConversation.findOne({ _id: conversationId, user: userId, isArchived: { $ne: true } });
+  return await AIConversation.findOne({ _id: conversationId, user: userId, isArchived: { $ne: true } });
 };
 
 export const findUserAiConversationsRepo = async (userId, skip = 0, limit = 20) => {
-  return await AiConversation.find({ user: userId, isArchived: { $ne: true } })
+  return await AIConversation.find({ user: userId, isArchived: { $ne: true } })
     .sort({ updatedAt: -1 })
     .skip(skip)
     .limit(limit);
 };
 
 export const countUserAiConversationsRepo = async (userId) => {
-  return await AiConversation.countDocuments({ user: userId, isArchived: { $ne: true } });
+  return await AIConversation.countDocuments({ user: userId, isArchived: { $ne: true } });
 };
 
 export const updateAiConversationStatsRepo = async (conversationId, updates) => {
@@ -45,11 +44,11 @@ export const updateAiConversationStatsRepo = async (conversationId, updates) => 
   if (lastMessageText) updateObj.$set.lastMessageText = lastMessageText.substring(0, 200);
   if (title) updateObj.$set.title = title;
 
-  return await AiConversation.findByIdAndUpdate(conversationId, updateObj, { new: true });
+  return await AIConversation.findByIdAndUpdate(conversationId, updateObj, { new: true });
 };
 
 export const deleteAiConversationRepo = async (conversationId, userId) => {
-  const conversation = await AiConversation.findOneAndUpdate(
+  const conversation = await AIConversation.findOneAndUpdate(
     { _id: conversationId, user: userId },
     { $set: { isArchived: true } },
     { new: true }

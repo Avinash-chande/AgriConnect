@@ -22,7 +22,6 @@ export const protect = asyncHandler(async (req, res, next) => {
   if (!token) {
     return next(new AppError('Not authorized. Please log in to access this resource.', 401));
   }
-
   try {
     // 3. Verify JWT Access Token
     const decoded = jwt.verify(token, jwtConfig.accessSecret);

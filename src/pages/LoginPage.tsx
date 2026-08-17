@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sprout, Mail, Lock, Tractor, Briefcase, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +24,7 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const [role, setRole] = useState<UserRole>('farmer');
@@ -60,10 +61,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
       addToast({
         type: 'success',
         title: 'Sign In Successful',
-        message: `Welcome back, ${user.fullName}! Logged in as a ${user.role === 'farmer' ? 'Farmer' : 'Worker'}.`
+        message: `Welcome back, ${user.fullName || user.name || user.email}! Logged in successfully.`
       });
 
-      navigate('/');
+      const roleLower = (user.role || '').trim().toLowerCase();
+      const fromPath = (location.state as any)?.from?.pathname;
+
+      if (roleLower === 'admin') {
+        if (fromPath && fromPath.startsWith('/admin')) {
+          navigate(fromPath, { replace: true });
+        } else {
+          navigate('/admin/dashboard', { replace: true });
+        }
+      } else {
+        if (fromPath && !fromPath.startsWith('/admin')) {
+          navigate(fromPath, { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Invalid email or password. Please try again.');
       addToast({

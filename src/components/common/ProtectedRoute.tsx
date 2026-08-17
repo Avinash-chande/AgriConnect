@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.JSX.Element;
-  allowedRoles?: ('farmer' | 'worker' | 'admin' | 'Farmer' | 'Worker' | 'Admin')[];
+  allowedRoles?: ('farmer' | 'worker' | 'admin' | 'Farmer' | 'Worker' | 'Admin' | string)[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
@@ -24,14 +24,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && user) {
-    const userRoleLower = user.role.toLowerCase();
-    const hasRole = allowedRoles.some((r) => r.toLowerCase() === userRoleLower);
+  if (allowedRoles && allowedRoles.length > 0) {
+    const userRoleLower = (user.role || '').trim().toLowerCase();
+    const hasRole = allowedRoles.some((r) => (r || '').trim().toLowerCase() === userRoleLower);
     if (!hasRole) {
+      // If the authenticated user is an Admin, never redirect them to the farmer/worker home page "/"
+      if (userRoleLower === 'admin') {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      // Non-admins attempting to access admin or other unauthorized pages go to "/"
       return <Navigate to="/" replace />;
     }
   }
