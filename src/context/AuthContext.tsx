@@ -15,18 +15,23 @@ import type {
 
 export interface UserAccount {
   _id: string;
-  fullName: string;
+  name?: string;
+  fullName?: string;
   email: string;
-  phone: string;
-  role: 'farmer' | 'worker' | 'admin' | 'Farmer' | 'Worker' | 'Admin';
-  isVerified: boolean;
-  isPhoneVerified: boolean;
+  phone?: string;
+  mobile?: string;
+  role: 'farmer' | 'worker' | 'admin' | 'Farmer' | 'Worker' | 'Admin' | string;
+  isVerified?: boolean;
+  isPhoneVerified?: boolean;
   isPremium?: boolean;
+  isActive?: boolean;
   subscriptionPlan?: string | null;
   subscriptionStatus?: string;
   subscriptionExpiresAt?: string | Date | null;
   farmerProfile?: any;
   workerProfile?: any;
+  adminRole?: any;
+  identityVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -42,12 +47,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeUser = (rawUser: any): UserAccount => {
+  if (!rawUser) return rawUser;
+  const name = rawUser.name || rawUser.fullName || rawUser.email || 'User';
+  const fullName = rawUser.fullName || rawUser.name || name;
+  const phone = rawUser.phone || rawUser.mobile || '';
+  const mobile = rawUser.mobile || rawUser.phone || phone;
+  return {
+    ...rawUser,
+    name,
+    fullName,
+    phone,
+    mobile,
+  };
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const normalizeUser = (userData: any): UserAccount => {
+    const nameVal = userData.fullName || userData.name || 'User';
+    return {
+      ...userData,
+      fullName: nameVal,
+      role: userData.role || 'farmer',
+    };
+  };
+
   const setSession = (userData: UserAccount, token?: string) => {
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
+    localStorage.setItem('agri_user', JSON.stringify(normalized));
     if (token) {
       localStorage.setItem('agri_access_token', token);
     }
@@ -56,11 +87,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearSession = () => {
     setUser(null);
     localStorage.removeItem('agri_access_token');
+    localStorage.removeItem('agri_user');
   };
 
   const checkSession = async () => {
     const token = localStorage.getItem('agri_access_token');
     if (!token) {
+      setUser(null);
       setIsLoading(false);
       return;
     }
@@ -68,7 +101,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const data = await getCurrentUserApi();
       if (data.data && data.data.user) {
-        setUser(data.data.user);
+        const normalized = normalizeUser(data.data.user);
+        setUser(normalized);
+        localStorage.setItem('agri_user', JSON.stringify(normalized));
       } else {
         clearSession();
       }
@@ -85,10 +120,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (payload: LoginPayload): Promise<UserAccount> => {
     const data = await loginApi(payload);
+
     const loggedInUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
+
+    console.log('🔐 Login response:', data);
+    console.log('🔑 Access token received:', !!token);
+
     setSession(loggedInUser, token);
-    return loggedInUser;
+
+    return normalizeUser(loggedInUser);
   };
 
   const registerFarmer = async (
@@ -97,7 +142,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const data = await registerFarmerApi(payload);
 
     const registeredUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
 
     setSession(registeredUser, token);
 
@@ -106,7 +154,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       registeredUser.email
     );
 
-    return registeredUser;
+    return normalizeUser(registeredUser);
   };
 
   const registerWorker = async (
@@ -115,7 +163,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const data = await registerWorkerApi(payload);
 
     const registeredUser = data.data.user;
-    const token = data.data.tokens?.accessToken;
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
 
     setSession(registeredUser, token);
 
@@ -124,7 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       registeredUser.email
     );
 
-    return registeredUser;
+    return normalizeUser(registeredUser);
   };
 
   const logout = async () => {

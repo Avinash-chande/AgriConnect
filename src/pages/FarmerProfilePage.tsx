@@ -262,15 +262,15 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
         {/* Header Hero Card */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-agri-dark to-agri-deep p-6 sm:p-10 text-white shadow-soft-lg mb-8 overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-agri-primary/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary p-6 sm:p-10 text-white shadow-soft-lg mb-8 overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
             
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 text-center md:text-left">
               
               <div className="relative group">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-white/20 overflow-hidden shadow-agri-glow flex items-center justify-center text-emerald-400">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-white/20 overflow-hidden shadow-agri-glow flex items-center justify-center text-emerald-300">
                   {profileImage ? (
                     <img src={profileImage} alt={farmName} className="w-full h-full object-cover" />
                   ) : (
@@ -284,22 +284,22 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                 </label>
 
                 {uploadingAvatar && (
-                  <div className="absolute inset-0 bg-slate-900/80 rounded-3xl flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-emerald-400 animate-spin" />
+                  <div className="absolute inset-0 bg-slate-900/60 rounded-3xl flex items-center justify-center">
+                    <RefreshCw className="w-6 h-6 text-emerald-300 animate-spin" />
                   </div>
                 )}
               </div>
 
               <div className="space-y-1">
-                <div className="inline-flex items-center space-x-2 bg-emerald-950/80 border border-emerald-700/80 px-3 py-1 rounded-full text-xs font-semibold text-emerald-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-agri-primary" />
+                <div className="inline-flex items-center space-x-2 bg-emerald-900/60 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-semibold text-emerald-200">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
                   <span>Verified Farm Owner Account</span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
                   {farmName || 'My Organic Farm Estate'}
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-300 flex items-center justify-center md:justify-start space-x-2">
-                  <MapPin className="w-4 h-4 text-agri-primary shrink-0" />
+                <p className="text-xs sm:text-sm text-emerald-100 flex items-center justify-center md:justify-start space-x-2">
+                  <MapPin className="w-4 h-4 text-emerald-300 shrink-0" />
                   <span>{district}, {stateName} • {farmSize} {farmSizeUnit}</span>
                 </p>
               </div>
@@ -315,7 +315,7 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                   px-4 py-2 rounded-xl text-xs font-bold font-heading flex items-center space-x-2 transition-all cursor-pointer
                   ${activeTab === 'edit'
                     ? 'bg-white text-agri-dark shadow-sm'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-200 hover:text-white'
                   }
                 `}
               >
@@ -330,7 +330,7 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                   px-4 py-2 rounded-xl text-xs font-bold font-heading flex items-center space-x-2 transition-all cursor-pointer
                   ${activeTab === 'preview'
                     ? 'bg-white text-agri-dark shadow-sm'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-200 hover:text-white'
                   }
                 `}
               >

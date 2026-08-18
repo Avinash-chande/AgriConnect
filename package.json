@@ -23,6 +23,7 @@
     "axios": "^1.18.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.42.2",
+    "ioredis": "^6.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.27.0",
     "postcss": "^8.5.23",
@@ -30,7 +31,9 @@
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.83.0",
     "react-leaflet": "^5.0.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.1",
+    "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.3.3",
     "zod": "^4.4.3"

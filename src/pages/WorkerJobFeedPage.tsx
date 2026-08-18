@@ -162,28 +162,28 @@ export const WorkerJobFeedPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-agri-bg text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-950 border border-emerald-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary border border-emerald-600 rounded-3xl p-6 sm:p-8 shadow-soft-lg relative overflow-hidden text-white">
           <div className="space-y-2 z-10">
-            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-full inline-flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
+            <span className="px-3 py-1 bg-white/10 text-emerald-100 border border-white/20 text-xs font-bold rounded-full inline-flex items-center space-x-1.5 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
               <span>Worker Opportunity Portal</span>
             </span>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight">
               Explore Agricultural Job Openings
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+            <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
               Discover harvesting, plowing, machine operating, and seasonal farm vacancies across top agricultural districts.
             </p>
           </div>
 
           <Link
             to="/saved-jobs"
-            className="self-start md:self-auto px-5 py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-bold rounded-2xl text-xs transition-all flex items-center space-x-2 shadow-lg"
+            className="self-start md:self-auto px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl text-xs transition-all flex items-center space-x-2 shadow-soft-sm backdrop-blur-sm"
           >
-            <Bookmark className="w-4 h-4 fill-amber-400/20" />
+            <Bookmark className="w-4 h-4 fill-amber-300 text-amber-300" />
             <span>My Saved Bookmarks</span>
           </Link>
         </div>
@@ -200,12 +200,12 @@ export const WorkerJobFeedPage: React.FC = () => {
 
           <button
             onClick={() => setIsFilterDrawerOpen(true)}
-            className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 rounded-2xl text-xs font-bold transition-all shadow-xl flex items-center justify-center space-x-2 flex-shrink-0"
+            className="px-5 py-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-soft-sm flex items-center justify-center space-x-2 flex-shrink-0"
           >
-            <Filter className="w-4 h-4 text-emerald-400" />
+            <Filter className="w-4 h-4 text-agri-primary" />
             <span>Advanced Filters</span>
             {Object.keys(appliedFilters).length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span className="w-2 h-2 rounded-full bg-agri-primary"></span>
             )}
           </button>
         </div>
@@ -216,8 +216,8 @@ export const WorkerJobFeedPage: React.FC = () => {
             onClick={() => setActiveTab('all')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               activeTab === 'all'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-agri-primary text-white shadow-agri-glow'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-soft-sm'
             }`}
           >
             <Briefcase className="w-3.5 h-3.5" />
@@ -228,11 +228,11 @@ export const WorkerJobFeedPage: React.FC = () => {
             onClick={() => setActiveTab('nearby')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               activeTab === 'nearby'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-agri-primary text-white shadow-agri-glow'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-soft-sm'
             }`}
           >
-            <Navigation className="w-3.5 h-3.5 text-sky-400" />
+            <Navigation className="w-3.5 h-3.5 text-sky-600" />
             <span>Nearby (Within 50km)</span>
           </button>
 
@@ -240,11 +240,11 @@ export const WorkerJobFeedPage: React.FC = () => {
             onClick={() => setActiveTab('urgent')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               activeTab === 'urgent'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-rose-600 text-white shadow-soft-sm'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-soft-sm'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-rose-400" />
+            <Flame className="w-3.5 h-3.5 text-rose-500" />
             <span>Urgent Hiring</span>
           </button>
 
@@ -252,11 +252,11 @@ export const WorkerJobFeedPage: React.FC = () => {
             onClick={() => setActiveTab('featured')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               activeTab === 'featured'
-                ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-amber-600 text-white shadow-soft-sm'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-soft-sm'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>Featured Listings</span>
           </button>
 
@@ -264,11 +264,11 @@ export const WorkerJobFeedPage: React.FC = () => {
             onClick={() => setActiveTab('highWage')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               activeTab === 'highWage'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-agri-primary text-white shadow-agri-glow'
+                : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-soft-sm'
             }`}
           >
-            <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
+            <IndianRupee className="w-3.5 h-3.5 text-agri-primary" />
             <span>High Daily Wage</span>
           </button>
         </div>
@@ -281,21 +281,21 @@ export const WorkerJobFeedPage: React.FC = () => {
             ))}
           </div>
         ) : error ? (
-          <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs text-center font-semibold">
+          <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs text-center font-semibold">
             {error}
           </div>
         ) : jobs.length === 0 ? (
-          <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl space-y-4">
-            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto">
+          <div className="p-12 text-center bg-white border border-slate-200 rounded-3xl space-y-4 shadow-soft-sm">
+            <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center text-agri-primary mx-auto">
               <Briefcase className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-white">No Matching Job Openings Found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <h3 className="text-base font-bold font-heading text-slate-900">No Matching Job Openings Found</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto">
               Try adjusting your search keywords, clearing specific filters, or selecting a different location tab.
             </p>
             <button
               onClick={handleResetAllFilters}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-all shadow-lg shadow-emerald-600/20"
+              className="px-6 py-2.5 bg-agri-primary hover:bg-agri-hover text-white text-xs font-semibold rounded-xl transition-all shadow-agri-glow"
             >
               Reset All Filters
             </button>
@@ -310,25 +310,25 @@ export const WorkerJobFeedPage: React.FC = () => {
               return (
                 <div
                   key={jobId}
-                  className="bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 rounded-3xl p-6 space-y-4 flex flex-col justify-between shadow-xl transition-all duration-300 hover:border-emerald-500/40 relative group"
+                  className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 flex flex-col justify-between shadow-soft-sm hover:shadow-soft-md transition-all duration-300 hover:border-emerald-300 relative group"
                 >
                   <div className="space-y-3">
                     {/* Header Badges & Actions */}
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="px-2.5 py-0.5 bg-slate-800 text-slate-300 text-[10px] font-semibold rounded-full">
+                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-semibold rounded-full">
                           {job.category}
                         </span>
 
                         {job.isUrgent && (
-                          <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold rounded-full flex items-center space-x-0.5">
-                            <Flame className="w-3 h-3" />
+                          <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold rounded-full flex items-center space-x-0.5">
+                            <Flame className="w-3 h-3 text-rose-600" />
                             <span>Urgent</span>
                           </span>
                         )}
 
                         {job.isFeatured && (
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold rounded-full">
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold rounded-full">
                             Featured
                           </span>
                         )}
@@ -340,7 +340,7 @@ export const WorkerJobFeedPage: React.FC = () => {
                             setShareJobId(jobId);
                             setShareJobTitle(job.title);
                           }}
-                          className="p-2 bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-xl border border-slate-800/80 transition-colors"
+                          className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-agri-primary rounded-xl border border-slate-200 transition-colors"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>
@@ -349,11 +349,11 @@ export const WorkerJobFeedPage: React.FC = () => {
                           onClick={() => handleToggleSave(jobId)}
                           className={`p-2 rounded-xl border transition-all ${
                             isSaved
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                              : 'bg-slate-950/80 text-slate-400 hover:text-amber-400 border-slate-800/80'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-slate-50 text-slate-600 hover:text-amber-600 border-slate-200'
                           }`}
                         >
-                          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-amber-400 text-amber-400' : ''}`} />
+                          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-amber-500 text-amber-500' : ''}`} />
                         </button>
                       </div>
                     </div>
@@ -362,12 +362,12 @@ export const WorkerJobFeedPage: React.FC = () => {
                     <div>
                       <Link
                         to={`/jobs/${jobId}`}
-                        className="text-base font-bold text-white hover:text-emerald-400 transition-colors line-clamp-1 block"
+                        className="text-base font-bold font-heading text-slate-900 hover:text-agri-primary transition-colors line-clamp-1 block"
                       >
                         {job.title}
                       </Link>
-                      <p className="text-xs text-slate-400 flex items-center space-x-1.5 mt-1">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <p className="text-xs text-slate-600 flex items-center space-x-1.5 mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-agri-primary flex-shrink-0" />
                         <span>
                           {job.jobAddress?.district}, {job.jobAddress?.state} {job.jobAddress?.village ? `• ${job.jobAddress.village}` : ''}
                         </span>
@@ -376,39 +376,39 @@ export const WorkerJobFeedPage: React.FC = () => {
 
                     {/* Key Metrics Grid */}
                     <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
-                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                         <span className="text-slate-500 block text-[10px] uppercase font-medium">Wage / Salary</span>
-                        <span className="font-bold text-emerald-400 flex items-center mt-0.5">
+                        <span className="font-bold text-agri-primary flex items-center mt-0.5">
                           <IndianRupee className="w-3 h-3 mr-0.5" />
                           {job.dailyWage ? `${job.dailyWage}/Day` : `${job.monthlySalary}/Mo`}
                         </span>
                       </div>
 
-                      <div className="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/60">
-                        <span className="text-slate-500 block text-[10px] uppercase font-medium font-medium">Workers Needed</span>
-                        <span className="font-bold text-white flex items-center mt-0.5">
-                          <Users className="w-3 h-3 mr-1 text-emerald-400" />
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-slate-500 block text-[10px] uppercase font-medium">Workers Needed</span>
+                        <span className="font-bold text-slate-900 flex items-center mt-0.5">
+                          <Users className="w-3 h-3 mr-1 text-agri-primary" />
                           {job.numberOfWorkers} Workers
                         </span>
                       </div>
                     </div>
 
                     {/* Facilities Chips */}
-                    <div className="flex items-center space-x-3 text-[11px] text-slate-400 pt-1">
+                    <div className="flex items-center space-x-3 text-[11px] text-slate-600 pt-1">
                       {job.accommodationProvided && (
-                        <span className="flex items-center space-x-1 text-emerald-400">
+                        <span className="flex items-center space-x-1 text-agri-primary font-medium">
                           <Home className="w-3 h-3" />
                           <span>Stay</span>
                         </span>
                       )}
                       {job.foodProvided && (
-                        <span className="flex items-center space-x-1 text-emerald-400">
+                        <span className="flex items-center space-x-1 text-agri-primary font-medium">
                           <Utensils className="w-3 h-3" />
                           <span>Food</span>
                         </span>
                       )}
                       {job.transportProvided && (
-                        <span className="flex items-center space-x-1 text-emerald-400">
+                        <span className="flex items-center space-x-1 text-agri-primary font-medium">
                           <Truck className="w-3 h-3" />
                           <span>Pickup</span>
                         </span>
@@ -417,10 +417,10 @@ export const WorkerJobFeedPage: React.FC = () => {
                   </div>
 
                   {/* Card Bottom Action Bar */}
-                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                     <Link
                       to={`/jobs/${jobId}`}
-                      className="px-3 py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs transition-colors border border-slate-800"
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors border border-slate-200"
                     >
                       Details
                     </Link>
@@ -430,13 +430,13 @@ export const WorkerJobFeedPage: React.FC = () => {
                       disabled={isApplied}
                       className={`flex-1 py-2 font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 ${
                         isApplied
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : 'bg-agri-primary hover:bg-agri-hover text-white shadow-agri-glow'
                       }`}
                     >
                       {isApplied ? (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-agri-primary" />
                           <span>Applied</span>
                         </>
                       ) : (
@@ -456,7 +456,7 @@ export const WorkerJobFeedPage: React.FC = () => {
         {/* Infinite Scroll Sentinel Element & Loading Spinner */}
         <div ref={sentinelRef} className="py-6 text-center">
           {loadingMore && (
-            <div className="inline-flex items-center space-x-2 text-xs font-semibold text-emerald-400 bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
+            <div className="inline-flex items-center space-x-2 text-xs font-semibold text-agri-primary bg-white border border-slate-200 px-4 py-2 rounded-full shadow-soft-sm">
               <RefreshCw className="w-4 h-4 animate-spin" />
               <span>Loading more jobs...</span>
             </div>
@@ -500,20 +500,20 @@ export const WorkerJobFeedPage: React.FC = () => {
 };
 
 /**
- * Skeleton Card for Loading Feed State
+ * Skeleton Loader Component for Feed Cards
  */
 const JobFeedCardSkeleton: React.FC = () => (
-  <div className="h-64 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 animate-pulse">
+  <div className="h-64 bg-white border border-slate-200 rounded-3xl p-6 space-y-4 animate-pulse shadow-soft-sm">
     <div className="flex items-center justify-between">
-      <div className="h-4 w-20 bg-slate-800 rounded-full"></div>
-      <div className="h-6 w-12 bg-slate-800 rounded-xl"></div>
+      <div className="h-4 w-20 bg-slate-200 rounded-full"></div>
+      <div className="h-6 w-12 bg-slate-200 rounded-xl"></div>
     </div>
-    <div className="h-6 w-3/4 bg-slate-800 rounded-xl"></div>
-    <div className="h-4 w-1/2 bg-slate-800 rounded-lg"></div>
+    <div className="h-6 w-3/4 bg-slate-200 rounded-xl"></div>
+    <div className="h-4 w-1/2 bg-slate-200 rounded-lg"></div>
     <div className="grid grid-cols-2 gap-2 pt-2">
-      <div className="h-10 bg-slate-950 rounded-xl"></div>
-      <div className="h-10 bg-slate-950 rounded-xl"></div>
+      <div className="h-10 bg-slate-100 rounded-xl"></div>
+      <div className="h-10 bg-slate-100 rounded-xl"></div>
     </div>
-    <div className="h-9 bg-slate-800 rounded-xl mt-4"></div>
+    <div className="h-9 bg-slate-200 rounded-xl mt-4"></div>
   </div>
 );

@@ -133,6 +133,11 @@ export const getUnreadChatCount = async (): Promise<number> => {
   return response.data.data?.totalUnread || 0;
 };
 
+export const checkChatEligibility = async (): Promise<{ canChat: boolean; eligibleCount: number }> => {
+  const response = await api.get('/chat/eligibility');
+  return response.data.data || { canChat: false, eligibleCount: 0 };
+};
+
 export interface UploadedAttachmentResponse {
   url: string;
   public_id: string;

@@ -126,24 +126,24 @@ export const RouteNavigationPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans pb-16">
+    <div className="min-h-screen bg-agri-bg text-slate-800 font-sans pb-16">
       {/* Header Bar */}
-      <header className="bg-slate-900 border-b border-slate-800 py-6 px-4 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-slate-200 py-6 px-4 sm:px-6 lg:px-8 shadow-soft-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors border border-slate-200"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div>
-              <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 font-bold text-[11px] mb-1">
-                <Navigation className="w-3 h-3" />
+              <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 bg-emerald-50 border border-emerald-200 rounded-full text-agri-primary font-bold text-[11px] mb-1">
+                <Navigation className="w-3 h-3 text-agri-primary" />
                 <span>OSRM Open Routing Engine</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-white">
+              <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-slate-900">
                 Route Navigation
               </h1>
             </div>
@@ -153,7 +153,7 @@ export const RouteNavigationPage: React.FC = () => {
             <button
               type="button"
               onClick={handleUseGpsAsOrigin}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors"
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-agri-primary border border-slate-200 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors shadow-soft-sm"
             >
               <Compass className="w-4 h-4" />
               <span>Use My GPS Origin</span>
@@ -163,7 +163,7 @@ export const RouteNavigationPage: React.FC = () => {
               type="button"
               onClick={fetchRoute}
               disabled={loading}
-              className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors shadow-lg"
+              className="px-3.5 py-2 bg-agri-primary hover:bg-agri-hover text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-colors shadow-agri-glow"
             >
               <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Recalculate</span>
@@ -175,8 +175,8 @@ export const RouteNavigationPage: React.FC = () => {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {error && (
-          <div className="p-4 mb-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm flex items-center space-x-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
+          <div className="p-4 mb-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-sm flex items-center space-x-3">
+            <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
@@ -185,15 +185,15 @@ export const RouteNavigationPage: React.FC = () => {
           {/* Left Column: Route Summary & Turn-by-Turn Steps */}
           <div className="lg:col-span-5 space-y-6">
             {/* Origin & Destination Cards */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
-              <h2 className="text-xs uppercase font-extrabold text-slate-400 tracking-wider">
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-soft-sm space-y-4">
+              <h2 className="text-xs uppercase font-extrabold text-slate-500 tracking-wider">
                 Trip Waypoints
               </h2>
 
-              <div className="space-y-3 relative pl-6 border-l-2 border-dashed border-emerald-500/40">
+              <div className="space-y-3 relative pl-6 border-l-2 border-dashed border-emerald-300">
                 {/* Origin */}
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center text-[8px] font-bold text-slate-950">
+                  <span className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-agri-primary border-2 border-white flex items-center justify-center text-[8px] font-bold text-white">
                     A
                   </span>
                   <div>

@@ -309,15 +309,15 @@ export const WorkerProfilePage: React.FC<WorkerProfilePageProps> = ({ addToast }
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
         {/* Header Hero Card */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-agri-dark to-slate-900 p-6 sm:p-10 text-white shadow-soft-lg mb-8 overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-agri-primary/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative rounded-3xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary p-6 sm:p-10 text-white shadow-soft-lg mb-8 overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
             
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 text-center md:text-left">
               
               <div className="relative group">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-white/20 overflow-hidden shadow-agri-glow flex items-center justify-center text-emerald-400">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/10 backdrop-blur-md border-2 border-white/20 overflow-hidden shadow-agri-glow flex items-center justify-center text-emerald-300">
                   {profileImage ? (
                     <img src={profileImage} alt={fullName} className="w-full h-full object-cover" />
                   ) : (
@@ -331,8 +331,8 @@ export const WorkerProfilePage: React.FC<WorkerProfilePageProps> = ({ addToast }
                 </label>
 
                 {uploadingAvatar && (
-                  <div className="absolute inset-0 bg-slate-900/80 rounded-3xl flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-emerald-400 animate-spin" />
+                  <div className="absolute inset-0 bg-slate-900/60 rounded-3xl flex items-center justify-center">
+                    <RefreshCw className="w-6 h-6 text-emerald-300 animate-spin" />
                   </div>
                 )}
               </div>

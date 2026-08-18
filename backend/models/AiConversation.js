@@ -35,17 +35,51 @@ const AIMessageSchema = new mongoose.Schema(
 
 const AIConversationSchema = new mongoose.Schema(
   {
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
       index: true,
     },
-    sessionId: {
+
+    systemPromptType: {
       type: String,
-      required: true,
-      unique: true,
-      index: true,
+      default: 'AGRICONNECT_ASSISTANT',
+    },
+
+    model: {
+      type: String,
+      default: 'openai/gpt-oss-120b',
+    },
+
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+
+    messageCount: {
+      type: Number,
+      default: 0,
+    },
+
+    totalTokens: {
+      type: Number,
+      default: 0,
+    },
+
+    totalPromptTokens: {
+      type: Number,
+      default: 0,
+    },
+
+    totalCompletionTokens: {
+      type: Number,
+      default: 0,
+    },
+
+    lastMessageText: {
+      type: String,
+      default: '',
     },
     title: {
       type: String,
@@ -86,7 +120,9 @@ const AIConversationSchema = new mongoose.Schema(
 );
 
 // Compound Indexes for fast session lookup
-AIConversationSchema.index({ userId: 1, category: 1, updatedAt: -1 });
-AIConversationSchema.index({ sessionId: 1, userId: 1 });
-
+AIConversationSchema.index({
+  user: 1,
+  category: 1,
+  updatedAt: -1
+});
 export const AIConversation = mongoose.model('AIConversation', AIConversationSchema);

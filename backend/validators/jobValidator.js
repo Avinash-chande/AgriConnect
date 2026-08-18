@@ -8,10 +8,48 @@ import {
 } from '../constants/index.js';
 import { isValidIndianMobile, isValidIndianPincode } from './profileValidator.js';
 
+const parseJobFormData = (req, res, next) => {
+  if (req.body) {
+    if (typeof req.body.jobAddress === 'string') {
+      try {
+        req.body.jobAddress = JSON.parse(req.body.jobAddress);
+      } catch {
+        // Ignored
+      }
+    }
+    if (!req.body.jobAddress || typeof req.body.jobAddress !== 'object') {
+      req.body.jobAddress = {};
+    }
+    if (!req.body.jobAddress.district && req.body.district) {
+      req.body.jobAddress.district = req.body.district;
+    }
+    if (!req.body.jobAddress.state && req.body.state) {
+      req.body.jobAddress.state = req.body.state;
+    }
+    if (!req.body.jobAddress.district && req.body['jobAddress[district]']) {
+      req.body.jobAddress.district = req.body['jobAddress[district]'];
+    }
+    if (!req.body.jobAddress.state && req.body['jobAddress[state]']) {
+      req.body.jobAddress.state = req.body['jobAddress[state]'];
+    }
+
+    if (typeof req.body.requiredSkills === 'string') {
+      try {
+        req.body.requiredSkills = JSON.parse(req.body.requiredSkills);
+      } catch {
+        req.body.requiredSkills = req.body.requiredSkills.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    }
+  }
+  next();
+};
+
 /**
  * Express Validator Chain for Creating a Job Posting
  */
 export const validateCreateJobInput = [
+  parseJobFormData,
+
   // 1. Title Validation
   body('title')
     .trim()
@@ -162,15 +200,19 @@ export const validateCreateJobInput = [
     .withMessage('Working hours must be between 1 and 24 hours per day'),
 
   // 10. Location & Address Validation
-  body('jobAddress.district')
-    .trim()
-    .notEmpty()
-    .withMessage('District is required'),
-
-  body('jobAddress.state')
-    .trim()
-    .notEmpty()
-    .withMessage('State is required'),
+  body('jobAddress')
+    .custom((val, { req }) => {
+      const addr = req.body.jobAddress;
+      const district = addr?.district || req.body.district;
+      const state = addr?.state || req.body.state;
+      if (!district || typeof district !== 'string' || !district.trim()) {
+        throw new Error('District is required');
+      }
+      if (!state || typeof state !== 'string' || !state.trim()) {
+        throw new Error('State is required');
+      }
+      return true;
+    }),
 
   body('jobAddress.pincode')
     .optional()
@@ -201,6 +243,7 @@ export const validateCreateJobInput = [
  * Express Validator Chain for Editing an Existing Job Posting
  */
 export const validateUpdateJobInput = [
+  parseJobFormData,
   body('title')
     .optional()
     .trim()

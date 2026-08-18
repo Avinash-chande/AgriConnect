@@ -238,4 +238,4 @@ export const processStreamChatMessage = async (userId, inputData, res) => {
     res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
     res.end();
   }
-};
+}

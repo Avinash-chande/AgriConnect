@@ -151,33 +151,33 @@ export const NearbyJobsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans pb-16">
+    <div className="min-h-screen bg-agri-bg text-slate-800 font-sans pb-16">
       {/* Header Banner */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/60 border-b border-slate-800 pt-8 pb-10 px-4 sm:px-6 lg:px-8">
+      <header className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary border-b border-emerald-600 pt-8 pb-10 px-4 sm:px-6 lg:px-8 text-white shadow-soft-sm">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 font-bold text-xs mb-2">
-                <Compass className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-emerald-100 font-bold text-xs mb-2 backdrop-blur-sm">
+                <Compass className="w-3.5 h-3.5 text-emerald-300" />
                 <span>Geospatial Job Matching Engine</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white tracking-tight">
                 Nearby Agricultural Vacancies
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-emerald-100 mt-1">
                 Discover active farm work opportunities within your local radius
               </p>
             </div>
 
             {/* View Mode Switches */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 self-start md:self-auto">
+            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 self-start md:self-auto">
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'split'
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <Layers className="w-4 h-4" />
@@ -188,8 +188,8 @@ export const NearbyJobsPage: React.FC = () => {
                 onClick={() => setViewMode('grid')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <List className="w-4 h-4" />
@@ -200,8 +200,8 @@ export const NearbyJobsPage: React.FC = () => {
                 onClick={() => setViewMode('map')}
                 className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
                   viewMode === 'map'
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-agri-dark shadow-soft-sm'
+                    : 'text-slate-200 hover:text-white'
                 }`}
               >
                 <MapIcon className="w-4 h-4" />
@@ -211,19 +211,19 @@ export const NearbyJobsPage: React.FC = () => {
           </div>
 
           {/* Location & Radius Control Bar */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-soft-sm space-y-4 text-slate-800">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
               {/* Location Bar */}
-              <div className="md:col-span-6 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div className="md:col-span-6 bg-slate-50 p-3 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-3 truncate">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-agri-primary flex items-center justify-center shrink-0">
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div className="truncate">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                       Search Center Location
                     </span>
-                    <span className="font-bold text-xs text-white truncate block">{addressPreview}</span>
+                    <span className="font-bold text-xs text-slate-900 truncate block">{addressPreview}</span>
                   </div>
                 </div>
 
@@ -233,14 +233,14 @@ export const NearbyJobsPage: React.FC = () => {
                     onClick={handleGpsDetect}
                     disabled={isGpsLoading}
                     title="Detect current GPS position"
-                    className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl transition-colors disabled:opacity-50"
+                    className="p-2 bg-white hover:bg-slate-100 text-agri-primary rounded-xl transition-colors disabled:opacity-50 border border-slate-200 shadow-soft-sm"
                   >
                     {isGpsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsLocationPickerOpen(true)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors"
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-200"
                   >
                     Change Pin
                   </button>
@@ -249,8 +249,8 @@ export const NearbyJobsPage: React.FC = () => {
 
               {/* Radius Options Pills */}
               <div className="md:col-span-6 flex items-center justify-start md:justify-end space-x-2 overflow-x-auto pb-1 md:pb-0">
-                <span className="text-xs font-bold text-slate-400 shrink-0 mr-1 flex items-center space-x-1">
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold text-slate-600 shrink-0 mr-1 flex items-center space-x-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-agri-primary" />
                   <span>Radius:</span>
                 </span>
                 {RADIUS_OPTIONS.map((r) => (
@@ -263,8 +263,8 @@ export const NearbyJobsPage: React.FC = () => {
                     }}
                     className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all shrink-0 ${
                       radius === r
-                        ? 'bg-emerald-500 text-slate-950 shadow-md ring-2 ring-emerald-400/30'
-                        : 'bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300'
+                        ? 'bg-agri-primary text-white shadow-agri-glow'
+                        : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-soft-sm'
                     }`}
                   >
                     {r} km
@@ -274,16 +274,16 @@ export const NearbyJobsPage: React.FC = () => {
             </div>
 
             {/* Additional Filter Row */}
-            <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-slate-400 font-semibold">Category Filter:</span>
+                <span className="text-slate-600 font-semibold">Category Filter:</span>
                 <select
                   value={category}
                   onChange={(e) => {
                     setCategory(e.target.value);
                     setPage(1);
                   }}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-agri-primary shadow-soft-sm"
                 >
                   <option value="all">All Categories ({JOB_CATEGORIES.length})</option>
                   {JOB_CATEGORIES.map((cat) => (
@@ -295,24 +295,28 @@ export const NearbyJobsPage: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <span className="text-slate-400 font-semibold">Sort By:</span>
+                <span className="text-slate-600 font-semibold">Sort By:</span>
                 <button
                   type="button"
                   onClick={() => setSort('distance')}
-                  className={`px-3 py-1 rounded-xl font-semibold transition-colors ${
-                    sort === 'distance' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all border ${
+                    sort === 'distance'
+                      ? 'bg-emerald-50 border-emerald-200 text-agri-primary'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  Nearest Distance
+                  Distance
                 </button>
                 <button
                   type="button"
                   onClick={() => setSort('newest')}
-                  className={`px-3 py-1 rounded-xl font-semibold transition-colors ${
-                    sort === 'newest' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all border ${
+                    sort === 'newest'
+                      ? 'bg-emerald-50 border-emerald-200 text-agri-primary'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  Recently Posted
+                  Newest
                 </button>
               </div>
             </div>
@@ -321,40 +325,42 @@ export const NearbyJobsPage: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {error && (
-          <div className="p-4 mb-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm flex items-center space-x-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {loading ? (
-          <div className="py-20 text-center space-y-4">
-            <Loader2 className="w-10 h-10 animate-spin text-emerald-400 mx-auto" />
-            <p className="text-sm font-semibold text-slate-400">Querying 2dsphere index for active jobs within {radius}km...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-64 bg-white border border-slate-200 rounded-3xl p-6 space-y-4 animate-pulse shadow-soft-sm">
+                <div className="h-4 w-20 bg-slate-200 rounded-full"></div>
+                <div className="h-6 w-3/4 bg-slate-200 rounded-xl"></div>
+                <div className="h-4 w-1/2 bg-slate-200 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs text-center font-semibold">
+            {error}
           </div>
         ) : nearbyItems.length === 0 ? (
-          <div className="py-16 text-center bg-slate-900/40 border border-slate-800 rounded-3xl p-8 space-y-4 max-w-lg mx-auto">
-            <div className="w-14 h-14 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-              <Compass className="w-7 h-7" />
+          <div className="py-16 text-center bg-white border border-slate-200 rounded-3xl p-8 space-y-4 max-w-lg mx-auto shadow-soft-sm">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 text-agri-primary flex items-center justify-center mx-auto border border-emerald-200">
+              <MapPin className="w-7 h-7" />
             </div>
-            <h3 className="text-lg font-bold text-white">No Vacancies Found Within {radius} km</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              We couldn't find active job postings near your current coordinates. Try expanding your search radius to 25km or 50km.
+            <h3 className="text-lg font-bold font-heading text-slate-900">No Job Vacancies Nearby</h3>
+            <p className="text-xs text-slate-600 max-w-sm mx-auto">
+              No agricultural jobs were found within {radius} km of your selected search center. Try expanding your search radius.
             </p>
             <div className="flex justify-center space-x-2 pt-2">
               <button
                 type="button"
                 onClick={() => setRadius(25)}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition-colors shadow-lg"
+                className="px-4 py-2 bg-agri-primary hover:bg-agri-hover text-white font-bold text-xs rounded-xl transition-all shadow-agri-glow"
               >
                 Expand to 25 km
               </button>
               <button
                 type="button"
                 onClick={() => setRadius(50)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors border border-slate-200"
               >
                 Expand to 50 km
               </button>

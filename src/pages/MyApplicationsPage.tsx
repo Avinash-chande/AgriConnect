@@ -12,9 +12,11 @@ import {
   ChevronDown,
   Loader2,
   Eye,
+  MessageSquare,
 } from 'lucide-react';
 import type { JobApplication, ApplicationStatus } from "../types/application";
 import { getMyApplications } from '../services/applicationService';
+import { getOrCreateConversation } from '../services/chatService';
 import { WithdrawApplicationModal } from '../components/applications/WithdrawApplicationModal';
 import { ApplicationStatusTimeline } from '../components/applications/ApplicationStatusTimeline';
 import { ApplicationDetailsModal } from '../components/applications/ApplicationDetailsModal';
@@ -76,6 +78,7 @@ export const MyApplicationsPage: React.FC = () => {
       Withdrawn:  { bg: 'bg-slate-50',   text: 'text-slate-600',   border: 'border-slate-200',   label: 'Withdrawn' },
       Rejected:   { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200',    label: 'Not Selected' },
       Cancelled:  { bg: 'bg-amber-50',   text: 'text-amber-800',   border: 'border-amber-300',   label: 'Cancelled' },
+      Completed:  { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300', label: 'Completed' },
     };
     const s = map[status] ?? { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: status };
     return (
@@ -239,11 +242,25 @@ export const MyApplicationsPage: React.FC = () => {
                             Withdraw
                           </button>
                         )}
-                        {app.status === 'Hired' && (
-                          <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Hired
-                          </span>
+                        {(app.status === 'Accepted' || app.status === 'Hired' || app.status === 'Completed') && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const workerId = (app.worker as any)?._id || app.worker;
+                                const farmerId = (app.farmer as any)?._id || app.farmer;
+                                const jobId = (app.job as any)?._id || app.job;
+                                const conv = await getOrCreateConversation({ workerId, farmerId, jobId });
+                                window.location.href = `/chat/${conv._id}`;
+                              } catch (err: any) {
+                                console.error('Failed to open chat:', err);
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-soft-sm transition-colors"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Chat with Farmer
+                          </button>
                         )}
                         {app.status === 'Rejected' && (
                           <span className="text-xs font-medium text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 flex items-center gap-1">

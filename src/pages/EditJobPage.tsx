@@ -250,26 +250,26 @@ export const EditJobPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-agri-bg text-slate-800 flex items-center justify-center p-6">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-medium">Loading Job Details...</p>
+          <div className="w-12 h-12 border-4 border-agri-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-600 font-medium">Loading Job Details...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-agri-bg text-slate-800 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Navigation Bar */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
+            <span className="text-sm font-semibold">Back to Dashboard</span>
           </button>
 
           <div className="flex items-center space-x-3">
@@ -277,14 +277,14 @@ export const EditJobPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold rounded-lg border border-rose-500/20 flex items-center space-x-1.5 transition-all"
+                className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 flex items-center space-x-1.5 transition-all"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete Job</span>
               </button>
             )}
 
-            <span className="text-xs font-semibold px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20">
+            <span className="text-xs font-semibold px-3.5 py-1.5 bg-emerald-100/80 text-emerald-800 rounded-full border border-emerald-200">
               Edit Job Vacancy
             </span>
           </div>
@@ -292,11 +292,11 @@ export const EditJobPage: React.FC = () => {
 
         {/* Ownership & Status Warnings */}
         {!isOwner && !isAdmin && (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 flex items-start space-x-3">
-            <ShieldAlert className="w-6 h-6 flex-shrink-0 text-amber-400 mt-0.5" />
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-start space-x-3">
+            <ShieldAlert className="w-6 h-6 flex-shrink-0 text-amber-600 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-sm">Read-Only Mode</h4>
-              <p className="text-xs text-amber-400/80 mt-1">
+              <h4 className="font-bold text-sm">Read-Only Mode</h4>
+              <p className="text-xs text-amber-800 mt-1">
                 You are viewing this job as a non-owner. Only the farmer who created this posting can make modifications.
               </p>
             </div>
@@ -304,11 +304,11 @@ export const EditJobPage: React.FC = () => {
         )}
 
         {isClosed && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 flex items-start space-x-3">
-            <AlertCircle className="w-6 h-6 flex-shrink-0 text-rose-400 mt-0.5" />
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 flex-shrink-0 text-rose-600 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-sm">Closed Job Vacancy</h4>
-              <p className="text-xs text-rose-400/80 mt-1">
+              <h4 className="font-bold text-sm">Closed Job Vacancy</h4>
+              <p className="text-xs text-rose-800 mt-1">
                 This job posting is closed or expired. Please re-open or activate the status to edit fields.
               </p>
             </div>
@@ -317,17 +317,17 @@ export const EditJobPage: React.FC = () => {
 
         {/* Error / Success Notifications */}
         {error && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm flex items-center justify-between">
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm flex items-center justify-between">
             <span>{error}</span>
             <button onClick={() => setError(null)}>
-              <X className="w-4 h-4 text-rose-400 hover:text-white" />
+              <X className="w-4 h-4 text-rose-600 hover:text-rose-900" />
             </button>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5 text-emerald-400" />
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -335,15 +335,15 @@ export const EditJobPage: React.FC = () => {
         {/* Form Container */}
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Section 1: Basic Information */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <Briefcase className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold text-white">Basic Job Vacancy Details</h2>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <Briefcase className="w-6 h-6 text-agri-primary" />
+              <h2 className="text-lg font-bold font-heading text-slate-900">Basic Job Vacancy Details</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Job Title *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Job Title *</label>
                 <input
                   type="text"
                   disabled={!isOwner || isClosed}
@@ -351,17 +351,17 @@ export const EditJobPage: React.FC = () => {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Paddy Harvesting Combine Operator"
                   required
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Category *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Category *</label>
                 <select
                   disabled={!isOwner || isClosed}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 >
                   {JOB_CATEGORIES.map((cat: string) => (
                     <option key={cat} value={cat}>
@@ -372,19 +372,19 @@ export const EditJobPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Crop Type</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Crop Type</label>
                 <input
                   type="text"
                   disabled={!isOwner || isClosed}
                   value={cropType}
                   onChange={(e) => setCropType(e.target.value)}
                   placeholder="e.g. Wheat, Paddy, Cotton, Sugarcane"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Job Description *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Job Description *</label>
                 <textarea
                   rows={4}
                   disabled={!isOwner || isClosed}
@@ -392,27 +392,27 @@ export const EditJobPage: React.FC = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe job responsibilities, farm conditions, working tools required..."
                   required
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Worker Requirements & Skills */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <Users className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold text-white">Worker Requirements & Skills</h2>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <Users className="w-6 h-6 text-agri-primary" />
+              <h2 className="text-lg font-bold font-heading text-slate-900">Worker Requirements & Skills</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Work Type *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Work Type *</label>
                 <select
                   disabled={!isOwner || isClosed}
                   value={workType}
                   onChange={(e) => setWorkType(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 >
                   {PREFERRED_WORK_TYPES.map((type: string) => (
                     <option key={type} value={type}>
@@ -423,24 +423,24 @@ export const EditJobPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Workers Needed *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Workers Needed *</label>
                 <input
                   type="number"
                   min={1}
                   disabled={!isOwner || isClosed}
                   value={numberOfWorkers}
                   onChange={(e) => setNumberOfWorkers(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Gender Preference</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Gender Preference</label>
                 <select
                   disabled={!isOwner || isClosed}
                   value={genderPreference}
                   onChange={(e) => setGenderPreference(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 >
                   {GENDER_PREFERENCE.map((gender: string) => (
                     <option key={gender} value={gender}>
@@ -451,7 +451,7 @@ export const EditJobPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Min Age (Years)</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Min Age (Years)</label>
                 <input
                   type="number"
                   min={18}
@@ -459,12 +459,12 @@ export const EditJobPage: React.FC = () => {
                   disabled={!isOwner || isClosed}
                   value={minimumAge}
                   onChange={(e) => setMinimumAge(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Max Age (Years)</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Max Age (Years)</label>
                 <input
                   type="number"
                   min={18}
@@ -472,26 +472,26 @@ export const EditJobPage: React.FC = () => {
                   disabled={!isOwner || isClosed}
                   value={maximumAge}
                   onChange={(e) => setMaximumAge(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Experience (Years)</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Experience (Years)</label>
                 <input
                   type="number"
                   min={0}
                   disabled={!isOwner || isClosed}
                   value={experienceRequired}
                   onChange={(e) => setExperienceRequired(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
             </div>
 
             {/* Skills Tag Input */}
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Required Skills *</label>
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Required Skills *</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
@@ -500,13 +500,13 @@ export const EditJobPage: React.FC = () => {
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
                   placeholder="e.g. Tractor Driving, Thresher Operation..."
-                  className="flex-1 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={handleAddSkill}
                   disabled={!isOwner || isClosed || !skillInput.trim()}
-                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium rounded-xl flex items-center space-x-1"
+                  className="px-5 py-3 bg-agri-primary hover:bg-agri-hover disabled:opacity-50 text-white font-medium rounded-xl flex items-center space-x-1 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add</span>
@@ -517,11 +517,11 @@ export const EditJobPage: React.FC = () => {
                 {requiredSkills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 text-emerald-400 text-xs font-semibold rounded-lg border border-slate-700"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200"
                   >
                     <span>{skill}</span>
                     {isOwner && !isClosed && (
-                      <button type="button" onClick={() => handleRemoveSkill(skill)} className="hover:text-rose-400">
+                      <button type="button" onClick={() => handleRemoveSkill(skill)} className="hover:text-rose-600">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -532,20 +532,20 @@ export const EditJobPage: React.FC = () => {
           </div>
 
           {/* Section 3: Wages & Work Schedule */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <IndianRupee className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold text-white">Wage & Work Schedule</h2>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <IndianRupee className="w-6 h-6 text-agri-primary" />
+              <h2 className="text-lg font-bold font-heading text-slate-900">Wage & Work Schedule</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Wage Type *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Wage Type *</label>
                 <select
                   disabled={!isOwner || isClosed}
                   value={wageType}
                   onChange={(e) => setWageType(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 >
                   {WAGE_TYPES.map((type: string) => (
                     <option key={type} value={type}>
@@ -556,47 +556,47 @@ export const EditJobPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Wage Amount (₹) *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Wage Amount (₹) *</label>
                 <input
                   type="number"
                   min={0}
                   disabled={!isOwner || isClosed}
                   value={wageAmount}
                   onChange={(e) => setWageAmount(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Start Date *</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Start Date *</label>
                 <input
                   type="date"
                   disabled={!isOwner || isClosed}
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">End Date</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">End Date</label>
                 <input
                   type="date"
                   disabled={!isOwner || isClosed}
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-agri-primary disabled:opacity-50"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 4: Location & Facilities */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <MapPin className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold text-white">Farm Location & Facilities</h2>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <MapPin className="w-6 h-6 text-agri-primary" />
+              <h2 className="text-lg font-bold font-heading text-slate-900">Farm Location & Facilities</h2>
             </div>
 
             <JobLocationSelector
@@ -624,16 +624,16 @@ export const EditJobPage: React.FC = () => {
             />
 
             {/* Checkbox Facilities */}
-            <div className="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   disabled={!isOwner || isClosed}
                   checked={accommodationProvided}
                   onChange={(e) => setAccommodationProvided(e.target.checked)}
-                  className="w-5 h-5 accent-emerald-500 rounded bg-slate-950 border-slate-800"
+                  className="w-5 h-5 accent-agri-primary rounded border-slate-300"
                 />
-                <span className="text-sm font-medium text-slate-200">Accommodation Provided</span>
+                <span className="text-sm font-medium text-slate-700">Accommodation Provided</span>
               </label>
 
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -642,9 +642,9 @@ export const EditJobPage: React.FC = () => {
                   disabled={!isOwner || isClosed}
                   checked={foodProvided}
                   onChange={(e) => setFoodProvided(e.target.checked)}
-                  className="w-5 h-5 accent-emerald-500 rounded bg-slate-950 border-slate-800"
+                  className="w-5 h-5 accent-agri-primary rounded border-slate-300"
                 />
-                <span className="text-sm font-medium text-slate-200">Food Provided</span>
+                <span className="text-sm font-medium text-slate-700">Food Provided</span>
               </label>
 
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -653,27 +653,27 @@ export const EditJobPage: React.FC = () => {
                   disabled={!isOwner || isClosed}
                   checked={transportProvided}
                   onChange={(e) => setTransportProvided(e.target.checked)}
-                  className="w-5 h-5 accent-emerald-500 rounded bg-slate-950 border-slate-800"
+                  className="w-5 h-5 accent-agri-primary rounded border-slate-300"
                 />
-                <span className="text-sm font-medium text-slate-200">Transport Provided</span>
+                <span className="text-sm font-medium text-slate-700">Transport Provided</span>
               </label>
             </div>
           </div>
 
           {/* Section 5: Farm & Job Gallery Images */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <ImageIcon className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold text-white">Farm & Job Gallery Images</h2>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <ImageIcon className="w-6 h-6 text-agri-primary" />
+              <h2 className="text-lg font-bold font-heading text-slate-900">Farm & Job Gallery Images</h2>
             </div>
 
             {/* Existing Images */}
             {existingImages.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Current Images</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Current Images</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {existingImages.map((imgUrl, idx) => (
-                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-800 aspect-video">
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-video">
                       <img src={imgUrl} alt="Farm sample" className="w-full h-full object-cover" />
                       {isOwner && !isClosed && (
                         <button
@@ -693,16 +693,16 @@ export const EditJobPage: React.FC = () => {
             {/* Upload New File Input */}
             {isOwner && !isClosed && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Upload Additional Photos</label>
-                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-800 hover:border-emerald-500/50 rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition-all">
-                  <Upload className="w-8 h-8 text-emerald-400 mb-2" />
-                  <span className="text-sm font-medium text-slate-300">Click to select new farm/job photos</span>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Upload Additional Photos</label>
+                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 hover:border-agri-primary rounded-xl cursor-pointer bg-slate-50 hover:bg-emerald-50/50 transition-all">
+                  <Upload className="w-8 h-8 text-agri-primary mb-2" />
+                  <span className="text-sm font-medium text-slate-700">Click to select new farm/job photos</span>
                   <span className="text-xs text-slate-500 mt-1">JPEG, PNG, WEBP up to 5MB</span>
                   <input type="file" multiple accept="image/*" onChange={handleImageFileChange} className="hidden" />
                 </label>
 
                 {newFarmFiles.length > 0 && (
-                  <p className="text-xs text-emerald-400 font-medium pt-2">
+                  <p className="text-xs text-agri-primary font-semibold pt-2">
                     {newFarmFiles.length} new image file(s) selected for upload.
                   </p>
                 )}
@@ -711,8 +711,8 @@ export const EditJobPage: React.FC = () => {
           </div>
 
           {/* Section 6: Status Management */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Job Vacancy Status</h3>
+          <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Job Vacancy Status</h3>
             <div className="flex items-center space-x-4">
               {(['Active', 'Paused', 'Closed'] as const).map((st) => (
                 <button
@@ -723,11 +723,11 @@ export const EditJobPage: React.FC = () => {
                   className={`px-4 py-2.5 rounded-xl font-medium text-xs transition-all ${
                     status === st
                       ? st === 'Active'
-                        ? 'bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/20'
+                        ? 'bg-agri-primary text-white font-bold shadow-soft-sm'
                         : st === 'Paused'
-                        ? 'bg-amber-500 text-slate-950 font-bold shadow-lg shadow-amber-500/20'
-                        : 'bg-rose-500 text-white font-bold shadow-lg shadow-rose-500/20'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                        ? 'bg-amber-500 text-white font-bold shadow-soft-sm'
+                        : 'bg-rose-600 text-white font-bold shadow-soft-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
                   {st}
@@ -737,11 +737,11 @@ export const EditJobPage: React.FC = () => {
           </div>
 
           {/* Action Footer */}
-          <div className="flex items-center justify-end space-x-4 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-4 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium text-sm transition-colors"
+              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition-colors"
             >
               Cancel
             </button>
@@ -749,7 +749,7 @@ export const EditJobPage: React.FC = () => {
             <button
               type="submit"
               disabled={!isOwner || isClosed || submitting}
-              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 flex items-center space-x-2"
+              className="px-8 py-3 bg-agri-primary hover:bg-agri-hover disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-all shadow-agri-glow flex items-center space-x-2"
             >
               {submitting ? (
                 <>

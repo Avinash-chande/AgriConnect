@@ -18,9 +18,11 @@ import {
   Ban,
   Building,
   Award,
+  MessageSquare,
 } from 'lucide-react';
 import { ApplicationStatusTimeline } from './ApplicationStatusTimeline';
 import type { JobApplication } from '../../types/application';
+import { getOrCreateConversation } from '../../services/chatService';
 
 interface ApplicationDetailsModalProps {
   application: JobApplication | null;
@@ -303,6 +305,26 @@ export const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = (
             </button>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {(application.status === 'Accepted' || application.status === 'Hired' || application.status === 'Completed') && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const workerId = (worker as any)?._id || worker;
+                      const farmerId = (farmer as any)?._id || farmer;
+                      const jobId = (job as any)?._id || job;
+                      const conv = await getOrCreateConversation({ workerId, farmerId, jobId });
+                      window.location.href = `/chat/${conv._id}`;
+                    } catch (err: any) {
+                      console.error('Failed to open chat:', err);
+                    }
+                  }}
+                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Chat Now
+                </button>
+              )}
+
               {canWithdraw && onWithdraw && (
                 <button
                   onClick={() => { onWithdraw(application); onClose(); }}

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { aiService } from '../../services/aiService';
 import type { AiMessageItem } from '../../services/aiService';
 import { useAuth } from '../../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const AiAssistantWidget: React.FC = () => {
   const { user } = useAuth();
@@ -190,28 +192,147 @@ You can ask me about:
           </div>
 
           {/* Messages Body */}
+          {/* Messages Body */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3.5 text-sm bg-slate-900/90">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
               >
                 {msg.role === 'assistant' && (
                   <div className="w-7 h-7 rounded-full bg-emerald-600/40 border border-emerald-400/30 flex items-center justify-center text-sm shrink-0 mt-0.5">
                     🌱
                   </div>
                 )}
+
                 <div
-                  className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${
-                    msg.role === 'user'
-                      ? 'bg-emerald-600 text-white rounded-br-none'
-                      : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
-                  }`}
+                  className={`max-w-[82%] min-w-0 px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm overflow-hidden ${msg.role === 'user'
+                    ? 'bg-emerald-600 text-white rounded-br-none'
+                    : 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-bl-none'
+                    }`}
                 >
-                  {msg.content || (isStreaming && index === messages.length - 1 ? 'Thinking...' : '')}
+                  {msg.content ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => (
+                          <p className="mb-3 last:mb-0 leading-6">
+                            {children}
+                          </p>
+                        ),
+
+                        strong: ({ children }) => (
+                          <strong className="font-bold text-white">
+                            {children}
+                          </strong>
+                        ),
+
+                        em: ({ children }) => (
+                          <em className="italic text-slate-300">
+                            {children}
+                          </em>
+                        ),
+
+                        h1: ({ children }) => (
+                          <h1 className="text-lg font-bold text-white mt-2 mb-3">
+                            {children}
+                          </h1>
+                        ),
+
+                        h2: ({ children }) => (
+                          <h2 className="text-base font-bold text-white mt-3 mb-2">
+                            {children}
+                          </h2>
+                        ),
+
+                        h3: ({ children }) => (
+                          <h3 className="font-bold text-white mt-2 mb-2">
+                            {children}
+                          </h3>
+                        ),
+
+                        ul: ({ children }) => (
+                          <ul className="list-disc ml-5 mb-3 space-y-1.5">
+                            {children}
+                          </ul>
+                        ),
+
+                        ol: ({ children }) => (
+                          <ol className="list-decimal ml-5 mb-3 space-y-1.5">
+                            {children}
+                          </ol>
+                        ),
+
+                        li: ({ children }) => (
+                          <li className="pl-1 leading-6">
+                            {children}
+                          </li>
+                        ),
+
+                        // TABLE
+                        table: ({ children }) => (
+                          <div className="my-3 w-full overflow-x-auto rounded-lg border border-slate-600">
+                            <table className="w-full min-w-[600px] border-collapse text-xs">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+
+                        thead: ({ children }) => (
+                          <thead className="bg-slate-700">
+                            {children}
+                          </thead>
+                        ),
+
+                        tbody: ({ children }) => (
+                          <tbody>
+                            {children}
+                          </tbody>
+                        ),
+
+                        tr: ({ children }) => (
+                          <tr className="border-b border-slate-700 last:border-b-0">
+                            {children}
+                          </tr>
+                        ),
+
+                        th: ({ children }) => (
+                          <th className="px-3 py-2 text-left font-bold text-emerald-300 whitespace-nowrap">
+                            {children}
+                          </th>
+                        ),
+
+                        td: ({ children }) => (
+                          <td className="px-3 py-2 align-top text-slate-200 leading-5">
+                            {children}
+                          </td>
+                        ),
+
+                        code: ({ children }) => (
+                          <code className="bg-slate-700 px-1.5 py-0.5 rounded text-emerald-300">
+                            {children}
+                          </code>
+                        ),
+
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-4 border-emerald-500 pl-3 my-3 text-slate-300 italic">
+                            {children}
+                          </blockquote>
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  ) : (
+                    isStreaming && index === messages.length - 1
+                      ? 'Thinking...'
+                      : ''
+                  )}
                 </div>
               </div>
             ))}
+
             <div ref={messagesEndRef} />
           </div>
 

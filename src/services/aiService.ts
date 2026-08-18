@@ -96,12 +96,14 @@ export const aiService = {
     try {
       const response = await fetch(`${API_BASE_URL}/ai/chat/stream`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message, conversationId, systemPromptType }),
       });
+
 
       if (!response.ok) {
         throw new Error(`Server returned HTTP ${response.status}`);

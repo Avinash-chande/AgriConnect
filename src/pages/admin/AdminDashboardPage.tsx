@@ -23,7 +23,7 @@ import {
 export const AdminDashboardPage: React.FC = () => {
   const [auditPage, setAuditPage] = useState(1);
 
-  const { data: dashData, isLoading, error } = useQuery({
+  const { data: dashData, isLoading, error, refetch } = useQuery({
     queryKey: ['adminDashboard', auditPage],
     queryFn: () => getAdminDashboardApi(),
     refetchInterval: 30000,
@@ -36,23 +36,39 @@ export const AdminDashboardPage: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Welcome Hero Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl">
+        <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary border border-emerald-600 rounded-3xl p-6 relative overflow-hidden shadow-soft-lg text-white">
           <div className="relative z-10 max-w-2xl space-y-2">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-mono border border-emerald-500/20">
+            <span className="px-3 py-1 rounded-full bg-white/10 text-emerald-100 text-xs font-mono border border-white/20 backdrop-blur-sm">
               AgriConnect Production Telemetry Engine
             </span>
             <h2 className="text-2xl font-bold font-heading text-white">Platform Command Center</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-emerald-100 leading-relaxed">
               Real-time operational metrics across Users, Jobs, Applications, System A Trust Verification, System B Aadhaar e-KYC, Financial Revenue, and Security Audits.
             </p>
           </div>
         </div>
 
+        {/* Error State Banner */}
+        {error && (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-between text-xs text-rose-300">
+            <div className="flex items-center space-x-2">
+              <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
+              <span>Failed to fetch real-time dashboard telemetry. Please check API connection.</span>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl font-bold transition text-rose-200"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Loading State */}
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-28 bg-slate-900 rounded-2xl animate-pulse border border-slate-800" />
+              <div key={i} className="h-28 bg-white rounded-2xl animate-pulse border border-slate-200 shadow-soft-sm" />
             ))}
           </div>
         )}
@@ -68,23 +84,23 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="Total Platform Users"
-                value={m.totalUsers.toLocaleString()}
-                subtitle={`${m.farmers} Farmers • ${m.workers} Workers`}
+                value={(m.totalUsers ?? 0).toLocaleString()}
+                subtitle={`${m.farmers ?? 0} Farmers • ${m.workers ?? 0} Workers`}
                 icon={Users}
                 color="emerald"
               />
 
               <StatCard
                 title="Skill Verified Workers (System A)"
-                value={m.verifiedWorkers.toLocaleString()}
-                subtitle={`${m.trustedWorkers} Trusted Workers (80+ Score)`}
+                value={(m.verifiedWorkers ?? 0).toLocaleString()}
+                subtitle={`${m.trustedWorkers ?? 0} Trusted Workers (80+ Score)`}
                 icon={ShieldCheck}
                 color="emerald"
               />
 
               <StatCard
                 title="Identity Verified Workers (System B)"
-                value={m.identityVerifiedWorkers.toLocaleString()}
+                value={(m.identityVerifiedWorkers ?? 0).toLocaleString()}
                 subtitle="UIDAI Paperless e-KYC Passed"
                 icon={IdCard}
                 color="blue"
@@ -92,7 +108,7 @@ export const AdminDashboardPage: React.FC = () => {
 
               <StatCard
                 title="Active Premium Subscribers"
-                value={m.premiumUsers.toLocaleString()}
+                value={(m.premiumUsers ?? 0).toLocaleString()}
                 subtitle="Pro Membership Active"
                 icon={Crown}
                 color="amber"
@@ -100,7 +116,7 @@ export const AdminDashboardPage: React.FC = () => {
 
               <StatCard
                 title="Total Job Vacancies"
-                value={m.totalJobs.toLocaleString()}
+                value={(m.totalJobs ?? 0).toLocaleString()}
                 subtitle="Agriculture & Equipment Jobs"
                 icon={Briefcase}
                 color="blue"
@@ -108,24 +124,24 @@ export const AdminDashboardPage: React.FC = () => {
 
               <StatCard
                 title="Job Applications & Hires"
-                value={m.applications.toLocaleString()}
-                subtitle={`${m.hires} Candidates Successfully Hired`}
+                value={(m.applications ?? 0).toLocaleString()}
+                subtitle={`${m.hires ?? 0} Candidates Successfully Hired`}
                 icon={FileCheck}
                 color="purple"
               />
 
               <StatCard
                 title="Pending Verification Queue"
-                value={(m.pendingCertificates + m.pendingIdentityVerifications).toString()}
-                subtitle={`${m.pendingCertificates} Certs • ${m.pendingIdentityVerifications} Aadhaar KYC`}
+                value={((m.pendingCertificates ?? 0) + (m.pendingIdentityVerifications ?? 0)).toString()}
+                subtitle={`${m.pendingCertificates ?? 0} Certs • ${m.pendingIdentityVerifications ?? 0} Aadhaar KYC`}
                 icon={FileText}
                 color="amber"
               />
 
               <StatCard
                 title="Gross Platform Revenue"
-                value={`₹${(m.revenue || 0).toLocaleString('en-IN')}`}
-                subtitle={`₹${(m.monthlyRevenue || 0).toLocaleString('en-IN')} this month`}
+                value={`₹${(m.revenue ?? 0).toLocaleString('en-IN')}`}
+                subtitle={`₹${(m.monthlyRevenue ?? 0).toLocaleString('en-IN')} this month`}
                 icon={IndianRupee}
                 color="emerald"
               />

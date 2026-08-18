@@ -221,11 +221,11 @@ export const PaymentDetailsPage: React.FC = () => {
         )}
 
         {/* PCI Security Guarantee Card */}
-        <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 shadow-md flex items-start gap-4">
-          <Lock className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
+        <div className="bg-emerald-50 border border-emerald-200 text-slate-800 rounded-3xl p-6 shadow-soft-sm flex items-start gap-4">
+          <Lock className="w-6 h-6 text-agri-primary shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
-            <p className="font-bold text-white text-sm">Strict PCI-DSS Compliance & Secrecy Guarantee</p>
-            <p className="text-slate-400">
+            <p className="font-bold text-slate-900 font-heading text-sm">Strict PCI-DSS Compliance & Secrecy Guarantee</p>
+            <p className="text-slate-600">
               AgriConnect enforces PCI-DSS standards. Raw card numbers, CVVs, PINs, and gateway secrets are strictly forbidden from being stored in our database or exposed in responses.
             </p>
           </div>

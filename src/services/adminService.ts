@@ -14,8 +14,8 @@ import type {
 
 // Dashboard
 export const getAdminDashboardApi = async () => {
-  const res = await api.get<{ data: { kpis: AdminDashboardKpis } }>('/admin/dashboard');
-  return res.data.data.kpis;
+  const res = await api.get<{ data: any }>('/admin/dashboard');
+  return res.data.data;
 };
 
 // Users

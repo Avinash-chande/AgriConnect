@@ -139,25 +139,25 @@ export const SubscriptionManagementPage: React.FC = () => {
         </div>
 
         {/* Current Plan Overview Card */}
-        <div className="bg-slate-900 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-agri-primary text-white rounded-3xl p-8 shadow-soft-lg relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                     isPremium && status === 'active'
-                      ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30'
+                      ? 'bg-white/20 text-white border border-white/30 backdrop-blur-sm'
                       : status === 'cancelled'
-                      ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      ? 'bg-amber-500/30 text-amber-200 border border-amber-400/40 backdrop-blur-sm'
+                      : 'bg-white/10 text-emerald-100 border border-white/20 backdrop-blur-sm'
                   }`}
                 >
                   {isPremium ? `Active ${status}` : 'Free Plan'}
                 </span>
-                {isPremium && <Crown className="w-5 h-5 text-amber-400" />}
+                {isPremium && <Crown className="w-5 h-5 text-amber-300" />}
               </div>
 
-              <h2 className="text-2xl font-black tracking-tight text-white">
+              <h2 className="text-2xl font-black font-heading tracking-tight text-white">
                 {isPremium ? planObj.name : 'AgriConnect Free Tier'}
               </h2>
 

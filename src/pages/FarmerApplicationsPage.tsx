@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Sparkles,
   Eye,
+  MessageSquare,
 } from 'lucide-react';
 import {
   getFarmerApplications,
@@ -21,6 +22,7 @@ import {
   acceptApplication,
   rejectApplication,
 } from '../services/applicationService';
+import { getOrCreateConversation } from '../services/chatService';
 import type { JobApplication, ApplicationStatus } from "../types/application";
 import { ApplicationStatusTimeline } from '../components/applications/ApplicationStatusTimeline';
 import { ApplicationDetailsModal } from '../components/applications/ApplicationDetailsModal';
@@ -430,6 +432,26 @@ export const FarmerApplicationsPage: React.FC = () => {
                         Reject
                       </button>
                     </div>
+                  )}
+
+                  {(app.status === 'Accepted' || app.status === 'Hired' || app.status === 'Completed') && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const workerId = (app.worker as any)?._id || app.worker;
+                          const farmerId = (app.farmer as any)?._id || app.farmer;
+                          const jobId = (app.job as any)?._id || app.job;
+                          const conv = await getOrCreateConversation({ workerId, farmerId, jobId });
+                          window.location.href = `/chat/${conv._id}`;
+                        } catch (err: any) {
+                          console.error('Failed to open chat:', err);
+                        }
+                      }}
+                      className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 shadow-soft-sm"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Chat with Worker
+                    </button>
                   )}
 
                   {/* Timeline & Details Toggle */}
