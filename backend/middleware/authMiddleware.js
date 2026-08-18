@@ -45,6 +45,36 @@ export const protect = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * Optional Auth Middleware: Attaches req.user if authenticated, or a guest user object if unauthenticated/token invalid
+ */
+const GUEST_USER_ID = '000000000000000000000000';
+
+export const protectOrGuest = asyncHandler(async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
+  }
+
+  if (!token) {
+    req.user = { _id: GUEST_USER_ID, role: 'guest', fullName: 'Guest Visitor' };
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, jwtConfig.accessSecret);
+    const userId = decoded.id || decoded._id;
+    const currentUser = await User.findOne({ _id: userId, isDeleted: { $ne: true } });
+    req.user = currentUser || { _id: GUEST_USER_ID, role: 'guest', fullName: 'Guest Visitor' };
+    next();
+  } catch (error) {
+    req.user = { _id: GUEST_USER_ID, role: 'guest', fullName: 'Guest Visitor' };
+    next();
+  }
+});
+
+/**
  * Authorize roles middleware
  */
 export const authorize = (...roles) => {

@@ -5,7 +5,7 @@ import {
   processStreamChatMessage
 } from '../services/aiChatService.js';
 
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, protectOrGuest } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/health', (req, res) => {
 
 
 // Normal AI chat
-router.post('/chat', protect, async (req, res, next) => {
+router.post('/chat', protectOrGuest, async (req, res, next) => {
   try {
     const result = await processChatMessage(
       req.user._id,
@@ -38,7 +38,7 @@ router.post('/chat', protect, async (req, res, next) => {
 
 
 // Streaming AI chat
-router.post('/chat/stream', protect, async (req, res, next) => {
+router.post('/chat/stream', protectOrGuest, async (req, res, next) => {
   try {
     await processStreamChatMessage(
       req.user._id,

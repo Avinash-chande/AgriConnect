@@ -81,7 +81,13 @@ const allowedOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || origin === allowedOrigin || process.env.NODE_ENV === 'test') {
+      if (
+        !origin ||
+        process.env.NODE_ENV !== 'production' ||
+        origin === allowedOrigin ||
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1')
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Blocked by CORS policy'));
