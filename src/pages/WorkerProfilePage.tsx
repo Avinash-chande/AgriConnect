@@ -251,6 +251,7 @@ export const WorkerProfilePage: React.FC<WorkerProfilePageProps> = ({ addToast }
     try {
       const payload = {
         name: fullName,
+        fullName,
         title,
         bio,
         skills,

@@ -201,6 +201,7 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
     try {
       const payload = {
         name: fullName,
+        fullName,
         farmName,
         farmDescription,
         farmSize: Number(farmSize),

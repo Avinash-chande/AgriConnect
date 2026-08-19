@@ -47,8 +47,8 @@ export const createProfile = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateProfile = asyncHandler(async (req, res) => {
-  const profile = await updateProfileService(req.user, req.body);
-  return sendResponse(res, 200, 'Profile updated successfully', { profile });
+  const result = await updateProfileService(req.user, req.body);
+  return sendResponse(res, 200, 'Profile updated successfully', result);
 });
 
 /**

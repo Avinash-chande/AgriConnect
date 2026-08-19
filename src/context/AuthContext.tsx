@@ -49,31 +49,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const normalizeUser = (rawUser: any): UserAccount => {
   if (!rawUser) return rawUser;
-  const name = rawUser.name || rawUser.fullName || rawUser.email || 'User';
-  const fullName = rawUser.fullName || rawUser.name || name;
+  const nameVal = rawUser.name || rawUser.fullName || rawUser.email || 'User';
   const phone = rawUser.phone || rawUser.mobile || '';
   const mobile = rawUser.mobile || rawUser.phone || phone;
   return {
     ...rawUser,
-    name,
-    fullName,
+    name: nameVal,
+    fullName: nameVal,
     phone,
     mobile,
+    role: rawUser.role || 'farmer',
   };
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const normalizeUser = (userData: any): UserAccount => {
-    const nameVal = userData.fullName || userData.name || 'User';
-    return {
-      ...userData,
-      fullName: nameVal,
-      role: userData.role || 'farmer',
-    };
-  };
 
   const setSession = (userData: UserAccount, token?: string) => {
     const normalized = normalizeUser(userData);

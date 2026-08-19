@@ -19,20 +19,42 @@ export const getMyProfileService = async (user) => {
   const roleLower = user?.role?.toLowerCase() || '';
   const userId = user._id || user.id;
 
-  let profile = user.farmerProfile || user.workerProfile || null;
+  const freshUser = await User.findById(userId).select('-password');
+  const currentUser = freshUser || user;
+
+  let profile = currentUser.farmerProfile || currentUser.workerProfile || null;
 
   if (!profile) {
     if (roleLower === 'farmer') {
       profile = await FarmerProfile.findOne({ owner: userId });
+      if (!profile) {
+        profile = await FarmerProfile.create({
+          owner: userId,
+          farmName: `${currentUser.name}'s Organic Farm`,
+          farmSize: 10,
+          farmSizeUnit: 'Acres',
+          cropTypes: ['Wheat', 'Basmati Rice'],
+        });
+      }
     } else if (roleLower === 'worker') {
       profile = await WorkerProfile.findOne({ owner: userId });
+      if (!profile) {
+        profile = await WorkerProfile.create({
+          owner: userId,
+          title: 'Agricultural Specialist',
+          skills: ['General Labor'],
+          expectedDailyWage: 650,
+          preferredDistrict: 'Amritsar',
+          preferredState: 'Punjab',
+        });
+      }
     }
   }
 
-  const completionPercentage = calculateProfileCompletion(user, profile);
+  const completionPercentage = calculateProfileCompletion(currentUser, profile);
 
   return {
-    user,
+    user: currentUser,
     profile,
     completionPercentage,
   };
@@ -79,28 +101,60 @@ export const createProfileService = async (user, profileData) => {
 /**
  * Update profile of current logged-in user
  */
-export const updateProfileService = async (user, data) => {
+export const updateProfileService = async (user, data = {}) => {
   const roleLower = user?.role?.toLowerCase() || '';
   const userId = user._id || user.id;
 
+  const { name, fullName, ...profileData } = data;
+  const nameToUpdate = name || fullName;
+
+  // 1. Update user full name if provided in payload (data.name or data.fullName)
+  if (nameToUpdate && typeof nameToUpdate === 'string' && nameToUpdate.trim()) {
+    const cleanName = nameToUpdate.trim();
+    if (cleanName !== user.name) {
+      user.name = cleanName;
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+
   let profile = null;
 
+  // 2. Handle Farmer Profile updates
   if (roleLower === 'farmer') {
-    profile = await FarmerProfile.findOneAndUpdate(
-      { owner: userId },
-      { $set: data },
-      { new: true, runValidators: true }
-    );
-  } else if (roleLower === 'worker') {
-    profile = await WorkerProfile.findOneAndUpdate(
-      { owner: userId },
-      { $set: data },
-      { new: true, runValidators: true }
-    );
+    profile = await FarmerProfile.findOne({ owner: userId });
+    if (!profile) {
+      profile = new FarmerProfile({
+        owner: userId,
+        farmName: profileData.farmName || `${user.name}'s Organic Farm`,
+        farmSize: profileData.farmSize !== undefined ? Number(profileData.farmSize) : 10,
+        ...profileData,
+      });
+    } else {
+      Object.assign(profile, profileData);
+    }
+    await profile.save();
+  } 
+  // 3. Handle Worker Profile updates
+  else if (roleLower === 'worker') {
+    profile = await WorkerProfile.findOne({ owner: userId });
+    if (!profile) {
+      profile = new WorkerProfile({
+        owner: userId,
+        title: profileData.title || 'Agricultural Specialist',
+        skills: profileData.skills || ['General Labor'],
+        expectedDailyWage: profileData.expectedDailyWage !== undefined ? Number(profileData.expectedDailyWage) : 650,
+        preferredDistrict: profileData.preferredDistrict || 'Amritsar',
+        preferredState: profileData.preferredState || 'Punjab',
+        ...profileData,
+      });
+    } else {
+      Object.assign(profile, profileData);
+    }
+    await profile.save();
   }
 
   if (!profile) {
-    throw new AppError('Profile not found for update.', 404);
+    throw new AppError('Invalid role or profile could not be updated.', 400);
   }
 
   cacheService.clearPrefix('profile:');
@@ -111,7 +165,7 @@ export const updateProfileService = async (user, data) => {
     await user.save({ validateBeforeSave: false });
   }
 
-  return { profile, completionPercentage, profileCompleted: user.profileCompleted };
+  return { user, profile, completionPercentage, profileCompleted: user.profileCompleted };
 };
 
 /**
@@ -147,6 +201,8 @@ export const getPublicProfileService = async (identifier) => {
   let farmerProf = null;
   let workerProf = null;
 
+  let userDoc = null;
+
   if (mongoose.Types.ObjectId.isValid(identifier)) {
     farmerProf = await FarmerProfile.findOne({ owner: identifier }).populate(
       'owner',
@@ -157,6 +213,9 @@ export const getPublicProfileService = async (identifier) => {
         'owner',
         'name email mobile role profileImage isVerified profileCompleted'
       );
+    }
+    if (!farmerProf && !workerProf) {
+      userDoc = await User.findById(identifier).select('name email mobile role profileImage isVerified profileCompleted');
     }
   }
 
@@ -170,6 +229,30 @@ export const getPublicProfileService = async (identifier) => {
         'owner',
         'name email mobile role profileImage isVerified profileCompleted'
       );
+    }
+  }
+
+  if (!farmerProf && !workerProf && userDoc) {
+    const roleLower = userDoc.role?.toLowerCase() || '';
+    if (roleLower === 'farmer') {
+      farmerProf = await FarmerProfile.create({
+        owner: userDoc._id,
+        farmName: `${userDoc.name}'s Organic Farm`,
+        farmSize: 10,
+        farmSizeUnit: 'Acres',
+        cropTypes: ['Wheat', 'Basmati Rice'],
+      });
+      farmerProf.owner = userDoc;
+    } else if (roleLower === 'worker') {
+      workerProf = await WorkerProfile.create({
+        owner: userDoc._id,
+        title: 'Agricultural Specialist',
+        skills: ['General Labor'],
+        expectedDailyWage: 650,
+        preferredDistrict: 'Amritsar',
+        preferredState: 'Punjab',
+      });
+      workerProf.owner = userDoc;
     }
   }
 
