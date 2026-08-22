@@ -17,6 +17,7 @@ import {
   updateLocationPrivacy,
   deleteSavedLocation,
 } from '../controllers/profileController.js';
+import { getFeaturedWorkersController } from '../controllers/workerController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { uploadSingleImage, uploadMultipleImages } from '../middleware/uploadMiddleware.js';
 import { validateProfileQuery, validateFarmLocationInput } from '../validators/profileValidator.js';
@@ -35,6 +36,7 @@ export const publicCacheControl = (req, res, next) => {
  * Public Presence & Profile Routes
  */
 router.get('/presence/:userId', getUserPresence);
+router.get('/featured-workers', publicCacheControl, getFeaturedWorkersController);
 router.get('/search', publicCacheControl, validateProfileQuery, searchProfiles);
 router.get('/filter', publicCacheControl, validateProfileQuery, filterProfiles);
 router.get('/user/:identifier', publicCacheControl, getUserProfile);
@@ -81,6 +83,28 @@ router.post('/upload/photo', protect, uploadRateLimiter, uploadSingleImage, uplo
 router.post('/upload-photo', protect, uploadRateLimiter, uploadSingleImage, uploadProfileImage);
 
 router.post(
+  '/upload-avatar',
+  protect,
+  uploadRateLimiter,
+  uploadSingleImage,
+  uploadProfileImage
+);
+router.post(
+  '/upload/photo',
+  protect,
+  uploadRateLimiter,
+  uploadSingleImage,
+  uploadProfileImage
+);
+
+router.post(
+  '/upload-photo',
+  protect,
+  uploadRateLimiter,
+  uploadSingleImage,
+  uploadProfileImage
+);
+router.post(
   '/upload/farm',
   protect,
   authorize(USER_ROLES.FARMER),
@@ -114,6 +138,6 @@ router.post(
   uploadCertificates
 );
 
-router.delete('/upload/image', protect, deleteImage);
+router.delete('/images', protect, deleteImage);
 
 export default router;

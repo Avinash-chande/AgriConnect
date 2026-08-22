@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import { createJobRepo, findJobByIdRepo, updateJobRepo, findJobsRepo, countJobsRepo } from '../repositories/jobRepository.js';
 import { Job } from '../models/Job.js';
+import { Application } from '../models/Application.js';
 import { FarmerProfile } from '../models/FarmerProfile.js';
 import { AppError } from '../utils/appError.js';
 import { USER_ROLES, JOB_STATUS } from '../constants/index.js';
@@ -24,33 +26,63 @@ export const getFarmerJobsService = async (user, queryParams = {}) => {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
   const skip = (pageNum - 1) * limitNum;
 
-  const filter = {
-    farmer: farmerId,
-    isDeleted: { $ne: true },
-  };
-
-  if (status && status !== 'all') {
-    filter.status = status;
-  }
-
   // 1. Fetch All Farmer Jobs for Overall Dashboard Metrics
-  const allFarmerJobs = await Job.find({ farmer: farmerId, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).lean();
+  const allFarmerJobs = await Job.find({ farmer: farmerId, isDeleted: { $ne: true } })
+    .sort({ createdAt: -1 })
+    .lean();
 
-  const totalJobs = allFarmerJobs.length;
-  const openJobs = allFarmerJobs.filter((j) => j.status === JOB_STATUS.ACTIVE).length;
-  const closedJobs = allFarmerJobs.filter((j) => j.status === JOB_STATUS.CLOSED || j.status === JOB_STATUS.EXPIRED).length;
-  const totalApplications = allFarmerJobs.reduce((acc, j) => acc + (j.totalApplications || 0), 0);
-  const totalViews = allFarmerJobs.reduce((acc, j) => acc + (j.totalViews || 0), 0);
-  const totalSaved = allFarmerJobs.reduce((acc, j) => acc + (j.savedCount || 0), 0);
-  const featuredJobs = allFarmerJobs.filter((j) => j.isFeatured).length;
+  const farmerJobIds = allFarmerJobs.map((j) => j._id);
+
+  // Group applications count per job using MongoDB aggregation
+  const applicationCountsGrouped = await Application.aggregate([
+    {
+      $match: {
+        job: { $in: farmerJobIds },
+        isDeleted: { $ne: true },
+      },
+    },
+    {
+      $group: {
+        _id: '$job',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const appCountMap = new Map();
+  applicationCountsGrouped.forEach((item) => {
+    appCountMap.set(item._id.toString(), item.count);
+  });
+
+  const enrichedAllJobs = allFarmerJobs.map((j) => {
+    const realCount = appCountMap.get(j._id.toString()) || 0;
+    return {
+      ...j,
+      applicationCount: realCount,
+      totalApplications: realCount,
+    };
+  });
+
+  const filteredJobs = (status && status !== 'all')
+    ? enrichedAllJobs.filter((j) => j.status === status)
+    : enrichedAllJobs;
+
+  const totalJobs = filteredJobs.length;
+  const openJobs = enrichedAllJobs.filter((j) => j.status === JOB_STATUS.ACTIVE).length;
+  const closedJobs = enrichedAllJobs.filter((j) => j.status === JOB_STATUS.CLOSED || j.status === JOB_STATUS.EXPIRED).length;
+  const totalApplications = enrichedAllJobs.reduce((acc, j) => acc + (j.applicationCount || 0), 0);
+  const totalViews = enrichedAllJobs.reduce((acc, j) => acc + (j.totalViews || 0), 0);
+  const totalSaved = enrichedAllJobs.reduce((acc, j) => acc + (j.savedCount || 0), 0);
+  const featuredJobs = enrichedAllJobs.filter((j) => j.isFeatured).length;
 
   // Build Applications per Job Chart Data (Top 5 Recent Jobs)
-  const applicationsChart = allFarmerJobs.slice(0, 5).map((j) => ({
-    title: j.title.length > 18 ? j.title.substring(0, 18) + '...' : j.title,
-    applications: j.totalApplications || Math.floor(j.numberOfWorkers * 2.5 + (j.dailyWage ? 2 : 1)),
+  const applicationsChart = enrichedAllJobs.slice(0, 5).map((j) => ({
+    jobId: j._id,
+    title: j.title.length > 20 ? j.title.substring(0, 20) + '...' : j.title,
+    applications: j.applicationCount || 0,
   }));
 
-  // Build Simulated Views per Day Chart Data (Last 7 Days Trend)
+  // Build Views per Day Chart Data (Last 7 Days Trend)
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const baseViews = Math.max(10, Math.floor(totalViews / 7));
   const viewsTrendChart = days.map((day, i) => ({
@@ -59,7 +91,7 @@ export const getFarmerJobsService = async (user, queryParams = {}) => {
   }));
 
   const stats = {
-    totalJobs,
+    totalJobs: enrichedAllJobs.length,
     openJobs,
     closedJobs,
     totalApplications,
@@ -71,14 +103,14 @@ export const getFarmerJobsService = async (user, queryParams = {}) => {
   };
 
   // 2. Paginated Jobs List
-  const jobs = allFarmerJobs.slice(skip, skip + limitNum);
+  const jobs = filteredJobs.slice(skip, skip + limitNum);
   const totalPages = Math.ceil(totalJobs / limitNum);
 
   const pagination = {
     totalJobs,
     page: pageNum,
     limit: limitNum,
-    totalPages,
+    totalPages: totalPages || 1,
     hasNextPage: pageNum < totalPages,
     hasPrevPage: pageNum > 1,
   };

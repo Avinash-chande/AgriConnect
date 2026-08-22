@@ -57,7 +57,6 @@ export const uploadProfilePhotoService = async (fileBuffer) => {
   return await uploadImageBuffer(fileBuffer, 'agriconnect/profiles', {
     transformation: [
       { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-      { quality: 'auto:good', fetch_format: 'auto' },
     ],
   });
 };
@@ -71,7 +70,6 @@ export const uploadFarmImagesService = async (fileBuffers) => {
     uploadImageBuffer(buffer, 'agriconnect/farms', {
       transformation: [
         { width: 1920, crop: 'limit' },
-        { quality: 'auto:good', fetch_format: 'auto' },
       ],
     })
   );
@@ -87,7 +85,6 @@ export const uploadJobImagesService = async (fileBuffers) => {
     uploadImageBuffer(buffer, 'agriconnect/jobs', {
       transformation: [
         { width: 1920, crop: 'limit' },
-        { quality: 'auto:good', fetch_format: 'auto' },
       ],
     })
   );
@@ -133,14 +130,13 @@ export const uploadAttachmentBuffer = (fileBuffer, mimetype, originalname, folde
 
 /**
  * 5. Certificate Documents Upload Service (Folder: agriconnect/certificates)
- * Max 1600px width limit with document sharpening & auto-format
+ * Max 1920px width limit with document sharpening & auto-format
  */
 export const uploadCertificateImagesService = async (fileBuffers) => {
   const promises = fileBuffers.map((buffer) =>
     uploadImageBuffer(buffer, 'agriconnect/certificates', {
       transformation: [
-        { width: 1600, crop: 'limit' },
-        { quality: 'auto:good', fetch_format: 'auto' },
+        { width: 1920, crop: 'limit' },
       ],
     })
   );

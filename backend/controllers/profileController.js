@@ -27,7 +27,7 @@ import { User } from '../models/User.js';
  * @access  Private
  */
 export const getMyProfile = asyncHandler(async (req, res) => {
-  const result = await getMyProfileService(req.user._id);
+  const result = await getMyProfileService(req.user);
   return sendResponse(res, 200, 'User profile retrieved successfully', result);
 });
 
@@ -37,8 +37,8 @@ export const getMyProfile = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const createProfile = asyncHandler(async (req, res) => {
-  const profile = await createProfileService(req.user, req.body);
-  return sendResponse(res, 201, 'Profile created successfully', { profile });
+  const result = await createProfileService(req.user, req.body);
+  return sendResponse(res, 201, 'Profile created successfully', result);
 });
 
 /**

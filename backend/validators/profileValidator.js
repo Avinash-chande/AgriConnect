@@ -48,24 +48,22 @@ export const validateFarmerProfileInput = [
     .isIn(IRRIGATION_TYPES)
     .withMessage(`Irrigation type must be one of: ${IRRIGATION_TYPES.join(', ')}`),
   body('farmAddress.district')
-    .trim()
-    .notEmpty()
-    .withMessage('District name is required'),
+    .optional({ checkFalsy: true })
+    .trim(),
   body('farmAddress.state')
-    .trim()
-    .notEmpty()
-    .withMessage('State name is required'),
+    .optional({ checkFalsy: true })
+    .trim(),
   body('farmAddress.pincode')
-    .optional()
-    .custom(isValidIndianPincode)
+    .optional({ checkFalsy: true })
+    .custom((val) => !val || isValidIndianPincode(val))
     .withMessage('Please enter a valid 6-digit Indian PIN code'),
   body('farmAddress.latitude')
-    .optional()
-    .isFloat({ min: -90, max: 90 })
+    .optional({ nullable: true })
+    .custom((val) => val === null || val === undefined || (typeof val === 'number' && val >= -90 && val <= 90))
     .withMessage('Latitude must be between -90 and 90'),
   body('farmAddress.longitude')
-    .optional()
-    .isFloat({ min: -180, max: 180 })
+    .optional({ nullable: true })
+    .custom((val) => val === null || val === undefined || (typeof val === 'number' && val >= -180 && val <= 180))
     .withMessage('Longitude must be between -180 and 180'),
   body('phone')
     .optional()

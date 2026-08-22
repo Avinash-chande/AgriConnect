@@ -39,11 +39,19 @@ export const registerFarmerService = async (data) => {
     farmName: farmName || `${userName}'s Organic Farm`,
     farmType: farmType || 'Grain & Wheat Cultivation',
     farmSize: totalAcreage || 5,
-    farmAddress: {
-      district: location ? location.split(',')[0].trim() : 'Amritsar',
-      state: location && location.includes(',') ? location.split(',')[1].trim() : 'Punjab',
-      addressLine: location || 'Punjab, India',
-    },
+    cropTypes: [],
+    livestock: [],
+    equipment: [],
+    farmImages: [],
+    workingDays: [],
+    farmAddress: location
+      ? {
+          district: location.split(',')[0].trim(),
+          state: location.includes(',') ? location.split(',')[1].trim() : '',
+          addressLine: location,
+          country: 'India',
+        }
+      : null,
     farmDescription: farmDescription || '',
   });
 

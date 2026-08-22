@@ -20,6 +20,10 @@ export const createEmailTransporter = () => {
  * Send Email helper function
  */
 export const sendEmail = async ({ to, subject, html, text }) => {
+  if (process.env.NODE_ENV === 'test') {
+    return { messageId: 'test-email-id-mock' };
+  }
+
   const transporter = createEmailTransporter();
 
   const mailOptions = {
