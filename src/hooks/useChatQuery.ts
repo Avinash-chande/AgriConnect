@@ -35,25 +35,60 @@ export const useConversationMessages = (
   useEffect(() => {
     if (!socket || !conversationId) return;
 
+    // 🔥 New message received
+    const handleNewMessage = (payload: any) => {
+      if (payload.conversationId === conversationId) {
+        queryClient.invalidateQueries({
+          queryKey: ['chatMessages', conversationId],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['conversations'],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['unreadChatCount'],
+        });
+      }
+    };
+
+    // ✅ Message delivered
     const handleDelivered = (payload: any) => {
       if (payload.conversationId === conversationId) {
-        queryClient.invalidateQueries({ queryKey: ['chatMessages', conversationId] });
+        queryClient.invalidateQueries({
+          queryKey: ['chatMessages', conversationId],
+        });
       }
     };
 
+    // 👁️ Message seen
     const handleSeen = (payload: any) => {
       if (payload.conversationId === conversationId) {
-        queryClient.invalidateQueries({ queryKey: ['chatMessages', conversationId] });
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        queryClient.invalidateQueries({ queryKey: ['unreadChatCount'] });
+        queryClient.invalidateQueries({
+          queryKey: ['chatMessages', conversationId],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['conversations'],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['unreadChatCount'],
+        });
       }
     };
 
+    // 🔥 Listen for new messages
+    socket.on('chat:message_received', handleNewMessage);
+
+    // Existing events
     socket.on('chat:message_delivered', handleDelivered);
     socket.on('chat:message_seen', handleSeen);
     socket.on('chat:read_receipt', handleSeen);
 
+    // 🧹 Cleanup listeners
     return () => {
+      socket.off('chat:message_received', handleNewMessage);
       socket.off('chat:message_delivered', handleDelivered);
       socket.off('chat:message_seen', handleSeen);
       socket.off('chat:read_receipt', handleSeen);

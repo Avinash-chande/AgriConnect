@@ -105,7 +105,9 @@ export const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({ conver
   const userRole = (user?.role || '').toLowerCase();
 
   const partner = userRole === 'farmer' ? conversation.worker : conversation.farmer;
-  const isOnline = partner?._id ? onlineUserIds.includes(partner._id) : false;
+  const isOnline = partner?._id
+    ? onlineUserIds.includes(String(partner._id))
+    : false;
 
   // React Query Hooks
   const { data, isLoading } = useConversationMessages(conversation._id, {
@@ -157,13 +159,13 @@ export const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({ conver
     const textToSend = messageText.trim();
     const attachments = pendingAttachment
       ? [
-          {
-            url: pendingAttachment.url,
-            fileType: pendingAttachment.fileType,
-            fileName: pendingAttachment.fileName,
-            fileSize: pendingAttachment.fileSize,
-          },
-        ]
+        {
+          url: pendingAttachment.url,
+          fileType: pendingAttachment.fileType,
+          fileName: pendingAttachment.fileName,
+          fileSize: pendingAttachment.fileSize,
+        },
+      ]
       : [];
 
     setMessageText('');
@@ -255,7 +257,11 @@ export const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({ conver
             <div className="text-[11px] text-emerald-400 font-medium flex items-center mt-0.5">
               <Briefcase className="w-3 h-3 mr-1 inline flex-shrink-0" />
               <span className="truncate max-w-[200px]">{conversation.job?.title || 'Job Vacancy'}</span>
-              <OnlineIndicator userId={partner?._id || ''} className="ml-2" />
+              <OnlineIndicator
+                userId={partner?._id ? String(partner._id) : ''}
+                isOnlineOverride={isOnline}
+                className="ml-2"
+              />
             </div>
           </div>
         </div>
@@ -342,11 +348,10 @@ export const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({ conver
                     className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] sm:max-w-[70%] rounded-2xl p-3 text-xs shadow-lg relative group ${
-                        isMe
-                          ? 'bg-emerald-700 text-white rounded-br-none border border-emerald-600/50'
-                          : 'bg-slate-900 border border-slate-800 text-slate-100 rounded-bl-none'
-                      } ${msg.isDeleted ? 'opacity-60 italic bg-slate-900 border-slate-800 text-slate-400' : ''}`}
+                      className={`max-w-[80%] sm:max-w-[70%] rounded-2xl p-3 text-xs shadow-lg relative group ${isMe
+                        ? 'bg-emerald-700 text-white rounded-br-none border border-emerald-600/50'
+                        : 'bg-slate-900 border border-slate-800 text-slate-100 rounded-bl-none'
+                        } ${msg.isDeleted ? 'opacity-60 italic bg-slate-900 border-slate-800 text-slate-400' : ''}`}
                     >
                       {/* File / Image / PDF Attachment Preview */}
                       {msg.attachments && msg.attachments.length > 0 && (
@@ -549,9 +554,8 @@ export const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({ conver
         <button
           type="button"
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className={`p-2 rounded-xl transition-colors ${
-            showEmojiPicker ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
+          className={`p-2 rounded-xl transition-colors ${showEmojiPicker ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
           title="Emoji picker"
         >
           <Smile className="w-5 h-5" />

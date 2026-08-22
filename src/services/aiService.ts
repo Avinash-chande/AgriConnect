@@ -92,7 +92,7 @@ export const aiService = {
     onDone: (data: { conversationId: string; usage?: any }) => void,
     onError: (err: Error) => void
   ) {
-    const token = localStorage.getItem('agri_access_token');
+    const token = localStorage.getItem('agri_access_token') || localStorage.getItem('token') || localStorage.getItem('agriconnect_token');
     try {
       const response = await fetch(`${API_BASE_URL}/ai/chat/stream`, {
         method: 'POST',
@@ -323,7 +323,7 @@ export const aiService = {
     onDone: (data: { conversationId: string; usage?: any }) => void,
     onError: (err: Error) => void
   ) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('agri_access_token') || localStorage.getItem('token') || localStorage.getItem('agriconnect_token');
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
     try {

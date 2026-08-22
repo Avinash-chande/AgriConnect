@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
 import { socketService } from '../services/socketService';
+import { SOCKET_EVENTS } from '../socket/socketEvents';
 import { useAuth } from './AuthContext';
 
 export interface NotificationPayload {
@@ -29,8 +30,8 @@ const SocketContext = createContext<SocketContextType>({
   onlineUserIds: [],
   latestNotification: null,
   latestStatusUpdate: null,
-  joinJobRoom: () => {},
-  leaveJobRoom: () => {},
+  joinJobRoom: () => { },
+  leaveJobRoom: () => { },
 });
 
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -84,15 +85,35 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const unsubPresence = socketService.onPresenceChange(
         (data) => {
           if (data.userId) {
-            setOnlineUserIds((prev) => Array.from(new Set([...prev, data.userId])));
+            const userId = String(data.userId);
+
+            setOnlineUserIds((prev) =>
+              Array.from(new Set([...prev, userId]))
+            );
           }
         },
         (data) => {
           if (data.userId) {
-            setOnlineUserIds((prev) => prev.filter((id) => id !== data.userId));
+            const userId = String(data.userId);
+
+            setOnlineUserIds((prev) =>
+              prev.filter((id) => String(id) !== userId)
+            );
           }
         }
       );
+
+      // Get users who are already online
+      sock.emit(SOCKET_EVENTS.GET_ONLINE_USERS, (response: any) => {
+        if (
+          response?.success &&
+          Array.isArray(response.data?.onlineUserIds)
+        ) {
+          setOnlineUserIds(
+            response.data.onlineUserIds.map((id: string) => String(id))
+          );
+        }
+      });
 
       return () => {
         sock.off('connect', handleConnect);
