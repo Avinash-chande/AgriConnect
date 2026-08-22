@@ -26,8 +26,10 @@ const normalizeLocationObject = (item, rawLat, rawLng) => {
   const longitude = typeof item.lon !== 'undefined' ? Number(item.lon) : Number(rawLng);
 
   const address = item.name || addr.road || addr.suburb || '';
-  const village = addr.village || addr.suburb || addr.town || addr.hamlet || addr.neighbourhood || '';
-  const district = addr.state_district || addr.county || addr.district || addr.city || '';
+  // Village / Locality priority: village -> town -> city -> municipality -> suburb -> neighbourhood -> hamlet
+  const village = addr.village || addr.town || addr.city || addr.municipality || addr.suburb || addr.neighbourhood || addr.hamlet || '';
+  // District priority: district -> state_district -> county -> city_district -> city
+  const district = addr.district || addr.state_district || addr.county || addr.city_district || addr.city || '';
   const state = addr.state || '';
   const country = addr.country || 'India';
   const pincode = addr.postcode || '';
@@ -311,17 +313,17 @@ export const reverseGeocodeService = async (latitude, longitude) => {
   } catch (error) {
     logger.warn(`[LocationService] Reverse geocoding failed for ${lat}, ${lng}: ${error.message}. Returning fallback.`);
 
-    // Fallback response
+    // Fallback response without inventing fake addresses
     return {
-      address: `Point (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+      address: '',
       village: '',
-      district: 'Unknown District',
-      state: 'Punjab',
+      district: '',
+      state: '',
       country: 'India',
       pincode: '',
       latitude: lat,
       longitude: lng,
-      formattedAddress: `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      formattedAddress: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
     };
   }
 };

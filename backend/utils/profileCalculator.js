@@ -6,27 +6,27 @@ import { USER_ROLES } from '../constants/index.js';
 export const calculateProfileCompletion = (user, profile) => {
   if (!user || !profile) return 0;
 
-  let totalPoints = 0;
-  let earnedPoints = 0;
-
-  // Base User fields
-  const userFields = [
-    { name: 'name', value: user.name, weight: 10 },
-    { name: 'email', value: user.email, weight: 10 },
-    { name: 'mobile', value: user.mobile, weight: 10 },
-    { name: 'profileImage', value: user.profileImage, weight: 10 },
-  ];
-
-  userFields.forEach((field) => {
-    totalPoints += field.weight;
-    if (field.value && field.value.toString().trim() !== '') {
-      earnedPoints += field.weight;
-    }
-  });
-
   const roleLower = user.role?.toLowerCase() || '';
 
   if (roleLower === 'farmer') {
+    let totalPoints = 0;
+    let earnedPoints = 0;
+
+    // Base User fields for farmer
+    const userFields = [
+      { name: 'name', value: user.name, weight: 10 },
+      { name: 'email', value: user.email, weight: 10 },
+      { name: 'mobile', value: user.mobile, weight: 10 },
+      { name: 'profileImage', value: user.profileImage, weight: 10 },
+    ];
+
+    userFields.forEach((field) => {
+      totalPoints += field.weight;
+      if (field.value && field.value.toString().trim() !== '') {
+        earnedPoints += field.weight;
+      }
+    });
+
     const farmerFields = [
       { name: 'farmName', value: profile.farmName, weight: 10 },
       { name: 'farmSize', value: profile.farmSize, weight: 10 },
@@ -44,26 +44,69 @@ export const calculateProfileCompletion = (user, profile) => {
         earnedPoints += field.weight;
       }
     });
-  } else if (roleLower === 'worker') {
-    const workerFields = [
-      { name: 'title', value: profile.title, weight: 10 },
-      { name: 'skills', value: profile.skills?.length > 0, weight: 10 },
-      { name: 'expectedDailyWage', value: profile.expectedDailyWage > 0, weight: 10 },
-      { name: 'preferredDistrict', value: profile.preferredDistrict, weight: 10 },
-      { name: 'preferredState', value: profile.preferredState, weight: 5 },
-      { name: 'bio', value: profile.bio, weight: 5 },
-      { name: 'experience', value: profile.experience !== undefined, weight: 5 },
-      { name: 'certificateImages', value: profile.certificateImages?.length > 0, weight: 5 },
-    ];
 
-    workerFields.forEach((field) => {
-      totalPoints += field.weight;
-      if (field.value) {
-        earnedPoints += field.weight;
-      }
-    });
+    if (totalPoints === 0) return 0;
+    return Math.min(100, Math.round((earnedPoints / totalPoints) * 100));
+  } else if (roleLower === 'worker') {
+    // 8-Section Dynamic Worker Profile Calculation
+    const isSection1 = Boolean(
+      (user.name || profile.name || '').trim().length >= 2 &&
+      (profile.title || '').trim().length >= 2 &&
+      (profile.bio || '').trim().length > 0
+    );
+
+    const isSection2 = Boolean(
+      Array.isArray(profile.skills) && profile.skills.length > 0
+    );
+
+    const isSection3 = Boolean(
+      profile.experience !== undefined &&
+      profile.experience !== null &&
+      !isNaN(Number(profile.experience)) &&
+      Number(profile.experience) >= 0 &&
+      profile.education &&
+      profile.education.trim().length > 0
+    );
+
+    const isSection4 = Boolean(
+      profile.expectedDailyWage !== undefined &&
+      profile.expectedDailyWage !== null &&
+      !isNaN(Number(profile.expectedDailyWage)) &&
+      Number(profile.expectedDailyWage) >= 50 &&
+      profile.availability &&
+      profile.preferredWorkType
+    );
+
+    const isSection5 = Boolean(
+      profile.preferredDistrict &&
+      profile.preferredDistrict.trim().length > 0 &&
+      profile.preferredState &&
+      profile.preferredState.trim().length > 0
+    );
+
+    const isSection6 = Boolean(
+      Array.isArray(profile.certificateImages) && profile.certificateImages.length > 0
+    );
+
+    const isSection7 = Boolean(
+      Array.isArray(profile.profileGallery) && profile.profileGallery.length > 0
+    );
+
+    const isSection8 = Boolean(profile.aadhaarVerified === true);
+
+    const completedSections = [
+      isSection1,
+      isSection2,
+      isSection3,
+      isSection4,
+      isSection5,
+      isSection6,
+      isSection7,
+      isSection8,
+    ].filter(Boolean).length;
+
+    return Math.round((completedSections / 8) * 100);
   }
 
-  if (totalPoints === 0) return 0;
-  return Math.min(100, Math.round((earnedPoints / totalPoints) * 100));
+  return 0;
 };

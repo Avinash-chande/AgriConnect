@@ -1,3 +1,4 @@
+import './config/dns.js'
 import 'dotenv/config';
 import http from 'http';
 import mongoose from 'mongoose';

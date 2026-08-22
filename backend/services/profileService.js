@@ -10,23 +10,32 @@ import {
   uploadCertificateImagesService as cloudinaryCertUpload,
   deleteCloudinaryImage,
 } from './cloudinaryService.js';
+import { createGeoPoint } from '../models/schemas/commonSchemas.js';
 import { cacheService } from './cacheService.js';
 
 /**
  * Get profile of current logged-in user
  */
-export const getMyProfileService = async (user) => {
+export const getMyProfileService = async (userInput) => {
+  if (!userInput) return null;
+
+  let user = userInput;
+  if (typeof user === 'string' || user instanceof mongoose.Types.ObjectId || (!user.role && (user._id || user.id))) {
+    const userId = user._id || user.id || user;
+    user = await User.findOne({ _id: userId, isDeleted: { $ne: true } });
+  }
+
+  if (!user) return null;
+
   const roleLower = user?.role?.toLowerCase() || '';
   const userId = user._id || user.id;
 
-  let profile = user.farmerProfile || user.workerProfile || null;
+  let profile = null;
 
-  if (!profile) {
-    if (roleLower === 'farmer') {
-      profile = await FarmerProfile.findOne({ owner: userId });
-    } else if (roleLower === 'worker') {
-      profile = await WorkerProfile.findOne({ owner: userId });
-    }
+  if (roleLower === 'farmer') {
+    profile = await FarmerProfile.findOne({ owner: userId, isDeleted: { $ne: true } });
+  } else if (roleLower === 'worker') {
+    profile = await WorkerProfile.findOne({ owner: userId, isDeleted: { $ne: true } });
   }
 
   const completionPercentage = calculateProfileCompletion(user, profile);
@@ -83,19 +92,39 @@ export const updateProfileService = async (user, data) => {
   const roleLower = user?.role?.toLowerCase() || '';
   const userId = user._id || user.id;
 
+  // If name is provided in data, update User document
+  if (data.name && data.name.trim() !== '') {
+    user.name = data.name.trim();
+    await user.save({ validateBeforeSave: false });
+  }
+
+  const { name, ...profileData } = data;
   let profile = null;
 
   if (roleLower === 'farmer') {
+    if (profileData.farmAddress) {
+      const lat = profileData.farmAddress.latitude;
+      const lng = profileData.farmAddress.longitude;
+      if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+        const geoPoint = createGeoPoint(lng, lat);
+        if (geoPoint) {
+          profileData.location = geoPoint;
+        }
+      } else if (lat === null || lat === 0) {
+        profileData.location = null;
+      }
+    }
+
     profile = await FarmerProfile.findOneAndUpdate(
-      { owner: userId },
-      { $set: data },
-      { new: true, runValidators: true }
+      { owner: userId, isDeleted: { $ne: true } },
+      { $set: profileData },
+      { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
     );
   } else if (roleLower === 'worker') {
     profile = await WorkerProfile.findOneAndUpdate(
-      { owner: userId },
-      { $set: data },
-      { new: true, runValidators: true }
+      { owner: userId, isDeleted: { $ne: true } },
+      { $set: profileData },
+      { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
     );
   }
 
@@ -106,12 +135,12 @@ export const updateProfileService = async (user, data) => {
   cacheService.clearPrefix('profile:');
 
   const completionPercentage = calculateProfileCompletion(user, profile);
-  if (completionPercentage >= 80 && !user.profileCompleted) {
+  if (completionPercentage === 100 && !user.profileCompleted) {
     user.profileCompleted = true;
     await user.save({ validateBeforeSave: false });
   }
 
-  return { profile, completionPercentage, profileCompleted: user.profileCompleted };
+  return { user, profile, completionPercentage, profileCompleted: user.profileCompleted };
 };
 
 /**
@@ -249,8 +278,12 @@ export const filterProfilesService = searchProfilesService;
 /**
  * Upload profile image
  */
-export const uploadProfileImageService = async (user, fileBuffer) => {
-  const uploadResult = await uploadProfilePhotoService(fileBuffer);
+export const uploadProfileImageService = async (user, fileOrBuffer) => {
+  const buffer = Buffer.isBuffer(fileOrBuffer) ? fileOrBuffer : fileOrBuffer?.buffer;
+  if (!buffer || !Buffer.isBuffer(buffer)) {
+    throw new AppError('Invalid image data provided.', 400);
+  }
+  const uploadResult = await uploadProfilePhotoService(buffer);
   user.profileImage = uploadResult.secure_url;
   await user.save({ validateBeforeSave: false });
   cacheService.clearPrefix('profile:');
@@ -260,7 +293,20 @@ export const uploadProfileImageService = async (user, fileBuffer) => {
 /**
  * Upload farm gallery images (Farmer only)
  */
-export const uploadFarmImagesProfileService = async (user, fileBuffers) => {
+export const uploadFarmImagesProfileService = async (user, files) => {
+  if (!Array.isArray(files) || files.length === 0) {
+    throw new AppError('Please upload at least one farm image.', 400);
+  }
+
+  const invalidFile = files.find(
+    (file) => !file?.buffer || !Buffer.isBuffer(file.buffer)
+  );
+
+  if (invalidFile) {
+    throw new AppError('Invalid uploaded image data.', 400);
+  }
+  const fileBuffers = files.map((file) => file.buffer);
+
   const uploadResults = await cloudinaryFarmUpload(fileBuffers);
   const imageUrls = uploadResults.map((r) => r.secure_url);
 
@@ -269,26 +315,73 @@ export const uploadFarmImagesProfileService = async (user, fileBuffers) => {
     { $push: { farmImages: { $each: imageUrls } } },
     { new: true }
   );
+
+  if (!profile) {
+    throw new AppError('Farmer profile not found.', 404);
+  }
+
   cacheService.clearPrefix('profile:');
+
   return profile.farmImages;
 };
 
 export const uploadFarmImagesService = uploadFarmImagesProfileService;
 
 /**
- * Upload certificates (Worker only)
+ * Upload certificate OR work gallery image (Worker only)
  */
-export const uploadCertificatesProfileService = async (user, fileBuffers) => {
+export const uploadCertificatesProfileService = async (
+  user,
+  files,
+  targetField = 'certificateImages'
+) => {
+  // Only allow these two fields
+  if (!['certificateImages', 'profileGallery'].includes(targetField)) {
+    throw new AppError('Invalid image target field.', 400);
+  }
+
+  if (!Array.isArray(files) || files.length === 0) {
+    throw new AppError('Please upload at least one certificate or work photo file.', 400);
+  }
+
+  const invalidFile = files.find(
+    (file) => !file?.buffer || !Buffer.isBuffer(file.buffer)
+  );
+
+  if (invalidFile) {
+    throw new AppError('Invalid uploaded image data.', 400);
+  }
+
+  const fileBuffers = files.map((file) => file.buffer);
+
+  // Upload image(s) to Cloudinary
   const uploadResults = await cloudinaryCertUpload(fileBuffers);
   const imageUrls = uploadResults.map((r) => r.secure_url);
 
+  if (!imageUrls || imageUrls.length === 0) {
+    throw new AppError('Image upload failed.', 500);
+  }
+
   const profile = await WorkerProfile.findOneAndUpdate(
     { owner: user._id },
-    { $push: { certificateImages: { $each: imageUrls } } },
-    { new: true }
+    {
+      $push: {
+        [targetField]: { $each: imageUrls },
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
   );
+
+  if (!profile) {
+    throw new AppError('Worker profile not found.', 404);
+  }
+
   cacheService.clearPrefix('profile:');
-  return profile.certificateImages;
+
+  return profile[targetField];
 };
 
 export const uploadCertificatesService = uploadCertificatesProfileService;
