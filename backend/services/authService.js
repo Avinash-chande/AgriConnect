@@ -3,6 +3,7 @@ import { FarmerProfile } from '../models/FarmerProfile.js';
 import { WorkerProfile } from '../models/WorkerProfile.js';
 import { AppError } from '../utils/appError.js';
 import { USER_ROLES } from '../constants/index.js';
+import { OAuth2Client } from 'google-auth-library';
 import { generateAndSaveOTP, verifyOTPCode, clearOTP } from './otpService.js';
 import { sendOTPEmail } from './emailService.js';
 import { verifyToken, signAccessToken, signRefreshToken } from './jwtService.js';
@@ -46,11 +47,11 @@ export const registerFarmerService = async (data) => {
     workingDays: [],
     farmAddress: location
       ? {
-          district: location.split(',')[0].trim(),
-          state: location.includes(',') ? location.split(',')[1].trim() : '',
-          addressLine: location,
-          country: 'India',
-        }
+        district: location.split(',')[0].trim(),
+        state: location.includes(',') ? location.split(',')[1].trim() : '',
+        addressLine: location,
+        country: 'India',
+      }
       : null,
     farmDescription: farmDescription || '',
   });
@@ -94,6 +95,54 @@ export const registerWorkerService = async (data) => {
   });
 
   const populatedUser = await User.findById(user._id).populate('workerProfile');
+  return populatedUser;
+};
+
+export const findUserByEmailOrGoogleId = async (email, googleId) => {
+  return await User.findOne({ $or: [{ email: email.toLowerCase() }, { googleId }] });
+};
+
+export const registerGoogleUserService = async ({ email, name, googleId, role }) => {
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    throw new AppError('An account with this email address already exists.', 409);
+  }
+
+  const user = await User.create({
+    name,
+    email: email.toLowerCase(),
+    googleId,
+    authProvider: 'google',
+    role: role === 'farmer' ? USER_ROLES.FARMER : USER_ROLES.WORKER,
+    isVerified: true,        // Google already verified their email
+    emailVerifiedAt: new Date(),
+    profileCompleted: false, // forces them through your existing profile-completion flow
+  });
+
+  if (role === 'farmer') {
+    await FarmerProfile.create({
+      owner: user._id,
+      farmName: `${name}'s Farm`,   // placeholder, user edits later
+      farmType: 'Grain & Wheat Cultivation',
+      farmSize: 5,
+      cropTypes: [], livestock: [], equipment: [], farmImages: [], workingDays: [],
+      farmAddress: null,
+      farmDescription: '',
+    });
+  } else {
+    await WorkerProfile.create({
+      owner: user._id,
+      title: 'Agricultural Specialist',
+      skills: ['Tractor Driving', 'Crop Harvesting'],
+      expectedDailyWage: 650,
+      experience: 3,
+      preferredDistrict: 'Amritsar',
+      preferredState: 'Punjab',
+      bio: '',
+    });
+  }
+
+  const populatedUser = await User.findById(user._id).populate(role === 'farmer' ? 'farmerProfile' : 'workerProfile');
   return populatedUser;
 };
 
@@ -245,3 +294,91 @@ export const resetPasswordService = async (credential, otp, newPassword) => {
   await user.save();
   return true;
 };
+
+export const googleLoginService = async (token, selectedRole = 'farmer') => {
+  if (!token) throw new AppError('Google authentication token is required.', 400);
+
+  let googleId, email, name, picture;
+
+  // Try verifying as ID token first
+  try {
+    const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    googleId = payload.sub;
+    email = payload.email;
+    name = payload.name;
+    picture = payload.picture;
+  } catch (idTokenErr) {
+    // If ID token verification failed, try fetching profile via Access Token
+    try {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Invalid Google Access Token');
+      const data = await response.json();
+      googleId = data.sub;
+      email = data.email;
+      name = data.name;
+      picture = data.picture;
+    } catch (accessTokenErr) {
+      throw new AppError('Invalid or expired Google token. Verification failed.', 401);
+    }
+  }
+
+  if (!email) {
+    throw new AppError('Could not retrieve email address from Google authentication.', 400);
+  }
+
+  // Find user by googleId or email
+  let user = await User.findOne({
+    $or: [{ googleId }, { email: email.toLowerCase() }]
+  }).populate('farmerProfile').populate('workerProfile');
+
+  const role = selectedRole && selectedRole.toLowerCase() === 'worker' ? USER_ROLES.WORKER : USER_ROLES.FARMER;
+
+  if (!user) {
+    user = await User.create({
+      name: name || email.split('@')[0],
+      email: email.toLowerCase(),
+      googleId,
+      authProvider: 'google',
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+      profileImage: picture || '',
+      role,
+      profileCompleted: false,
+    });
+
+    if (role === USER_ROLES.FARMER) {
+      await FarmerProfile.create({
+        owner: user._id,
+        farmName: `${name || 'Farmer'}'s Farm`,
+        farmType: 'General Agriculture',
+        farmSize: 5,
+      });
+    } else {
+      await WorkerProfile.create({
+        owner: user._id,
+        title: 'Agricultural Specialist',
+        skills: ['General Labor'],
+        expectedDailyWage: 600,
+      });
+    }
+
+    user = await User.findById(user._id).populate('farmerProfile').populate('workerProfile');
+  } else {
+    // Update existing user with googleId if not linked yet
+    if (!user.googleId) {
+      user.googleId = googleId;
+      user.authProvider = 'google';
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+
+  return user;
+};
+

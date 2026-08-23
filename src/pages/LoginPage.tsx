@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sprout, Mail, Lock, Tractor, Briefcase, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sprout, Mail, Lock, Tractor, Briefcase, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
 
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -25,7 +27,7 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
 
   const [role, setRole] = useState<UserRole>('farmer');
   const [isLoading, setIsLoading] = useState(false);
@@ -92,13 +94,57 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    addToast({
-      type: 'info',
-      title: `${provider} Single Sign-On`,
-      message: `Connecting to ${provider} OAuth authentication...`
-    });
-  };
+  const handleGoogleSignIn = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      setErrorMessage('');
+      try {
+        const user = await googleLogin({
+          credential: tokenResponse.access_token,
+          role,
+        });
+
+        addToast({
+          type: 'success',
+          title: 'Sign In Successful',
+          message: `Welcome back, ${user.fullName || user.name || user.email}! Logged in via Google.`
+        });
+
+        const roleLower = (user.role || '').trim().toLowerCase();
+        const fromPath = (location.state as any)?.from?.pathname;
+
+        if (roleLower === 'admin') {
+          if (fromPath && fromPath.startsWith('/admin')) {
+            navigate(fromPath, { replace: true });
+          } else {
+            navigate('/admin/dashboard', { replace: true });
+          }
+        } else {
+          if (fromPath && !fromPath.startsWith('/admin')) {
+            navigate(fromPath, { replace: true });
+          } else {
+            navigate('/', { replace: true });
+          }
+        }
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Could not authenticate with Google.');
+        addToast({
+          type: 'error',
+          title: 'Google Sign-In Failed',
+          message: err.message || 'Google authentication failed.'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      addToast({
+        type: 'error',
+        title: 'Google Sign-In Failed',
+        message: 'Google Sign-In was cancelled or failed.'
+      });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-agri-bg flex flex-col justify-between">
@@ -119,9 +165,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12">
         <div className="max-w-5xl w-full bg-white rounded-3xl border border-agri-border shadow-soft-lg overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-          
+
           <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-agri-dark to-agri-deep p-8 lg:p-12 text-white flex flex-col justify-between relative overflow-hidden text-left min-h-[380px] lg:min-h-auto">
-            <div 
+            <div
               className="absolute inset-0 opacity-20 mix-blend-overlay bg-cover bg-center pointer-events-none"
               style={{ backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800')` }}
             />
@@ -153,7 +199,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
           </div>
 
           <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 text-left flex flex-col justify-center">
-            
+
             <div className="mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold font-heading text-agri-text tracking-tight">
                 Sign In to AgriConnect
@@ -179,8 +225,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
                 onClick={() => setRole('farmer')}
                 className={`
                   flex-1 py-2.5 px-4 rounded-xl text-xs font-bold font-heading flex items-center justify-center space-x-2 transition-all duration-200
-                  ${role === 'farmer' 
-                    ? 'bg-white text-agri-dark shadow-sm border border-slate-200' 
+                  ${role === 'farmer'
+                    ? 'bg-white text-agri-dark shadow-sm border border-slate-200'
                     : 'text-slate-500 hover:text-slate-800'
                   }
                 `}
@@ -194,8 +240,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
                 onClick={() => setRole('worker')}
                 className={`
                   flex-1 py-2.5 px-4 rounded-xl text-xs font-bold font-heading flex items-center justify-center space-x-2 transition-all duration-200
-                  ${role === 'worker' 
-                    ? 'bg-white text-agri-dark shadow-sm border border-slate-200' 
+                  ${role === 'worker'
+                    ? 'bg-white text-agri-dark shadow-sm border border-slate-200'
                     : 'text-slate-500 hover:text-slate-800'
                   }
                 `}
@@ -265,40 +311,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button
+            <div className="flex justify-center w-full">
+              <button
                 type="button"
-                variant="outline"
-                size="md"
-                onClick={() => handleSocialLogin('Google')}
-                leftIcon={
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                onClick={() => handleGoogleSignIn()}
+                disabled={isLoading}
+                className="
+                  w-[265px] py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50
+                  border border-slate-300 hover:border-slate-400
+                  shadow-sm hover:shadow
+                  transition-all duration-200 flex items-center justify-center space-x-2
+                  active:scale-[0.99] disabled:opacity-60 cursor-pointer
+                "
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-agri-primary shrink-0" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
                     <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"/>
                     <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"/>
                     <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
                   </svg>
-                }
-              >
-                Google
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={() => handleSocialLogin('Microsoft')}
-                leftIcon={
-                  <svg className="w-4 h-4" viewBox="0 0 23 23">
-                    <path fill="#f35325" d="M1 1h10v10H1z"/>
-                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
-                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
-                  </svg>
-                }
-              >
-                Microsoft
-              </Button>
+                )}
+                <span className="font-semibold text-slate-800 text-[13.5px] tracking-tight">
+                  {isLoading ? 'Connecting...' : 'Continue with Google'}
+                </span>
+              </button>
             </div>
 
             <div className="mt-8 text-center text-xs text-slate-500 space-y-1.5">

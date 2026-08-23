@@ -3,6 +3,7 @@ import {
   registerFarmer,
   registerWorker,
   login,
+  googleLogin,
   refreshToken,
   logout,
   forgotPassword,
@@ -19,6 +20,7 @@ import {
   validateResetPassword,
   validateOTPVerification,
 } from '../validators/authValidator.js';
+
 import { authRateLimiter } from '../middleware/rateLimiter.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -28,6 +30,7 @@ router.use(authRateLimiter);
 
 router.post('/register/farmer', validateFarmerRegistration, registerFarmer);
 router.post('/register/worker', validateWorkerRegistration, registerWorker);
+router.post('/google', googleLogin);
 router.post('/login', validateLogin, login);
 router.post('/refresh-token', refreshToken);
 router.post('/refresh', refreshToken);

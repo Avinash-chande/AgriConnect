@@ -1,6 +1,8 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
 import { AppError } from '../utils/appError.js';
+import { OAuth2Client } from 'google-auth-library';
+import { registerGoogleUserService, findUserByEmailOrGoogleId } from '../services/authService.js';
 import { setAuthCookies, clearAuthCookies } from '../services/jwtService.js';
 import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../config/jwt.js';
 import {
@@ -13,6 +15,7 @@ import {
   resetPasswordService,
   sendOTPService,
   verifyOTPService,
+  googleLoginService,
 } from '../services/authService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
 
@@ -58,6 +61,43 @@ export const registerWorker = asyncHandler(async (req, res, next) => {
 
   const user = await registerWorkerService(req.body);
   return await sendAuthTokenResponse(user, 201, 'Worker registered successfully', res);
+});
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleAuth = asyncHandler(async (req, res, next) => {
+  const { credential, role } = req.body;
+
+  if (!credential) {
+    return next(new AppError('Google credential is required.', 400));
+  }
+  if (!['farmer', 'worker'].includes(role)) {
+    return next(new AppError('Role must be farmer or worker.', 400));
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (err) {
+    return next(new AppError('Invalid Google token.', 401));
+  }
+
+  const { email, name, sub: googleId, email_verified } = payload;
+  if (!email_verified) {
+    return next(new AppError('Google email is not verified.', 400));
+  }
+
+  const existingUser = await findUserByEmailOrGoogleId(email, googleId);
+  if (existingUser) {
+    return await sendAuthTokenResponse(existingUser, 200, 'Sign in successful', res);
+  }
+
+  const newUser = await registerGoogleUserService({ email, name, googleId, role });
+  return await sendAuthTokenResponse(newUser, 201, 'Account created successfully', res);
 });
 
 export const login = asyncHandler(async (req, res, next) => {
@@ -162,3 +202,15 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
     },
   });
 });
+
+export const googleLogin = asyncHandler(async (req, res, next) => {
+  const { idToken, credential, token, role } = req.body;
+  const authToken = idToken || credential || token;
+
+  if (!authToken) {
+    return next(new AppError('Google authentication token is required.', 400));
+  }
+
+  const user = await googleLoginService(authToken, role);
+  return await sendAuthTokenResponse(user, 200, 'Google Sign-In successful', res);
+});

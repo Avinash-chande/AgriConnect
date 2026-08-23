@@ -12,6 +12,17 @@ const userSchema = new mongoose.Schema(
       minlength: [2, 'Name must be at least 2 characters long'],
       maxlength: [100, 'Name cannot exceed 100 characters'],
     },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
     email: {
       type: String,
       required: [true, 'Email address is required'],
@@ -26,15 +37,16 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: [true, 'Mobile number is required'],
+      required: [function () { return this.authProvider === 'local'; }, 'Mobile number is required for local signup'],
       unique: true,
+      sparse: true,
       trim: true,
       index: true,
       match: [/^[0-9+\-\s]{8,15}$/, 'Please enter a valid mobile number'],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: [function () { return this.authProvider === 'local'; }, 'Password is required for local signup'],
       minlength: [6, 'Password must be at least 6 characters long'],
       select: false,
     },

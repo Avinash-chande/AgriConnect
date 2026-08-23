@@ -6,11 +6,13 @@ import {
   registerWorkerApi,
   logoutApi,
   getCurrentUserApi,
+  googleAuthApi,
 } from '../services/authService';
 import type {
   LoginPayload,
   RegisterFarmerPayload,
   RegisterWorkerPayload,
+  GoogleAuthPayload,
 } from '../services/authService';
 
 export interface UserAccount {
@@ -39,6 +41,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<UserAccount>;
+  googleLogin: (payload: GoogleAuthPayload) => Promise<UserAccount>;
   registerFarmer: (payload: RegisterFarmerPayload) => Promise<UserAccount>;
   registerWorker: (payload: RegisterWorkerPayload) => Promise<UserAccount>;
   logout: () => Promise<void>;
@@ -127,6 +130,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return normalizeUser(loggedInUser);
   };
 
+  const googleLogin = async (payload: GoogleAuthPayload): Promise<UserAccount> => {
+    const data = await googleAuthApi(payload);
+
+    const loggedInUser = data.data.user;
+    const token =
+      data.data.tokens?.accessToken ||
+      data.data.accessToken ||
+      data.accessToken;
+
+    setSession(loggedInUser, token);
+
+    return normalizeUser(loggedInUser);
+  };
+
   const registerFarmer = async (
     payload: RegisterFarmerPayload
   ): Promise<UserAccount> => {
@@ -185,6 +202,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated: !!user,
         isLoading,
+        googleLogin,
         login,
         registerFarmer,
         registerWorker,

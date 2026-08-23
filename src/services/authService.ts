@@ -61,6 +61,16 @@ export const registerWorkerApi = async (payload: RegisterWorkerPayload) => {
   return response.data;
 };
 
+export interface GoogleAuthPayload {
+  credential: string;
+  role: 'farmer' | 'worker';
+}
+
+export const googleAuthApi = async (payload: GoogleAuthPayload) => {
+  const response = await api.post('/auth/google', payload);
+  return response.data;
+};
+
 export const loginApi = async (payload: LoginPayload) => {
   const response = await api.post('/auth/login', payload);
   return response.data;
