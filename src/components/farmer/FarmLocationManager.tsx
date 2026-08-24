@@ -43,8 +43,8 @@ export const FarmLocationManager: React.FC<FarmLocationManagerProps> = ({
 
   const hasValidCoordinates = isValidCoordinate(locationData.latitude, locationData.longitude);
 
-  const lat = hasValidCoordinates && locationData.latitude ? locationData.latitude : 31.634;
-  const lng = hasValidCoordinates && locationData.longitude ? locationData.longitude : 75.8573;
+  const lat = hasValidCoordinates && locationData.latitude ? locationData.latitude : 0;
+  const lng = hasValidCoordinates && locationData.longitude ? locationData.longitude : 0;
 
   // Handle location picker confirmation
   const handleConfirmLocation = async (selected: SelectedLocationData) => {
@@ -60,8 +60,8 @@ export const FarmLocationManager: React.FC<FarmLocationManagerProps> = ({
       const payload: Required<FarmLocationData> = {
         addressLine: selected.addressLine || locationData.addressLine || '',
         village: selected.village || locationData.village || '',
-        district: selected.district || locationData.district || 'Amritsar',
-        state: selected.state || locationData.state || 'Punjab',
+        district: selected.district || locationData.district || '',
+        state: selected.state || locationData.state || '',
         country: selected.country || 'India',
         pincode: selected.pincode || locationData.pincode || '',
         latitude: selected.latitude,
@@ -99,12 +99,12 @@ export const FarmLocationManager: React.FC<FarmLocationManagerProps> = ({
         await onSaveLocation({
           addressLine: '',
           village: '',
-          district: 'Amritsar',
-          state: 'Punjab',
+          district: '',
+          state: '',
           country: 'India',
           pincode: '',
-          latitude: 0,
-          longitude: 0,
+          latitude: null as any,
+          longitude: null as any,
         });
       }
 
@@ -212,7 +212,7 @@ export const FarmLocationManager: React.FC<FarmLocationManagerProps> = ({
             <div>
               <span className="text-slate-400 font-medium block text-[10px] uppercase">District & State</span>
               <span className="font-bold text-slate-900">
-                {locationData.district || 'Amritsar'}, {locationData.state || 'Punjab'}
+                {locationData.district || 'N/A'}{locationData.state ? `, ${locationData.state}` : ''}
               </span>
             </div>
             <div>

@@ -229,12 +229,14 @@ export const FarmerJobDashboardPage: React.FC = () => {
               <div className="space-y-4 pt-2">
                 {stats.applicationsChart.map((item, idx) => {
                   const maxApps = Math.max(...stats.applicationsChart.map((c) => c.applications), 1);
-                  const percentage = Math.min(100, Math.max(15, (item.applications / maxApps) * 100));
+                  const percentage = item.applications === 0 ? 0 : Math.min(100, Math.max(10, (item.applications / maxApps) * 100));
                   return (
                     <div key={idx} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs font-medium">
                         <span className="text-slate-700 truncate max-w-[200px]">{item.title}</span>
-                        <span className="text-agri-primary font-bold">{item.applications} Applicants</span>
+                        <span className="text-agri-primary font-bold">
+                          {item.applications} {item.applications === 1 ? 'Applicant' : 'Applicants'}
+                        </span>
                       </div>
                       <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
                         <div
@@ -379,7 +381,7 @@ export const FarmerJobDashboardPage: React.FC = () => {
                         </td>
 
                         <td className="py-4 px-3 font-bold text-slate-900">
-                          {job.totalApplications || 0}
+                          {job.applicationCount ?? job.totalApplications ?? 0}
                         </td>
 
                         <td className="py-4 px-3 text-slate-600">

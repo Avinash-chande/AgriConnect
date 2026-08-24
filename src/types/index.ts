@@ -2,22 +2,38 @@ export type UserRole = 'farmer' | 'worker';
 
 export interface WorkerProfile {
   id: string;
+  _id?: string;
+  ownerId?: string;
   name: string;
   avatar: string;
+  profileImage?: string;
   title: string;
   rating: number;
   reviewsCount: number;
   location: string;
-  hourlyRate: string;
-  dailyRate: string;
+  hourlyRate?: string;
+  dailyRate?: string;
+  dailyWage?: number;
+  expectedDailyWage?: number;
+  expectedMonthlySalary?: number;
   skills: string[];
-  experienceYears: number;
-  languages: string[];
+  experienceYears?: number;
+  experience?: number;
+  languages?: string[];
+  education?: string;
   isVerified: boolean;
-  availability: 'Immediate' | 'Within 3 Days' | 'Seasonal';
+  aadhaarVerified?: boolean;
+  availability: 'Immediate' | 'Within 3 Days' | 'Seasonal' | 'Unavailable' | string;
   completedJobs: number;
+  totalJobsCompleted?: number;
   badge?: string;
   bio: string;
+  profileGallery?: string[];
+  certificateImages?: string[];
+  preferredDistrict?: string;
+  preferredState?: string;
+  preferredVillage?: string;
+  slug?: string;
 }
 
 export interface JobCategory {

@@ -24,8 +24,8 @@ export const ProfileCompletionWizard: React.FC<ProfileCompletionWizardProps> = (
 
   // Form State
   const [farmNameOrTitle, setFarmNameOrTitle] = useState<string>('');
-  const [district, setDistrict] = useState<string>('Amritsar');
-  const [stateName, setStateName] = useState<string>('Punjab');
+  const [district, setDistrict] = useState<string>('');
+  const [stateName, setStateName] = useState<string>('');
   const [primarySkillOrCrop, setPrimarySkillOrCrop] = useState<string>('Wheat / Rice Cultivation');
 
   if (!isOpen) return null;

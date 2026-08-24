@@ -65,7 +65,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
       });
 
       const roleLower = (user.role || '').trim().toLowerCase();
-      const fromPath = (location.state as any)?.from?.pathname;
+      const state = location.state as {
+        from?: string | { pathname?: string; search?: string; hash?: string };
+        action?: string;
+        workerId?: string | number;
+        workerName?: string;
+      } | null;
+
+      const action = state?.action;
+      const workerId = state?.workerId;
+      const workerName = state?.workerName;
+
+      let fromPath: string | undefined;
+      if (typeof state?.from === 'string') {
+        fromPath = state.from;
+      } else if (state?.from && typeof state.from.pathname === 'string') {
+        fromPath = state.from.pathname + (state.from.search || '') + (state.from.hash || '');
+      }
 
       if (roleLower === 'admin') {
         if (fromPath && fromPath.startsWith('/admin')) {
@@ -73,8 +89,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ addToast }) => {
         } else {
           navigate('/admin/dashboard', { replace: true });
         }
+      } else if (roleLower === 'farmer') {
+        if (action === 'hire-worker') {
+          const target = fromPath || '/farmer/applications';
+          navigate(target, {
+            replace: true,
+            state: { action, workerId, workerName },
+          });
+          if (workerName) {
+            addToast({
+              type: 'info',
+              title: 'Continue Hiring',
+              message: `Welcome! Continue hiring ${workerName} from your applications.`,
+            });
+          }
+        } else if (fromPath && !fromPath.startsWith('/admin')) {
+          navigate(fromPath, { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       } else {
-        if (fromPath && !fromPath.startsWith('/admin')) {
+        // Worker role
+        if (action === 'hire-worker') {
+          addToast({
+            type: 'error',
+            title: 'Farmer Access Required',
+            message: 'You logged in as a Worker. Only Farmers can hire workers.',
+          });
+          navigate('/worker/dashboard', { replace: true });
+        } else if (fromPath && !fromPath.startsWith('/admin') && !fromPath.startsWith('/farmer')) {
           navigate(fromPath, { replace: true });
         } else {
           navigate('/', { replace: true });

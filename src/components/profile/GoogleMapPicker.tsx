@@ -15,10 +15,10 @@ export interface GoogleMapPickerProps {
  * Preserves prop compatibility for existing forms and tests while utilizing OpenStreetMap & Leaflet.
  */
 export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
-  latitude = 31.634,
-  longitude = 75.8573,
-  district = 'Amritsar',
-  state = 'Punjab',
+  latitude,
+  longitude,
+  district = '',
+  state = '',
   onLocationSelect,
 }) => {
   return (
