@@ -110,7 +110,7 @@ export const FarmerJobDashboardPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => fetchDashboardData(pagination.page, statusFilter)}
               className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-soft-sm"
@@ -118,6 +118,14 @@ export const FarmerJobDashboardPage: React.FC = () => {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
+
+            <Link
+              to="/farmer/nearby-workers"
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold rounded-xl text-xs transition-all flex items-center space-x-2"
+            >
+              <Users className="w-4 h-4 text-emerald-700" />
+              <span>Search & Hire Workers</span>
+            </Link>
 
             <Link
               to="/farmer/jobs/create"

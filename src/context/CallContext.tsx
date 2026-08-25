@@ -71,11 +71,11 @@ const CallContext = createContext<CallContextType>({
   errorMessage: null,
   initiateCall: async () => false,
   acceptCall: async () => false,
-  rejectCall: () => {},
-  cancelCall: () => {},
-  endCall: () => {},
-  toggleMute: () => {},
-  clearCallState: () => {},
+  rejectCall: () => { },
+  cancelCall: () => { },
+  endCall: () => { },
+  toggleMute: () => { },
+  clearCallState: () => { },
 });
 
 export const useCall = () => useContext(CallContext);
@@ -90,8 +90,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoDismissTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const durationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeCallRef = useRef<CallSessionData | null>(null);
 
   // Keep ref synchronized for callbacks

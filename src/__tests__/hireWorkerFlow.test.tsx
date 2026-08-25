@@ -10,6 +10,7 @@ import * as authService from '../services/authService';
 import * as chatService from '../services/chatService';
 import * as profileService from '../services/profileService';
 import { AuthProvider } from '../context/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import type { WorkerProfile } from '../types';
 
 vi.mock('../services/authService');
@@ -117,7 +118,7 @@ describe('AgriConnect Worker Hiring & Real Worker Integration Suite', () => {
           </AuthProvider>
         </QueryClientProvider>
       );
-
+      
       await waitFor(() => {
         expect(profileService.getFeaturedWorkersApi).toHaveBeenCalledWith(6);
         expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
@@ -416,36 +417,38 @@ describe('AgriConnect Worker Hiring & Real Worker Integration Suite', () => {
       } as any);
 
       render(
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <MemoryRouter
-              initialEntries={[
-                {
-                  pathname: '/login',
-                  state: {
-                    from: '/farmer/applications',
-                    action: 'hire-worker',
-                    workerId: 'w-1',
-                    workerName: 'Rajesh Kumar',
+        <GoogleOAuthProvider clientId="test-client-id">
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <MemoryRouter
+                initialEntries={[
+                  {
+                    pathname: '/login',
+                    state: {
+                      from: '/farmer/applications',
+                      action: 'hire-worker',
+                      workerId: 'w-1',
+                      workerName: 'Rajesh Kumar',
+                    },
                   },
-                },
-              ]}
-            >
-              <Routes>
-                <Route path="/login" element={<LoginPage addToast={mockAddToast} />} />
-                <Route
-                  path="/farmer/applications"
-                  element={
-                    <div>
-                      <div>Farmer Applications Portal</div>
-                      <LocationDisplay />
-                    </div>
-                  }
-                />
-              </Routes>
-            </MemoryRouter>
-          </AuthProvider>
-        </QueryClientProvider>
+                ]}
+              >
+                <Routes>
+                  <Route path="/login" element={<LoginPage addToast={mockAddToast} />} />
+                  <Route
+                    path="/farmer/applications"
+                    element={
+                      <div>
+                        <div>Farmer Applications Portal</div>
+                        <LocationDisplay />
+                      </div>
+                    }
+                  />
+                </Routes>
+              </MemoryRouter>
+            </AuthProvider>
+          </QueryClientProvider>
+        </GoogleOAuthProvider>
       );
 
       // Fill in credentials and submit
@@ -482,29 +485,31 @@ describe('AgriConnect Worker Hiring & Real Worker Integration Suite', () => {
       } as any);
 
       render(
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <MemoryRouter
-              initialEntries={[
-                {
-                  pathname: '/login',
-                  state: {
-                    from: '/farmer/applications',
-                    action: 'hire-worker',
-                    workerId: 'w-1',
-                    workerName: 'Rajesh Kumar',
+        <GoogleOAuthProvider clientId="test-client-id">
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <MemoryRouter
+                initialEntries={[
+                  {
+                    pathname: '/login',
+                    state: {
+                      from: '/farmer/applications',
+                      action: 'hire-worker',
+                      workerId: 'w-1',
+                      workerName: 'Rajesh Kumar',
+                    },
                   },
-                },
-              ]}
-            >
-              <Routes>
-                <Route path="/login" element={<LoginPage addToast={mockAddToast} />} />
-                <Route path="/worker/dashboard" element={<div>Worker Dashboard Portal</div>} />
-                <Route path="/farmer/applications" element={<div>Farmer Applications Portal</div>} />
-              </Routes>
-            </MemoryRouter>
-          </AuthProvider>
-        </QueryClientProvider>
+                ]}
+              >
+                <Routes>
+                  <Route path="/login" element={<LoginPage addToast={mockAddToast} />} />
+                  <Route path="/worker/dashboard" element={<div>Worker Dashboard Portal</div>} />
+                  <Route path="/farmer/applications" element={<div>Farmer Applications Portal</div>} />
+                </Routes>
+              </MemoryRouter>
+            </AuthProvider>
+          </QueryClientProvider>
+        </GoogleOAuthProvider>
       );
 
       // Switch to Worker tab

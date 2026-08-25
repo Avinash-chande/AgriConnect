@@ -23,6 +23,11 @@ import {
   ShieldCheck,
   Search,
   IndianRupee,
+  PlusCircle,
+  Sparkles,
+  Phone,
+  Briefcase,
+  Tractor,
 } from 'lucide-react';
 import { getNearbyWorkersApi } from "../services/locationService";
 import type { NearbyWorkerItem } from "../services/locationService";
@@ -32,7 +37,9 @@ import { LocationMap } from '../components/map/LocationMap';
 import { WorkerMarker } from '../components/map/WorkerMarker';
 import { UserLocationMarker } from '../components/map/UserLocationMarker';
 import { AgriLocationPickerModal } from '../components/location/AgriLocationPickerModal';
+import { DirectHireWorkerModal } from '../components/farmer/DirectHireWorkerModal';
 import { isValidCoordinate } from '../components/map/mapConfig';
+import type { WorkerProfile } from '../types';
 import axios from 'axios';
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
@@ -79,6 +86,7 @@ export const NearbyWorkersPage: React.FC = () => {
 
   // Modal State
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState<boolean>(false);
+  const [selectedHireWorker, setSelectedHireWorker] = useState<WorkerProfile | null>(null);
 
   // Geolocation Hook
   const { coordinates: userGpsCoords, refetchLocation: getGpsLocation, loading: isGpsLoading } = useCurrentLocation({
@@ -196,16 +204,34 @@ export const NearbyWorkersPage: React.FC = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 font-bold text-xs mb-2">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
                 <Users className="w-3.5 h-3.5" />
                 <span>Farmer Talent Sourcing Suite</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold font-heading text-white tracking-tight">
-                Nearby Worker Discovery
+                Nearby Worker Discovery & Hiring
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Locate and hire verified agricultural workers near your farm site
+                Locate, review, and directly hire background-verified agricultural specialists
               </p>
+            </div>
+
+            {/* Quick Action Navigation Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/farmer/worker-map"
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5"
+              >
+                <MapIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Map Discovery</span>
+              </Link>
+              <Link
+                to="/farmer/jobs/create"
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-lg"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Post Job Vacancy</span>
+              </Link>
             </div>
 
             {/* View Mode Switches */}
@@ -484,7 +510,11 @@ export const NearbyWorkersPage: React.FC = () => {
                   </div>
 
                   {workers.map((item) => (
-                    <NearbyWorkerCard key={item.worker._id} item={item} />
+                    <NearbyWorkerCard
+                      key={item.worker._id}
+                      item={item}
+                      onHireWorker={(w) => setSelectedHireWorker(w)}
+                    />
                   ))}
                 </div>
 
@@ -533,7 +563,11 @@ export const NearbyWorkersPage: React.FC = () => {
             {viewMode === 'grid' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {workers.map((item) => (
-                  <NearbyWorkerCard key={item.worker._id} item={item} />
+                  <NearbyWorkerCard
+                    key={item.worker._id}
+                    item={item}
+                    onHireWorker={(w) => setSelectedHireWorker(w)}
+                  />
                 ))}
               </div>
             )}
@@ -610,18 +644,50 @@ export const NearbyWorkersPage: React.FC = () => {
         onConfirm={handleLocationPick}
         title="Set Search Center for Nearby Worker Discovery"
       />
+
+      {/* Direct Hire Worker Modal */}
+      <DirectHireWorkerModal
+        isOpen={!!selectedHireWorker}
+        worker={selectedHireWorker}
+        onClose={() => setSelectedHireWorker(null)}
+        onHireSuccess={() => fetchNearbyWorkers()}
+      />
     </div>
   );
 };
 
 // Subcomponent: Individual Nearby Worker Card Component
-const NearbyWorkerCard: React.FC<{ item: NearbyWorkerItem }> = ({ item }) => {
+const NearbyWorkerCard: React.FC<{
+  item: NearbyWorkerItem;
+  onHireWorker: (worker: WorkerProfile) => void;
+}> = ({ item, onHireWorker }) => {
   const navigate = useNavigate();
   const { worker, distanceKm } = item;
 
+  // Adapt nearby worker shape into WorkerProfile for modal
+  const workerProfileForModal: WorkerProfile = {
+    id: worker._id,
+    _id: worker._id,
+    ownerId: worker.ownerId,
+    name: worker.name,
+    title: worker.title,
+    skills: worker.skills,
+    experience: worker.experience,
+    experienceYears: worker.experience,
+    dailyWage: worker.expectedDailyWage,
+    expectedDailyWage: worker.expectedDailyWage,
+    rating: worker.rating || 5.0,
+    location: `${distanceKm} km away`,
+    profileImage: worker.profileImage,
+    avatar: worker.profileImage,
+    isVerified: worker.isVerified,
+    availability: worker.availability,
+    bio: (worker as any).bio || `${worker.experience} years of agricultural expertise. Available for seasonal and contract operations.`,
+  };
+
   return (
     <div className="bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-3xl p-5 shadow-xl transition-all duration-300 space-y-4 group text-left">
-      {/* Top Profile Header Row (Strictly sanitized: NO phone/Aadhaar/email exposed) */}
+      {/* Top Profile Header Row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center space-x-3 truncate">
           <div className="w-12 h-12 rounded-2xl bg-emerald-700/40 text-emerald-300 flex items-center justify-center font-bold text-base uppercase overflow-hidden shrink-0 border border-emerald-500/30 shadow-md">
@@ -694,19 +760,28 @@ const NearbyWorkerCard: React.FC<{ item: NearbyWorkerItem }> = ({ item }) => {
         </div>
       </div>
 
-      {/* Direct Contact / Chat Action Buttons */}
+      {/* Direct Contact & Hire Action Buttons */}
       <div className="flex items-center space-x-2 pt-1">
         <button
           type="button"
-          onClick={() => navigate('/chat', { state: { recipientId: worker.ownerId, recipientName: worker.name } })}
-          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center space-x-1.5"
+          onClick={() => onHireWorker(workerProfileForModal)}
+          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center space-x-1.5"
         >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>Chat / Hire Worker</span>
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Hire / Offer Job</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/chat', { state: { recipientId: worker.ownerId, recipientName: worker.name } })}
+          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
+          title="Chat with Worker"
+        >
+          <MessageSquare className="w-4 h-4" />
         </button>
 
         <Link
-          to={`/profiles/worker/${worker._id}`}
+          to={`/profile/user/${worker.ownerId || worker._id}`}
           className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition-colors"
         >
           Profile

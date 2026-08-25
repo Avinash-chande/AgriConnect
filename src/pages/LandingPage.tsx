@@ -285,7 +285,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/register-farmer" className="w-full sm:w-auto">
+            <Link
+              to={isAuthenticated && user?.role?.toLowerCase() === 'farmer' ? '/farmer/nearby-workers' : '/register-farmer'}
+              className="w-full sm:w-auto"
+            >
               <Button
                 variant="primary"
                 size="lg"
@@ -298,7 +301,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
               </Button>
             </Link>
 
-            <Link to="/register-worker" className="w-full sm:w-auto">
+            <Link
+              to="/jobs"
+              className="w-full sm:w-auto"
+            >
               <Button
                 variant="outline"
                 size="lg"

@@ -477,12 +477,30 @@ export const JobDetailsPage: React.FC = () => {
                   <CheckCircle className="w-4 h-4" />
                   <span>{applied ? 'Application Submitted' : 'Apply for Job'}</span>
                 </button>
+
+                {applied && (
+                  <Link
+                    to="/my-applications"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5 shadow-md"
+                  >
+                    <span>Track in My Applications</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+
+                <Link
+                  to={`/route-navigation?jobId=${job._id}`}
+                  className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center space-x-1.5"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-agri-primary" />
+                  <span>Get Turn-by-Turn Farm Route</span>
+                </Link>
               </div>
 
               {/* View Profile Link */}
               <div className="pt-2">
                 <button
-                  onClick={() => navigate(`/profiles/farmer/${job.farmer?._id || job.farmer}`)}
+                  onClick={() => navigate(`/profile/user/${job.farmer?._id || job.farmer}`)}
                   className="w-full text-center text-xs font-semibold text-slate-600 hover:text-agri-primary transition-colors flex items-center justify-center space-x-1"
                 >
                   <span>View Farmer Profile</span>

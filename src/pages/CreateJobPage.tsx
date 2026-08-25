@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
   MapPin,
@@ -12,6 +12,8 @@ import {
   X,
   Upload,
   Image as ImageIcon,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { jobService } from '../services/jobService';
 import { JOB_CATEGORIES, WAGE_TYPES, PREFERRED_WORK_TYPES, GENDER_PREFERENCE } from '../constants/jobConstants';
@@ -19,14 +21,25 @@ import { JobLocationSelector } from '../components/jobs/JobLocationSelector';
 
 export const CreateJobPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const targetWorkerName = searchParams.get('workerName');
+  const targetWorkerId = searchParams.get('workerId');
+  const initialWage = Number(searchParams.get('wage')) || 650;
 
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Form State
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState(
+    targetWorkerName ? `Farm Operations Offer for ${targetWorkerName}` : ''
+  );
+  const [description, setDescription] = useState(
+    targetWorkerName
+      ? `Dedicated agricultural assignment for ${targetWorkerName}. Please review terms, wage rate, and start date.`
+      : ''
+  );
   const [category, setCategory] = useState<string>(JOB_CATEGORIES[0] || 'Harvesting');
   const [cropType, setCropType] = useState('');
   const [workType, setWorkType] = useState<string>(PREFERRED_WORK_TYPES[0] || 'Contractual / Seasonal');
@@ -38,7 +51,7 @@ export const CreateJobPage: React.FC = () => {
   const [skillInput, setSkillInput] = useState('');
   const [requiredSkills, setRequiredSkills] = useState<string[]>(['Crop Harvesting']);
   const [wageType, setWageType] = useState<string>(WAGE_TYPES[0] || 'Daily');
-  const [wageAmount, setWageAmount] = useState<number>(650);
+  const [wageAmount, setWageAmount] = useState<number>(initialWage);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
   const [workingHours, setWorkingHours] = useState<number>(8);
@@ -244,7 +257,28 @@ export const CreateJobPage: React.FC = () => {
           <span className="text-xs font-semibold px-3.5 py-1.5 bg-emerald-100/80 text-emerald-800 rounded-full border border-emerald-200">
             Create Farm Job Vacancy
           </span>
-        </div>
+          </div>
+        {targetWorkerName && (
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-emerald-600 text-white rounded-xl">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-emerald-900 dark:text-emerald-300">
+                  Dedicated Farm Job Offer for {targetWorkerName}
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  Fill in the vacancy details below. When posted, an instant job invitation will be sent to {targetWorkerName}.
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-white dark:bg-slate-900 border border-emerald-300 rounded-xl text-xs font-bold text-emerald-700">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Direct Hire Flow</span>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm flex items-center justify-between">

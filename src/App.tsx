@@ -11,6 +11,7 @@ import { OTPVerificationPage } from './pages/OTPVerificationPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { SocketProvider } from './context/SocketContext';
 import { PresenceProvider } from './context/PresenceContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -163,274 +164,284 @@ export function App() {
   };
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <SocketProvider>
-          <PresenceProvider>
-            <BrowserRouter>
-              <div className="min-h-screen bg-agri-bg text-agri-text flex flex-col font-sans antialiased selection:bg-agri-light selection:text-agri-dark">
-                <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
-              {/* Public Authentication & Search Pages */}
-              <Route path="/" element={<LandingPage addToast={addToast} />} />
-              <Route path="/login" element={<LoginPage addToast={addToast} />} />
-              <Route path="/register-farmer" element={<FarmerRegistrationPage addToast={addToast} />} />
-              <Route path="/register-worker" element={<WorkerRegistrationPage addToast={addToast} />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage addToast={addToast} />} />
-              <Route path="/verify-otp" element={<OTPVerificationPage addToast={addToast} />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/payment-history" element={<PaymentHistoryPage />} />
-              <Route path="/payment-details/:transactionId" element={<PaymentDetailsPage />} />
-              <Route path="/subscription" element={<SubscriptionManagementPage />} />
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <SocketProvider>
+            <PresenceProvider>
+              <BrowserRouter>
+                <div className="min-h-screen bg-agri-bg text-agri-text flex flex-col font-sans antialiased selection:bg-agri-light selection:text-agri-dark">
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    <Routes>
+                      {/* Public Authentication & Search Pages */}
+                      <Route path="/" element={<LandingPage addToast={addToast} />} />
+                      <Route path="/login" element={<LoginPage addToast={addToast} />} />
+                      <Route path="/register-farmer" element={<FarmerRegistrationPage addToast={addToast} />} />
+                      <Route path="/register-worker" element={<WorkerRegistrationPage addToast={addToast} />} />
+                      <Route path="/forgot-password" element={<ForgotPasswordPage addToast={addToast} />} />
+                      <Route path="/verify-otp" element={<OTPVerificationPage addToast={addToast} />} />
+                      <Route path="/pricing" element={<PricingPage />} />
+                      <Route path="/payment-history" element={<PaymentHistoryPage />} />
+                      <Route path="/payment-details/:transactionId" element={<PaymentDetailsPage />} />
+                      <Route path="/subscription" element={<SubscriptionManagementPage />} />
 
-              {/* Worker Job Feed Routes */}
-              <Route path="/jobs" element={<WorkerJobFeedPage />} />
-              <Route path="/worker/feed" element={<WorkerJobFeedPage />} />
-              <Route path="/jobs/map" element={<MapJobDiscoveryPage />} />
-              <Route path="/jobs/map-discovery" element={<MapJobDiscoveryPage />} />
+                      {/* Worker Job Feed Routes */}
+                      <Route path="/jobs" element={<WorkerJobFeedPage />} />
+                      <Route path="/worker/feed" element={<WorkerJobFeedPage />} />
+                      <Route path="/jobs/map" element={<MapJobDiscoveryPage />} />
+                      <Route path="/jobs/map-discovery" element={<MapJobDiscoveryPage />} />
 
-              {/* Public Profile & Job Details Routes */}
-              <Route path="/profile/user/:identifier" element={<PublicProfilePage />} />
-              <Route path="/jobs/:id" element={<JobDetailsPage />} />
-              <Route path="/route-navigation" element={<RouteNavigationPage />} />
+                      {/* Public Profile & Job Details Routes */}
+                      <Route path="/profile/user/:identifier" element={<PublicProfilePage />} />
+                      <Route path="/profiles/worker/:identifier" element={<PublicProfilePage />} />
+                      <Route path="/profiles/farmer/:identifier" element={<PublicProfilePage />} />
+                      <Route path="/profile/worker/:identifier" element={<PublicProfilePage />} />
+                      <Route path="/profile/farmer/:identifier" element={<PublicProfilePage />} />
+                      <Route path="/farmer/nearby" element={<Navigate to="/farmer/nearby-workers" replace />} />
+                      <Route path="/farmer/workers" element={<Navigate to="/farmer/nearby-workers" replace />} />
+                      <Route path="/nearby-jobs" element={<Navigate to="/jobs/nearby" replace />} />
+                      <Route path="/map-discovery" element={<Navigate to="/jobs/map" replace />} />
+                      <Route path="/jobs/:id" element={<JobDetailsPage />} />
+                      <Route path="/route-navigation" element={<RouteNavigationPage />} />
 
-              {/* Farmer Job Management Dashboard */}
-              <Route
-                path="/farmer/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <FarmerJobDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/farmer/applications"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <FarmerApplicationsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/farmer/application-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <FarmerApplicationDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/farmer/chat-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <FarmerChatDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/farmer/nearby-workers"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <NearbyWorkersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/farmer/worker-map"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <WorkerDiscoveryMapPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Farmer Job Management Dashboard */}
+                      <Route
+                        path="/farmer/dashboard"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <FarmerJobDashboardPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/farmer/applications"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <FarmerApplicationsPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/farmer/application-dashboard"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <FarmerApplicationDashboardPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/farmer/chat-dashboard"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <FarmerChatDashboardPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/farmer/nearby-workers"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <NearbyWorkersPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/farmer/worker-map"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <WorkerDiscoveryMapPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Saved Jobs Route (Worker Only) */}
-              <Route
-                path="/saved-jobs"
-                element={
-                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
-                    <SavedJobsPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Saved Jobs Route (Worker Only) */}
+                      <Route
+                        path="/saved-jobs"
+                        element={
+                          <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                            <SavedJobsPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* My Applications Route (Worker Only) */}
-              <Route
-                path="/my-applications"
-                element={
-                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
-                    <MyApplicationsPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* My Applications Route (Worker Only) */}
+                      <Route
+                        path="/my-applications"
+                        element={
+                          <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                            <MyApplicationsPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Worker Verification Profile Route */}
-              <Route
-                path="/verification"
-                element={
-                  <ProtectedRoute>
-                    <WorkerVerificationPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Worker Verification Profile Route */}
+                      <Route
+                        path="/verification"
+                        element={
+                          <ProtectedRoute>
+                            <WorkerVerificationPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Worker Dashboard */}
-              <Route
-                path="/worker/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
-                    <WorkerDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/worker/communication-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
-                    <WorkerCommunicationDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Worker Dashboard */}
+                      <Route
+                        path="/worker/dashboard"
+                        element={
+                          <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                            <WorkerDashboardPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/worker/communication-dashboard"
+                        element={
+                          <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                            <WorkerCommunicationDashboardPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Nearby Jobs Route */}
-              <Route path="/jobs/nearby" element={<NearbyJobsPage />} />
+                      {/* Nearby Jobs Route */}
+                      <Route path="/jobs/nearby" element={<NearbyJobsPage />} />
 
-              {/* Job Creation Routes */}
-              <Route
-                path="/farmer/jobs/create"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
-                    <CreateJobPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/jobs/create"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
-                    <CreateJobPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Job Creation Routes */}
+                      <Route
+                        path="/farmer/jobs/create"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
+                            <CreateJobPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/jobs/create"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
+                            <CreateJobPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Job Editing Route */}
-              <Route
-                path="/jobs/:id/edit"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
-                    <EditJobPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Job Editing Route */}
+                      <Route
+                        path="/jobs/:id/edit"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer', 'Admin', 'admin']}>
+                            <EditJobPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Protected Profile Pages */}
-              <Route
-                path="/create-profile"
-                element={
-                  <ProtectedRoute>
-                    <CreateProfilePage addToast={addToast} />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Protected Profile Pages */}
+                      <Route
+                        path="/create-profile"
+                        element={
+                          <ProtectedRoute>
+                            <CreateProfilePage addToast={addToast} />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              <Route
-                path="/edit-profile"
-                element={
-                  <ProtectedRoute>
-                    <EditProfilePage addToast={addToast} />
-                  </ProtectedRoute>
-                }
-              />
+                      <Route
+                        path="/edit-profile"
+                        element={
+                          <ProtectedRoute>
+                            <EditProfilePage addToast={addToast} />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              <Route
-                path="/profile/me"
-                element={
-                  <ProtectedRoute>
-                    <ViewProfilePage addToast={addToast} />
-                  </ProtectedRoute>
-                }
-              />
+                      <Route
+                        path="/profile/me"
+                        element={
+                          <ProtectedRoute>
+                            <ViewProfilePage addToast={addToast} />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              <Route
-                path="/farmer/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
-                    <FarmerProfilePage addToast={addToast} />
-                  </ProtectedRoute>
-                }
-              />
+                      <Route
+                        path="/farmer/profile"
+                        element={
+                          <ProtectedRoute allowedRoles={['Farmer', 'farmer']}>
+                            <FarmerProfilePage addToast={addToast} />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              <Route
-                path="/worker/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['Worker', 'worker']}>
-                    <WorkerProfilePage addToast={addToast} />
-                  </ProtectedRoute>
-                }
-              />
+                      <Route
+                        path="/worker/profile"
+                        element={
+                          <ProtectedRoute allowedRoles={['Worker', 'worker']}>
+                            <WorkerProfilePage addToast={addToast} />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              <Route
-                path="/chat"
-                element={
-                  <ProtectedRoute>
-                    <ChatPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat/:conversationId"
-                element={
-                  <ProtectedRoute>
-                    <ChatPage />
-                  </ProtectedRoute>
-                }
-              />
+                      <Route
+                        path="/chat"
+                        element={
+                          <ProtectedRoute>
+                            <ChatPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/chat/:conversationId"
+                        element={
+                          <ProtectedRoute>
+                            <ChatPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Dedicated AgriConnect AI Workspace Route */}
-              <Route
-                path="/ai-assistant"
-                element={
-                  <ProtectedRoute>
-                    <AiAssistantPage />
-                  </ProtectedRoute>
-                }
-              />
+                      {/* Dedicated AgriConnect AI Workspace Route */}
+                      <Route
+                        path="/ai-assistant"
+                        element={
+                          <ProtectedRoute>
+                            <AiAssistantPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-              {/* Phase 10 — Admin Panel Routes */}
-              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminDashboardPage /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminUserManagementPage /></ProtectedRoute>} />
-              <Route path="/admin/jobs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminJobModerationPage /></ProtectedRoute>} />
-              <Route path="/admin/applications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminApplicationMonitorPage /></ProtectedRoute>} />
-              <Route path="/admin/trust" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminTrustVerificationPage /></ProtectedRoute>} />
-              <Route path="/admin/certificates" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminCertificateVerificationPage /></ProtectedRoute>} />
-              <Route path="/admin/aadhaar-kyc" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAadhaarKycPage /></ProtectedRoute>} />
-              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminReportsPage /></ProtectedRoute>} />
-              <Route path="/admin/payments" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPaymentManagementPage /></ProtectedRoute>} />
-              <Route path="/admin/premium" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPremiumManagementPage /></ProtectedRoute>} />
-              <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminRoleManagementPage /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPlatformSettingsPage /></ProtectedRoute>} />
-              <Route path="/admin/audit-logs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAuditLogsPage /></ProtectedRoute>} />
-              <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAnalyticsPage /></ProtectedRoute>} />
-              <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminNotificationsPage /></ProtectedRoute>} />
+                      {/* Phase 10 — Admin Panel Routes */}
+                      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminDashboardPage /></ProtectedRoute>} />
+                      <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminUserManagementPage /></ProtectedRoute>} />
+                      <Route path="/admin/jobs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminJobModerationPage /></ProtectedRoute>} />
+                      <Route path="/admin/applications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminApplicationMonitorPage /></ProtectedRoute>} />
+                      <Route path="/admin/trust" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminTrustVerificationPage /></ProtectedRoute>} />
+                      <Route path="/admin/certificates" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminCertificateVerificationPage /></ProtectedRoute>} />
+                      <Route path="/admin/aadhaar-kyc" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAadhaarKycPage /></ProtectedRoute>} />
+                      <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminReportsPage /></ProtectedRoute>} />
+                      <Route path="/admin/payments" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPaymentManagementPage /></ProtectedRoute>} />
+                      <Route path="/admin/premium" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPremiumManagementPage /></ProtectedRoute>} />
+                      <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminRoleManagementPage /></ProtectedRoute>} />
+                      <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminPlatformSettingsPage /></ProtectedRoute>} />
+                      <Route path="/admin/audit-logs" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAuditLogsPage /></ProtectedRoute>} />
+                      <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminAnalyticsPage /></ProtectedRoute>} />
+                      <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['Admin', 'admin']}><AdminNotificationsPage /></ProtectedRoute>} />
 
-              {/* Fallback Catch-all Route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
+                      {/* Fallback Catch-all Route */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
 
-          {/* Floating AI Assistant Widget Accessible Anywhere */}
-          <AiAssistantWidget />
+                  {/* Floating AI Assistant Widget Accessible Anywhere */}
+                  <AiAssistantWidget />
 
-          {/* Toast Notification Container */}
-          <ToastContainer toasts={toasts} onDismiss={removeToast} />
-        </div>
-      </BrowserRouter>
-    </PresenceProvider>
-  </SocketProvider>
-</QueryClientProvider>
-</AuthProvider>
-  );
+                  {/* Toast Notification Container */}
+                  <ToastContainer toasts={toasts} onDismiss={removeToast} />
+                </div>
+              </BrowserRouter>
+            </PresenceProvider>
+          </SocketProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+        </GoogleOAuthProvider>
+      );
 }
 
-export default App;
+      export default App;

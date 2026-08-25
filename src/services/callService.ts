@@ -48,7 +48,7 @@ export interface CallHistoryRecord {
  * @param workerId - WorkerProfile ID or Worker User ID
  */
 export const initiateMobileCall = async (workerId: string): Promise<InitiateCallResponse> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.NODE_ENV !== 'production') {
     console.log(`Calling worker: ${workerId}`);
     console.log('Calling endpoint: /calls/mobile');
   }

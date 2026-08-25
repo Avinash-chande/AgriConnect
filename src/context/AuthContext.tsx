@@ -69,15 +69,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const normalizeUser = (userData: any): UserAccount => {
-    const nameVal = userData.fullName || userData.name || 'User';
-    return {
-      ...userData,
-      fullName: nameVal,
-      role: userData.role || 'farmer',
-    };
-  };
-
   const setSession = (userData: UserAccount, token?: string, refreshToken?: string) => {
     const normalized = normalizeUser(userData);
     setUser(normalized);
