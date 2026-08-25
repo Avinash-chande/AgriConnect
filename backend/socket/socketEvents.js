@@ -47,4 +47,21 @@ export const SOCKET_EVENTS = {
   CHAT_READ_RECEIPT: 'chat:read_receipt',
   CHAT_TYPING: 'chat:typing',
   CHAT_STOP_TYPING: 'chat:stop_typing',
+
+  // Voice Call Signaling Events (WebRTC)
+  CALL_INITIATE: 'call:initiate',
+  CALL_INCOMING: 'call:incoming',
+  CALL_ACCEPT: 'call:accept',
+  CALL_ACCEPTED: 'call:accepted',
+  CALL_REJECT: 'call:reject',
+  CALL_REJECTED: 'call:rejected',
+  CALL_CANCEL: 'call:cancel',
+  CALL_CANCELLED: 'call:cancelled',
+  CALL_OFFER: 'call:offer',
+  CALL_ANSWER: 'call:answer',
+  CALL_ICE_CANDIDATE: 'call:ice-candidate',
+  CALL_END: 'call:end',
+  CALL_BUSY: 'call:busy',
+  CALL_UNAVAILABLE: 'call:unavailable',
+  CALL_TIMEOUT: 'call:timeout',
 };

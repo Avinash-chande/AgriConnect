@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, MapPin, Sparkles, CheckCircle2, Star, ShieldCheck, 
   Zap, Tractor, Bot, Wheat, Droplets, Milk, Sprout,
-  ArrowRight, Filter, ChevronRight, PhoneCall, DollarSign, Award,
+  ArrowRight, Filter, ChevronRight, Phone, PhoneCall, DollarSign, Award,
   Briefcase, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -22,6 +22,7 @@ import {
 } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 import { getFeaturedWorkersApi } from '../services/profileService';
+import { initiateMobileCall } from '../services/callService';
 import type { WorkerProfile, ToastMessage } from '../types';
 
 interface LandingPageProps {
@@ -63,6 +64,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
 
   // Interactive Worker Detail Modal
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
+  const [isCallingWorker, setIsCallingWorker] = useState<boolean>(false);
+
+  // Mobile calling action handler for modal
+  const handleVoiceCallWorker = async () => {
+    if (!selectedWorker) return;
+
+    if (!isAuthenticated || !user) {
+      const worker = selectedWorker;
+      addToast({
+        type: 'info',
+        title: 'Sign In Required',
+        message: `Please sign in as a Farmer to call ${worker.name}.`,
+      });
+      navigate('/login', {
+        state: {
+          from: window.location.pathname,
+          action: 'call-worker',
+          workerId: worker.id || worker._id,
+          workerName: worker.name,
+        },
+      });
+      return;
+    }
+
+    const role = (user.role || '').trim().toLowerCase();
+    if (role !== 'farmer') {
+      addToast({
+        type: 'error',
+        title: 'Farmer Access Required',
+        message: 'Only Farmers can place voice calls to workers.',
+      });
+      return;
+    }
+
+    const workerId = selectedWorker.id || selectedWorker._id;
+    if (!workerId) {
+      addToast({
+        type: 'warning',
+        title: 'Worker Unavailable',
+        message: 'Worker is currently unavailable for calling.',
+      });
+      return;
+    }
+
+    try {
+      setIsCallingWorker(true);
+      const res = await initiateMobileCall(workerId);
+      addToast({
+        type: 'success',
+        title: 'Call Initiated',
+        message: res.message || `Dialing ${selectedWorker.name}'s verified mobile number...`,
+      });
+    } catch (err: any) {
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Unable to initiate call. Please try again.';
+      addToast({
+        type: 'error',
+        title: 'Calling Failed',
+        message: errMsg,
+      });
+    } finally {
+      setIsCallingWorker(false);
+    }
+  };
 
   // Hiring action handler for modal
   const handleConfirmHire = () => {
@@ -1022,7 +1089,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center space-x-3">
+            <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 fullWidth
@@ -1033,7 +1100,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
               <Button
                 variant="primary"
                 fullWidth
-                leftIcon={<PhoneCall className="w-4 h-4" />}
+                leftIcon={<Phone className="w-4 h-4" />}
+                onClick={handleVoiceCallWorker}
+                disabled={isCallingWorker || (!selectedWorker.ownerId && !selectedWorker._id && !selectedWorker.id)}
+                isLoading={isCallingWorker}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+              >
+                {isCallingWorker ? 'Calling...' : 'Call'}
+              </Button>
+              <Button
+                variant="dark"
+                fullWidth
+                leftIcon={<CheckCircle2 className="w-4 h-4" />}
                 onClick={handleConfirmHire}
               >
                 Confirm Hire

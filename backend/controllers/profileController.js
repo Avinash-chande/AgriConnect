@@ -176,6 +176,8 @@ export const getUserPresence = asyncHandler(async (req, res) => {
     throw new AppError('User account not found', 404);
   }
 
+  const isOnline = Boolean(isOnlineInMemory || user.isOnline);
+
   return sendResponse(res, 200, 'User presence status retrieved successfully', {
     userId: user._id,
     name: user.name,

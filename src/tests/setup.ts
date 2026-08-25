@@ -63,3 +63,59 @@ global.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 } as any;
+
+// Mock WebRTC APIs for jsdom
+class MockRTCPeerConnection {
+  iceConnectionState = 'new';
+  connectionState = 'connected';
+  onicecandidate: any = null;
+  ontrack: any = null;
+  onconnectionstatechange: any = null;
+  remoteDescription: any = null;
+  localDescription: any = null;
+
+  addTrack = vi.fn();
+  removeTrack = vi.fn();
+  createOffer = vi.fn().mockResolvedValue({ type: 'offer', sdp: 'mock-offer-sdp' });
+  createAnswer = vi.fn().mockResolvedValue({ type: 'answer', sdp: 'mock-answer-sdp' });
+  setLocalDescription = vi.fn().mockImplementation((desc) => {
+    this.localDescription = desc;
+    return Promise.resolve();
+  });
+  setRemoteDescription = vi.fn().mockImplementation((desc) => {
+    this.remoteDescription = desc;
+    return Promise.resolve();
+  });
+  addIceCandidate = vi.fn().mockResolvedValue(undefined);
+  close = vi.fn();
+}
+
+class MockRTCSessionDescription {
+  type: string;
+  sdp: string;
+  constructor(init?: any) {
+    this.type = init?.type || '';
+    this.sdp = init?.sdp || '';
+  }
+}
+
+class MockRTCIceCandidate {
+  candidate: string;
+  sdpMid: string | null;
+  sdpMLineIndex: number | null;
+  constructor(init?: any) {
+    this.candidate = init?.candidate || '';
+    this.sdpMid = init?.sdpMid || null;
+    this.sdpMLineIndex = init?.sdpMLineIndex || null;
+  }
+}
+
+(global as any).RTCPeerConnection = MockRTCPeerConnection;
+(global as any).RTCSessionDescription = MockRTCSessionDescription;
+(global as any).RTCIceCandidate = MockRTCIceCandidate;
+
+if (typeof window !== 'undefined') {
+  (window as any).RTCPeerConnection = MockRTCPeerConnection;
+  (window as any).RTCSessionDescription = MockRTCSessionDescription;
+  (window as any).RTCIceCandidate = MockRTCIceCandidate;
+}
