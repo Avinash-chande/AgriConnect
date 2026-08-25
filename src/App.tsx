@@ -168,8 +168,8 @@ export function App() {
         <SocketProvider>
           <PresenceProvider>
             <BrowserRouter>
-        <div className="min-h-screen bg-agri-bg text-agri-text flex flex-col font-sans antialiased selection:bg-agri-light selection:text-agri-dark">
-          <Suspense fallback={<PageLoadingFallback />}>
+              <div className="min-h-screen bg-agri-bg text-agri-text flex flex-col font-sans antialiased selection:bg-agri-light selection:text-agri-dark">
+                <Suspense fallback={<PageLoadingFallback />}>
             <Routes>
               {/* Public Authentication & Search Pages */}
               <Route path="/" element={<LandingPage addToast={addToast} />} />

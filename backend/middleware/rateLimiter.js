@@ -112,3 +112,19 @@ export const webhookRateLimiter = rateLimit({
   },
 });
 
+/**
+ * Mobile Telephony Call Rate Limiter
+ * Limits outgoing calls to prevent spam abuse
+ */
+export const callRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many call attempts. Please wait a few minutes before calling again.',
+  },
+});
+
+

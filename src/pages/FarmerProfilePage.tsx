@@ -55,11 +55,11 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
   // Address State
   const [addressLine, setAddressLine] = useState<string>('');
   const [village, setVillage] = useState<string>('');
-  const [district, setDistrict] = useState<string>('Amritsar');
-  const [stateName, setStateName] = useState<string>('Punjab');
-  const [pincode, setPincode] = useState<string>('143001');
-  const [latitude, setLatitude] = useState<number>(31.634);
-  const [longitude, setLongitude] = useState<number>(75.8573);
+  const [district, setDistrict] = useState<string>('');
+  const [stateName, setStateName] = useState<string>('');
+  const [pincode, setPincode] = useState<string>('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   // Media State
   const [profileImage, setProfileImage] = useState<string>('');
@@ -94,11 +94,22 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
           if (p.farmAddress) {
             setAddressLine(p.farmAddress.addressLine || '');
             setVillage(p.farmAddress.village || '');
-            setDistrict(p.farmAddress.district || 'Amritsar');
-            setStateName(p.farmAddress.state || 'Punjab');
-            setPincode(p.farmAddress.pincode || '143001');
-            setLatitude(p.farmAddress.latitude || 31.634);
-            setLongitude(p.farmAddress.longitude || 75.8573);
+            setDistrict(p.farmAddress.district || '');
+            setStateName(p.farmAddress.state || '');
+            setPincode(p.farmAddress.pincode || '');
+            setLatitude(typeof p.farmAddress.latitude === 'number' && !isNaN(p.farmAddress.latitude) ? p.farmAddress.latitude : null);
+            setLongitude(typeof p.farmAddress.longitude === 'number' && !isNaN(p.farmAddress.longitude) ? p.farmAddress.longitude : null);
+          } else if (p.location?.coordinates && Array.isArray(p.location.coordinates)) {
+            setLongitude(p.location.coordinates[0]);
+            setLatitude(p.location.coordinates[1]);
+          } else {
+            setAddressLine('');
+            setVillage('');
+            setDistrict('');
+            setStateName('');
+            setPincode('');
+            setLatitude(null);
+            setLongitude(null);
           }
         }
 
@@ -212,13 +223,14 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
         irrigationType,
         workingDays,
         farmAddress: {
-          addressLine,
-          village,
-          district,
-          state: stateName,
-          pincode,
-          latitude,
-          longitude,
+          addressLine: addressLine.trim(),
+          village: village.trim(),
+          district: district.trim(),
+          state: stateName.trim(),
+          pincode: pincode.trim(),
+          latitude: typeof latitude === 'number' && !isNaN(latitude) ? latitude : null,
+          longitude: typeof longitude === 'number' && !isNaN(longitude) ? longitude : null,
+          country: 'India',
         },
       };
 
@@ -542,21 +554,21 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                     label="District / City"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
-                    placeholder="e.g. Amritsar"
+                    placeholder="e.g. Pune, Ludhiana, Indore"
                   />
 
                   <Input
                     label="State"
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
-                    placeholder="e.g. Punjab"
+                    placeholder="e.g. Maharashtra, Punjab, MP"
                   />
 
                   <Input
                     label="PIN Code"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
-                    placeholder="143001"
+                    placeholder="e.g. 411001"
                   />
                 </div>
 
@@ -565,14 +577,14 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                     label="Village / Tehsil Name"
                     value={village}
                     onChange={(e) => setVillage(e.target.value)}
-                    placeholder="e.g. Jandiala Guru"
+                    placeholder="e.g. Village or Tehsil name"
                   />
 
                   <Input
                     label="Street / Address Line"
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
-                    placeholder="e.g. GT Road, Near Grain Market"
+                    placeholder="e.g. Farm road, Near canal gate"
                   />
                 </div>
 
@@ -590,19 +602,38 @@ export const FarmerProfilePage: React.FC<FarmerProfilePageProps> = ({ addToast }
                     longitude,
                   }}
                   onSaveLocation={async (updated) => {
-                    if (updated.latitude !== null && updated.latitude !== undefined) setLatitude(updated.latitude);
-                    if (updated.longitude !== null && updated.longitude !== undefined) setLongitude(updated.longitude);
-                    if (updated.addressLine) setAddressLine(updated.addressLine);
-                    if (updated.village) setVillage(updated.village);
-                    if (updated.district) setDistrict(updated.district);
-                    if (updated.state) setStateName(updated.state);
-                    if (updated.pincode) setPincode(updated.pincode);
+                    if (typeof updated.latitude === 'number' && !isNaN(updated.latitude)) {
+                      setLatitude(updated.latitude);
+                    }
+                    if (typeof updated.longitude === 'number' && !isNaN(updated.longitude)) {
+                      setLongitude(updated.longitude);
+                    }
+                    if (updated.addressLine !== undefined) setAddressLine(updated.addressLine);
+                    if (updated.village !== undefined) setVillage(updated.village);
+                    if (updated.district !== undefined) setDistrict(updated.district);
+                    if (updated.state !== undefined) setStateName(updated.state);
+                    if (updated.pincode !== undefined) setPincode(updated.pincode);
+
+                    addToast({
+                      type: 'success',
+                      title: 'Location Updated',
+                      message: 'Farm location and address updated from map coordinates.',
+                    });
                   }}
                   onRemoveLocation={async () => {
-                    setLatitude(0);
-                    setLongitude(0);
+                    setLatitude(null);
+                    setLongitude(null);
                     setAddressLine('');
                     setVillage('');
+                    setDistrict('');
+                    setStateName('');
+                    setPincode('');
+
+                    addToast({
+                      type: 'info',
+                      title: 'Location Removed',
+                      message: 'Farm location removed from profile.',
+                    });
                   }}
                 />
               </div>

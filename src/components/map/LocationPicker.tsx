@@ -106,9 +106,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
         const address = response.data?.address || {};
         const parsedDetails: LocationPickerAddressDetails = {
-          district: address.state_district || address.county || address.district || address.city || '',
+          district: address.district || address.state_district || address.county || address.city_district || address.city || '',
           state: address.state || '',
-          village: address.village || address.suburb || address.town || address.hamlet || '',
+          village: address.village || address.town || address.city || address.municipality || address.suburb || address.neighbourhood || address.hamlet || '',
           addressLine: response.data?.name || address.road || '',
           pincode: address.postcode || '',
           displayName: response.data?.display_name || '',
@@ -164,12 +164,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         setIsLocating(false);
       },
       (err) => {
-        console.warn('Geolocation failed:', err.message);
+        console.warn('Geolocation notice:', err.message);
         setIsLocating(false);
-        // Punjab simulation fallback if user denies GPS permission
-        const simLat = Number((30.9 + Math.random() * 0.8).toFixed(4));
-        const simLng = Number((74.8 + Math.random() * 1.2).toFixed(4));
-        handlePositionUpdate(simLat, simLng);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );

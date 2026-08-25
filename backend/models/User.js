@@ -67,6 +67,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    mobileVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     mobileVerifiedAt: {
       type: Date,
       default: null,
@@ -162,6 +167,11 @@ const userSchema = new mongoose.Schema(
 
 // Apply Soft Delete Plugin
 userSchema.plugin(softDeletePlugin);
+
+// Virtual alias for mobileNumber
+userSchema.virtual('mobileNumber').get(function () {
+  return this.mobile;
+});
 
 // Geospatial 2dsphere index for location queries
 userSchema.index({ location: '2dsphere' }, { sparse: true });

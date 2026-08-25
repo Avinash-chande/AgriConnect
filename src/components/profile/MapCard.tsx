@@ -12,11 +12,11 @@ interface MapCardProps {
 }
 
 export const MapCard: React.FC<MapCardProps> = ({
-  district = 'Amritsar',
-  state = 'Punjab',
+  district = '',
+  state = '',
   village,
-  latitude = 31.634,
-  longitude = 75.8573,
+  latitude = 0,
+  longitude = 0,
   className = '',
 }) => {
   const openStreetMapDirectionsUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;${latitude}%2C${longitude}`;

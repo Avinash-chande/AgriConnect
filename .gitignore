@@ -66,3 +66,4 @@ out
 .vite/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+backend/models/AiConversation.js

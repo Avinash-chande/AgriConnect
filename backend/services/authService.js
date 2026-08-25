@@ -12,12 +12,14 @@ import { TrustScoreService } from './TrustScoreService.js';
 import { VerificationHistory } from '../models/VerificationHistory.js';
 import { Notification, NOTIFICATION_TYPE } from '../models/Notification.js';
 import { createNotificationService } from './notificationService.js';
+import { normalizePhoneNumber } from '../utils/phoneUtils.js';
 
 export const registerFarmerService = async (data) => {
-  const { fullName, name, email, phone, mobile, password, farmName, farmType, location, totalAcreage, farmDescription } = data;
+  const { name, fullName, email, mobile, phone, password, location, farmDescription, farmName, farmType, totalAcreage } = data;
 
   const userName = name || fullName;
-  const userPhone = mobile || phone;
+  const rawPhone = mobile || phone;
+  const userPhone = rawPhone ? normalizePhoneNumber(rawPhone) : rawPhone;
 
   const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile: userPhone }] });
   if (existingUser) {
@@ -64,7 +66,8 @@ export const registerWorkerService = async (data) => {
   const { fullName, name, email, phone, mobile, password, title, location, hourlyRate, dailyRate, skills, experienceYears, experienceLevel, languages, bio } = data;
 
   const userName = name || fullName;
-  const userPhone = mobile || phone;
+  const rawPhone = mobile || phone;
+  const userPhone = rawPhone ? normalizePhoneNumber(rawPhone) : rawPhone;
 
   const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile: userPhone }] });
   if (existingUser) {
@@ -232,10 +235,14 @@ export const verifyOTPService = async (credential, otp) => {
   if (isEmail) {
     user.emailVerifiedAt = now;
   } else {
+    user.mobileVerified = true;
     user.mobileVerifiedAt = now;
   }
 
-  if (user.mobile && !user.mobileVerifiedAt) user.mobileVerifiedAt = now;
+  if (user.mobile) {
+    user.mobileVerified = true;
+    if (!user.mobileVerifiedAt) user.mobileVerifiedAt = now;
+  }
   if (user.email && !user.emailVerifiedAt) user.emailVerifiedAt = now;
 
   await user.save({ validateBeforeSave: false });

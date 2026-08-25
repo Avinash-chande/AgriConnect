@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, MapPin, Sparkles, CheckCircle2, Star, ShieldCheck, 
   Zap, Tractor, Bot, Wheat, Droplets, Milk, Sprout,
-  ArrowRight, Filter, ChevronRight, PhoneCall, DollarSign, Award,
-  Briefcase
+  ArrowRight, Filter, ChevronRight, Phone, PhoneCall, DollarSign, Award,
+  Briefcase, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -15,12 +15,14 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { 
-  MOCK_WORKERS, 
   MOCK_JOB_CATEGORIES, 
   MOCK_TESTIMONIALS, 
   MOCK_METRICS,
   MOCK_FARMS_LOCATIONS
 } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+import { getFeaturedWorkersApi } from '../services/profileService';
+import { initiateMobileCall } from '../services/callService';
 import type { WorkerProfile, ToastMessage } from '../types';
 
 interface LandingPageProps {
@@ -29,14 +31,162 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   // Search Bar State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
 
+  // Real Worker Profiles from MongoDB
+  const [workers, setWorkers] = useState<WorkerProfile[]>([]);
+  const [loadingWorkers, setLoadingWorkers] = useState<boolean>(true);
+  const [workerError, setWorkerError] = useState<string | null>(null);
+
+  // Fetch real featured workers from backend API
+  const fetchFeaturedWorkers = async () => {
+    setLoadingWorkers(true);
+    setWorkerError(null);
+    try {
+      const data = await getFeaturedWorkersApi(6);
+      setWorkers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('Failed to load featured workers:', err);
+      setWorkerError(err.message || 'Could not load verified workers.');
+    } finally {
+      setLoadingWorkers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeaturedWorkers();
+  }, []);
+
   // Interactive Worker Detail Modal
   const [selectedWorker, setSelectedWorker] = useState<WorkerProfile | null>(null);
+  const [isCallingWorker, setIsCallingWorker] = useState<boolean>(false);
+
+  // Mobile calling action handler for modal
+  const handleVoiceCallWorker = async () => {
+    if (!selectedWorker) return;
+
+    if (!isAuthenticated || !user) {
+      const worker = selectedWorker;
+      addToast({
+        type: 'info',
+        title: 'Sign In Required',
+        message: `Please sign in as a Farmer to call ${worker.name}.`,
+      });
+      navigate('/login', {
+        state: {
+          from: window.location.pathname,
+          action: 'call-worker',
+          workerId: worker.id || worker._id,
+          workerName: worker.name,
+        },
+      });
+      return;
+    }
+
+    const role = (user.role || '').trim().toLowerCase();
+    if (role !== 'farmer') {
+      addToast({
+        type: 'error',
+        title: 'Farmer Access Required',
+        message: 'Only Farmers can place voice calls to workers.',
+      });
+      return;
+    }
+
+    const workerId = selectedWorker.id || selectedWorker._id;
+    if (!workerId) {
+      addToast({
+        type: 'warning',
+        title: 'Worker Unavailable',
+        message: 'Worker is currently unavailable for calling.',
+      });
+      return;
+    }
+
+    try {
+      setIsCallingWorker(true);
+      const res = await initiateMobileCall(workerId);
+      addToast({
+        type: 'success',
+        title: 'Call Initiated',
+        message: res.message || `Dialing ${selectedWorker.name}'s verified mobile number...`,
+      });
+    } catch (err: any) {
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Unable to initiate call. Please try again.';
+      addToast({
+        type: 'error',
+        title: 'Calling Failed',
+        message: errMsg,
+      });
+    } finally {
+      setIsCallingWorker(false);
+    }
+  };
+
+  // Hiring action handler for modal
+  const handleConfirmHire = () => {
+    if (!isAuthenticated || !user) {
+      const worker = selectedWorker;
+      setSelectedWorker(null);
+
+      navigate('/login', {
+        state: {
+          from: '/farmer/applications',
+          action: 'hire-worker',
+          workerId: worker?.id,
+          workerName: worker?.name,
+        },
+      });
+
+      addToast({
+        type: 'info',
+        title: 'Sign In Required',
+        message: `Please sign in to continue hiring ${worker?.name || 'this worker'}.`,
+      });
+
+      return;
+    }
+
+    const role = (user.role || '').trim().toLowerCase();
+
+    if (role === 'admin') {
+      addToast({
+        type: 'info',
+        title: 'Admin Access',
+        message: 'Admin accounts cannot hire workers directly.',
+      });
+      return;
+    }
+
+    if (role !== 'farmer') {
+      addToast({
+        type: 'error',
+        title: 'Farmer Access Required',
+        message: 'Only Farmers can hire agricultural workers.',
+      });
+      return;
+    }
+
+    const workerName = selectedWorker?.name || 'worker';
+
+    setSelectedWorker(null);
+
+    navigate('/farmer/applications');
+
+    addToast({
+      type: 'success',
+      title: 'Continue Hiring',
+      message: `You are signed in as a Farmer. Continue hiring ${workerName} from your applications.`,
+    });
+  };
 
   // AgriMatch AI Interactive Widget State
   const [aiCrop, setAiCrop] = useState('Wheat Harvesting');
@@ -70,7 +220,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
         matchedCount: aiWorkersCount,
         score: 98.4,
         estimatedArrival: '1.5 Hours',
-        workers: MOCK_WORKERS.slice(0, 3)
+        workers: workers.length > 0 ? workers.slice(0, 3) : [],
       });
       addToast({
         type: 'success',
@@ -567,13 +717,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
 
                     <div className="flex items-center space-x-2 pt-1">
                       {aiResult.workers.map((w) => (
-                        <img
-                          key={w.id}
-                          src={w.avatar}
-                          alt={w.name}
-                          className="w-8 h-8 rounded-full border-2 border-agri-primary object-cover"
-                          title={w.name}
-                        />
+                        w.avatar || w.profileImage ? (
+                          <img
+                            key={w.id}
+                            src={w.avatar || w.profileImage}
+                            alt={w.name}
+                            className="w-8 h-8 rounded-full border-2 border-agri-primary object-cover"
+                            title={w.name}
+                          />
+                        ) : (
+                          <div
+                            key={w.id}
+                            className="w-8 h-8 rounded-full border-2 border-agri-primary bg-emerald-800 text-white font-bold text-xs flex items-center justify-center uppercase"
+                            title={w.name}
+                          >
+                            {w.name.charAt(0)}
+                          </div>
+                        )
                       ))}
                       <span className="text-[11px] text-emerald-300 font-medium pl-2">
                         Ready for instant booking
@@ -600,102 +760,184 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
             Browse rated professionals available for immediate farm hiring.
           </p>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_WORKERS.map((worker) => (
-              <motion.div
-                key={worker.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
+          {/* Loading Skeleton State */}
+          {loadingWorkers && (
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-soft-sm space-y-4 animate-pulse text-left">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-200" />
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded-lg w-2/3" />
+                        <div className="h-3 bg-slate-100 rounded-md w-1/2" />
+                      </div>
+                    </div>
+                    <div className="w-10 h-4 bg-slate-100 rounded" />
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-3.5 bg-slate-200 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-full" />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <div className="h-5 bg-slate-100 rounded-md w-16" />
+                    <div className="h-5 bg-slate-100 rounded-md w-20" />
+                    <div className="h-5 bg-slate-100 rounded-md w-16" />
+                  </div>
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="h-5 bg-slate-200 rounded w-20" />
+                    <div className="h-8 bg-slate-200 rounded-xl w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error State */}
+          {!loadingWorkers && workerError && (
+            <div className="mt-12 py-12 px-6 text-center bg-rose-50/50 rounded-3xl border border-rose-200/80 shadow-soft-sm max-w-2xl mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-rose-800 font-heading">
+                Unable to load verified workers
+              </h3>
+              <p className="text-xs text-rose-600 mt-1">
+                {workerError}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchFeaturedWorkers}
+                className="mt-4 border-rose-300 text-rose-700 hover:bg-rose-100"
               >
-                <Card className="p-6 text-left flex flex-col justify-between h-full group">
-                  <div>
-                    {/* Worker Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <img
-                            src={worker.avatar}
-                            alt={worker.name}
-                            className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-200 group-hover:border-agri-primary transition-colors"
-                          />
-                          {worker.isVerified && (
-                            <div className="absolute -bottom-1 -right-1 bg-agri-primary text-white p-0.5 rounded-full" title="Verified Worker">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                Try Again
+              </Button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loadingWorkers && !workerError && workers.length === 0 && (
+            <div className="mt-12 py-12 px-6 text-center bg-white rounded-3xl border border-slate-200/80 shadow-soft-sm max-w-2xl mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-agri-primary flex items-center justify-center mx-auto mb-3">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-800 font-heading">
+                No verified workers available yet.
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Check back soon as new agricultural specialists and machinery operators join AgriConnect.
+              </p>
+            </div>
+          )}
+
+          {/* Real Worker Cards Grid */}
+          {!loadingWorkers && !workerError && workers.length > 0 && (
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {workers.map((worker) => (
+                <motion.div
+                  key={worker.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Card className="p-6 text-left flex flex-col justify-between h-full group">
+                    <div>
+                      {/* Worker Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            {worker.avatar || worker.profileImage ? (
+                              <img
+                                src={worker.avatar || worker.profileImage}
+                                alt={worker.name}
+                                className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-200 group-hover:border-agri-primary transition-colors"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-agri-primary font-bold text-lg flex items-center justify-center border-2 border-emerald-200 group-hover:border-agri-primary transition-colors uppercase">
+                                {worker.name.charAt(0)}
+                              </div>
+                            )}
+                            {worker.isVerified && (
+                              <div className="absolute -bottom-1 -right-1 bg-agri-primary text-white p-0.5 rounded-full" title="Verified Worker">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-bold font-heading text-base text-agri-text group-hover:text-agri-primary transition-colors">
+                              {worker.name}
+                            </h3>
+                            <div className="flex items-center space-x-1.5 text-xs text-slate-500 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-agri-primary" />
+                              <span>{worker.location}</span>
                             </div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-bold font-heading text-base text-agri-text group-hover:text-agri-primary transition-colors">
-                            {worker.name}
-                          </h3>
-                          <div className="flex items-center space-x-1.5 text-xs text-slate-500 mt-0.5">
-                            <MapPin className="w-3.5 h-3.5 text-agri-primary" />
-                            <span>{worker.location}</span>
                           </div>
                         </div>
+
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center space-x-1 text-amber-500 text-xs font-bold">
+                            <Star className="w-4 h-4 fill-current" />
+                            <span>{(worker.rating || 5.0).toFixed(1)}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">({worker.completedJobs ?? worker.totalJobsCompleted ?? worker.reviewsCount ?? 0} jobs)</span>
+                        </div>
                       </div>
 
-                      <div className="flex flex-col items-end">
-                        <div className="flex items-center space-x-1 text-amber-500 text-xs font-bold">
-                          <Star className="w-4 h-4 fill-current" />
-                          <span>{worker.rating}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400">({worker.reviewsCount} reviews)</span>
+                      {/* Title & Badge */}
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold text-agri-dark font-heading">
+                          {worker.title || 'Agricultural Specialist'}
+                        </p>
+                        {worker.badge && (
+                          <div className="mt-2">
+                            <Badge variant="amber" size="sm">
+                              {worker.badge}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Title & Badge */}
-                    <div className="mt-4">
-                      <p className="text-xs font-semibold text-agri-dark font-heading">
-                        {worker.title}
-                      </p>
-                      {worker.badge && (
-                        <div className="mt-2">
-                          <Badge variant="amber" size="sm">
-                            {worker.badge}
-                          </Badge>
-                        </div>
+                      {/* Bio */}
+                      {worker.bio && (
+                        <p className="mt-3 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          {worker.bio}
+                        </p>
                       )}
+
+                      {/* Skills Tags */}
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        {(worker.skills || []).map((skill, sIdx) => (
+                          <span key={sIdx} className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-50 text-agri-dark border border-emerald-200">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* Bio */}
-                    <p className="mt-3 text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                      {worker.bio}
-                    </p>
-
-                    {/* Skills Tags */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {worker.skills.map((skill, sIdx) => (
-                        <span key={sIdx} className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-50 text-agri-dark border border-emerald-200">
-                          {skill}
+                    {/* Pricing & CTA */}
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs text-slate-400 block">Expected Wage</span>
+                        <span className="text-base font-extrabold font-heading text-agri-text">
+                          ₹{worker.dailyWage ?? worker.expectedDailyWage ?? 0}<span className="text-xs font-normal text-slate-500"> / day</span>
                         </span>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Pricing & CTA */}
-                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs text-slate-400 block">Rate</span>
-                      <span className="text-base font-extrabold font-heading text-agri-text">
-                        {worker.hourlyRate} <span className="text-xs font-normal text-slate-500">/ {worker.dailyRate}</span>
-                      </span>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setSelectedWorker(worker)}
+                      >
+                        Quick Hire
+                      </Button>
                     </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setSelectedWorker(worker)}
-                    >
-                      Quick Hire
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -780,39 +1022,74 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
         {selectedWorker && (
           <div className="space-y-4 text-left">
             <div className="flex items-center space-x-4 border-b border-slate-100 pb-4">
-              <img
-                src={selectedWorker.avatar}
-                alt={selectedWorker.name}
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-agri-primary"
-              />
+              {selectedWorker.avatar || selectedWorker.profileImage ? (
+                <img
+                  src={selectedWorker.avatar || selectedWorker.profileImage}
+                  alt={selectedWorker.name}
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-agri-primary"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-agri-primary font-bold text-2xl flex items-center justify-center border-2 border-agri-primary uppercase">
+                  {selectedWorker.name.charAt(0)}
+                </div>
+              )}
               <div>
-                <h4 className="font-bold text-base text-agri-text font-heading">{selectedWorker.name}</h4>
-                <p className="text-xs text-slate-500">{selectedWorker.title}</p>
+                <div className="flex items-center space-x-1.5">
+                  <h4 className="font-bold text-base text-agri-text font-heading">{selectedWorker.name}</h4>
+                  {selectedWorker.isVerified && (
+                    <span title="Verified Worker">
+                      <CheckCircle2 className="w-4 h-4 text-agri-primary shrink-0" />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500">{selectedWorker.title || 'Agricultural Specialist'}</p>
                 <div className="flex items-center space-x-2 text-xs font-semibold text-agri-dark mt-1">
-                  <span>{selectedWorker.hourlyRate}</span>
+                  <span>₹{selectedWorker.dailyWage ?? selectedWorker.expectedDailyWage ?? 0} / day</span>
                   <span>•</span>
                   <span>{selectedWorker.location}</span>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Primary Skills</label>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedWorker.skills.map((s, i) => (
-                  <span key={i} className="text-xs px-2.5 py-1 rounded-md bg-emerald-100 text-agri-dark font-medium">
-                    {s}
-                  </span>
-                ))}
+            {selectedWorker.skills && selectedWorker.skills.length > 0 && (
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Primary Skills</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedWorker.skills.map((s, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-md bg-emerald-100 text-agri-dark font-medium">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedWorker.bio && (
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">About Worker</label>
+                <p className="text-xs text-slate-600 leading-relaxed">{selectedWorker.bio}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Experience</span>
+                <span className="font-bold text-slate-800 block">{selectedWorker.experience ?? selectedWorker.experienceYears ?? 0} Years</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Rating</span>
+                <span className="font-bold text-amber-500 flex items-center justify-center space-x-1">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>{(selectedWorker.rating || 5.0).toFixed(1)}</span>
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Completed Jobs</span>
+                <span className="font-bold text-slate-800 block">{selectedWorker.completedJobs ?? selectedWorker.totalJobsCompleted ?? selectedWorker.reviewsCount ?? 0}</span>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold uppercase text-slate-500 block mb-1">About Worker</label>
-              <p className="text-xs text-slate-600 leading-relaxed">{selectedWorker.bio}</p>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center space-x-3">
+            <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 fullWidth
@@ -823,17 +1100,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
               <Button
                 variant="primary"
                 fullWidth
-                leftIcon={<PhoneCall className="w-4 h-4" />}
-                onClick={() => {
-                  const workerName = selectedWorker.name;
-                  setSelectedWorker(null);
-                  navigate('/login');
-                  addToast({
-                    type: 'success',
-                    title: 'Redirecting to Login',
-                    message: `Please sign in to confirm hiring ${workerName}.`
-                  });
-                }}
+                leftIcon={<Phone className="w-4 h-4" />}
+                onClick={handleVoiceCallWorker}
+                disabled={isCallingWorker || (!selectedWorker.ownerId && !selectedWorker._id && !selectedWorker.id)}
+                isLoading={isCallingWorker}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+              >
+                {isCallingWorker ? 'Calling...' : 'Call'}
+              </Button>
+              <Button
+                variant="dark"
+                fullWidth
+                leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                onClick={handleConfirmHire}
               >
                 Confirm Hire
               </Button>

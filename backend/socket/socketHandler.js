@@ -3,6 +3,8 @@ import { SOCKET_EVENTS } from './socketEvents.js';
 import { getUserRoomName, getJobRoomName, formatSocketResponse } from './socketUtils.js';
 import { logger } from '../utils/logger.js';
 import { validateSocketPayload } from '../validators/chatValidator.js';
+import { registerCallHandlers } from './callHandler.js';
+import { callSessionStore } from './callSessionStore.js';
 
 /**
  * Main Socket Connection & Event Handler
@@ -37,6 +39,9 @@ export const registerSocketHandlers = (io, socket) => {
     socketId: socket.id,
     onlineUsersCount: connectedUsersStore.getOnlineUsersCount(),
   }));
+
+  // Register WebRTC Voice Call Signaling Handlers
+  registerCallHandlers(io, socket);
 
   // 3. Room Management Event: Join Job Room
   socket.on(SOCKET_EVENTS.JOIN_JOB_ROOM, (data, callback) => {
@@ -124,6 +129,17 @@ export const registerSocketHandlers = (io, socket) => {
   // 4. Handle Disconnect
   socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
     logger.info(`🔌 Socket ${socket.id} disconnected (User: ${user.name}). Reason: ${reason}`);
+
+    // If user was in an active call, terminate call and notify peer
+    const activeCall = callSessionStore.getUserActiveCall(userId);
+    if (activeCall) {
+      const otherUserId = activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId;
+      callSessionStore.endSession(activeCall.callId, 'ended');
+      io.to(getUserRoomName(otherUserId)).emit(SOCKET_EVENTS.CALL_END, {
+        callId: activeCall.callId,
+        reason: 'User disconnected',
+      });
+    }
 
     const { userId: disconnectedUserId, isLastConnection, lastSeen } = connectedUsersStore.removeSocket(socket.id);
 

@@ -22,6 +22,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import kycRoutes from './routes/kycRoutes.js';
 import workerRoutes from './routes/workerRoutes.js';
+import callRoutes from './routes/callRoutes.js';
 import { globalRateLimiter } from './middleware/rateLimiter.js';
 import { sanitizeNoSQL } from './middleware/sanitizeMiddleware.js';
 import { notFound } from './middleware/notFoundMiddleware.js';
@@ -134,6 +135,7 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/kyc', kycRoutes);
 app.use('/api/v1/workers', workerRoutes);
 app.use('/api/workers', workerRoutes);
+app.use('/api/v1/calls', callRoutes);
 
 
 app.get('/', (req, res) => {

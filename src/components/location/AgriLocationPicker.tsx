@@ -91,9 +91,11 @@ export const AgriLocationPicker: React.FC<AgriLocationPickerProps> = ({
       });
 
       const addr = response.data?.address || {};
-      const dist = addr.state_district || addr.county || addr.district || addr.city || '';
+      // Village / Locality priority: village -> town -> city -> municipality -> suburb -> neighbourhood -> hamlet
+      const vil = addr.village || addr.town || addr.city || addr.municipality || addr.suburb || addr.neighbourhood || addr.hamlet || '';
+      // District priority: district -> state_district -> county -> city_district -> city
+      const dist = addr.district || addr.state_district || addr.county || addr.city_district || addr.city || '';
       const st = addr.state || '';
-      const vil = addr.village || addr.suburb || addr.town || addr.hamlet || '';
       const line = response.data?.name || addr.road || '';
       const pin = addr.postcode || '';
       const count = addr.country || 'India';
@@ -107,9 +109,10 @@ export const AgriLocationPicker: React.FC<AgriLocationPickerProps> = ({
       setCountryName(count);
       setFormattedAddress(disp);
     } catch {
-      // Fallback format on network failure
+      // Fallback format on network failure - keep exact lat/lng, do not invent fake address
       const fallbackDisp = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
       setFormattedAddress(fallbackDisp);
+      setValidationError('Could not determine the address automatically. Please enter the address manually.');
     } finally {
       setIsGeocoding(false);
     }
@@ -281,7 +284,7 @@ export const AgriLocationPicker: React.FC<AgriLocationPickerProps> = ({
             {isGeocoding && (
               <span className="text-[10px] text-emerald-700 font-semibold flex items-center space-x-1">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Geocoding...</span>
+                <span>Finding address...</span>
               </span>
             )}
           </div>

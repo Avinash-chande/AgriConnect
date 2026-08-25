@@ -43,6 +43,7 @@ export interface JobData {
   savedCount?: number;
   shareCount?: number;
   totalApplications?: number;
+  applicationCount?: number;
   totalViews?: number;
   createdAt?: string;
   farmer?: {

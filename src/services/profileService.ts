@@ -3,11 +3,12 @@ import api from './api';
 export interface FarmAddress {
   addressLine?: string;
   village?: string;
-  district: string;
-  state: string;
+  district?: string;
+  state?: string;
+  country?: string;
   pincode?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface FarmerProfilePayload {
@@ -96,3 +97,11 @@ export const getProfileByIdOrSlugApi = async (identifier: string) => {
   const response = await api.get(`/profiles/user/${identifier}`);
   return response.data;
 };
+
+export const getFeaturedWorkersApi = async (limit: number = 6) => {
+  const response = await api.get('/workers/featured', {
+    params: { limit },
+  });
+  return response.data.data;
+};
+

@@ -69,18 +69,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const setSession = (userData: UserAccount, token?: string) => {
+  const normalizeUser = (userData: any): UserAccount => {
+    const nameVal = userData.fullName || userData.name || 'User';
+    return {
+      ...userData,
+      fullName: nameVal,
+      role: userData.role || 'farmer',
+    };
+  };
+
+  const setSession = (userData: UserAccount, token?: string, refreshToken?: string) => {
     const normalized = normalizeUser(userData);
     setUser(normalized);
     localStorage.setItem('agri_user', JSON.stringify(normalized));
     if (token) {
       localStorage.setItem('agri_access_token', token);
     }
+    if (refreshToken) {
+      localStorage.setItem('agri_refresh_token', refreshToken);
+    }
   };
 
   const clearSession = () => {
     setUser(null);
     localStorage.removeItem('agri_access_token');
+    localStorage.removeItem('agri_refresh_token');
     localStorage.removeItem('agri_user');
   };
 
@@ -122,10 +135,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       data.data.accessToken ||
       data.accessToken;
 
+    const refreshToken =
+      data.data.tokens?.refreshToken ||
+      data.data.refreshToken ||
+      data.refreshToken;
+
     console.log('🔐 Login response:', data);
     console.log('🔑 Access token received:', !!token);
 
-    setSession(loggedInUser, token);
+    setSession(loggedInUser, token, refreshToken);
 
     return normalizeUser(loggedInUser);
   };
@@ -155,7 +173,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       data.data.accessToken ||
       data.accessToken;
 
-    setSession(registeredUser, token);
+    const refreshToken =
+      data.data.tokens?.refreshToken ||
+      data.data.refreshToken ||
+      data.refreshToken;
+
+    setSession(registeredUser, token, refreshToken);
 
     localStorage.setItem(
       'pending_verification_email',
@@ -176,7 +199,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       data.data.accessToken ||
       data.accessToken;
 
-    setSession(registeredUser, token);
+    const refreshToken =
+      data.data.tokens?.refreshToken ||
+      data.data.refreshToken ||
+      data.refreshToken;
+
+    setSession(registeredUser, token, refreshToken);
 
     localStorage.setItem(
       'pending_verification_email',

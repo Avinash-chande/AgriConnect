@@ -55,8 +55,22 @@ export const CreateJobPage: React.FC = () => {
   const [latitude, setLatitude] = useState<number>(31.634);
   const [longitude, setLongitude] = useState<number>(75.8573);
 
-  // Image State
-  const [farmFiles, setFarmFiles] = useState<File[]>([]);
+  // Image Preview State
+  interface SelectedImageItem {
+    id: string;
+    file: File;
+    previewUrl: string;
+  }
+
+  const [selectedImages, setSelectedImages] = useState<SelectedImageItem[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  // Clean up object URLs when component unmounts or selected images change
+  React.useEffect(() => {
+    return () => {
+      selectedImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, [selectedImages]);
 
   const handleAddSkill = () => {
     const trimmed = skillInput.trim();
@@ -71,10 +85,67 @@ export const CreateJobPage: React.FC = () => {
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setFarmFiles([...farmFiles, ...filesArray]);
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    setImageError(null);
+    const newFiles = Array.from(e.target.files);
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxTotalImages = 5;
+
+    const availableSlots = maxTotalImages - selectedImages.length;
+    if (availableSlots <= 0) {
+      setImageError('Maximum of 5 photos allowed per job posting.');
+      e.target.value = '';
+      return;
     }
+
+    const validNewItems: SelectedImageItem[] = [];
+    const errors: string[] = [];
+
+    for (const file of newFiles) {
+      if (selectedImages.length + validNewItems.length >= maxTotalImages) {
+        errors.push(`Maximum of ${maxTotalImages} photos allowed.`);
+        break;
+      }
+
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        errors.push(`"${file.name}" is not a valid format. Please upload JPEG, PNG, or WEBP.`);
+        continue;
+      }
+
+      if (file.size > maxSize) {
+        errors.push(`"${file.name}" exceeds the 5MB size limit.`);
+        continue;
+      }
+
+      validNewItems.push({
+        id: `${file.name}-${file.lastModified}-${Math.random().toString(36).substring(2, 9)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
+
+    if (errors.length > 0) {
+      setImageError(errors.join(' '));
+    }
+
+    if (validNewItems.length > 0) {
+      setSelectedImages((prev) => [...prev, ...validNewItems]);
+    }
+
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (idToRemove: string) => {
+    setSelectedImages((prev) => {
+      const itemToRemove = prev.find((item) => item.id === idToRemove);
+      if (itemToRemove) {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
+      }
+      return prev.filter((item) => item.id !== idToRemove);
+    });
+    setImageError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,9 +208,14 @@ export const CreateJobPage: React.FC = () => {
         })
       );
 
-      farmFiles.forEach((file) => formData.append('farmImages', file));
+      selectedImages.forEach((item) => formData.append('farmImages', item.file));
 
       await jobService.createJob(formData);
+      
+      // Revoke preview URLs on success
+      selectedImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+      setSelectedImages([]);
+
       setSuccessMsg('Job vacancy posted successfully!');
 
       setTimeout(() => {
@@ -494,24 +570,115 @@ export const CreateJobPage: React.FC = () => {
 
           {/* Section 5: Gallery Images */}
           <div className="bg-white border border-slate-200 shadow-soft-sm rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
-              <ImageIcon className="w-6 h-6 text-agri-primary" />
-              <h2 className="text-lg font-bold font-heading text-slate-900">Farm & Job Gallery Photos</h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-agri-primary flex items-center justify-center">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold font-heading text-slate-900">Farm & Job Gallery Photos</h2>
+                  <p className="text-xs text-slate-500">Show workers the field conditions, machinery, and crop setup</p>
+                </div>
+              </div>
+              {selectedImages.length > 0 && (
+                <span className="text-xs font-semibold px-3 py-1 bg-emerald-50 text-agri-primary rounded-full border border-emerald-200">
+                  {selectedImages.length} / 5 photos selected
+                </span>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Upload Farm Photos</label>
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 hover:border-agri-primary rounded-xl cursor-pointer bg-slate-50 hover:bg-emerald-50/50 transition-all">
-                <Upload className="w-8 h-8 text-agri-primary mb-2" />
-                <span className="text-sm font-medium text-slate-700">Click to select farm/job photos</span>
-                <span className="text-xs text-slate-500 mt-1">JPEG, PNG, WEBP up to 5MB</span>
-                <input type="file" multiple accept="image/*" onChange={handleImageFileChange} className="hidden" />
-              </label>
+            <div className="space-y-4">
+              {/* Upload Dropzone / Button */}
+              {selectedImages.length < 5 && (
+                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 hover:border-agri-primary rounded-2xl cursor-pointer bg-slate-50/70 hover:bg-emerald-50/40 transition-all group">
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-soft-sm border border-slate-200 group-hover:border-emerald-300 flex items-center justify-center mb-3 transition-colors">
+                    <Upload className="w-6 h-6 text-agri-primary group-hover:scale-110 transition-transform" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-800 group-hover:text-agri-primary transition-colors">
+                    Click to select farm/job photos
+                  </span>
+                  <span className="text-xs text-slate-500 mt-1">JPEG, PNG, WEBP up to 5MB (Max 5 photos)</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                    disabled={selectedImages.length >= 5}
+                  />
+                </label>
+              )}
 
-              {farmFiles.length > 0 && (
-                <p className="text-xs text-agri-primary font-semibold pt-2">
-                  {farmFiles.length} file(s) selected for upload.
-                </p>
+              {/* Validation / Error Message */}
+              {imageError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700 flex items-center justify-between">
+                  <span>{imageError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setImageError(null)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Selected Images Grid Preview */}
+              {selectedImages.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Selected Photos ({selectedImages.length})
+                    </span>
+                    <span className="text-[11px] text-slate-500">Previews generated from selected files</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {selectedImages.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="group relative bg-slate-50 border border-slate-200 rounded-2xl p-2 flex flex-col items-center hover:border-emerald-300 hover:shadow-soft-md transition-all"
+                      >
+                        {/* Image Preview Container */}
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-200">
+                          <img
+                            src={item.previewUrl}
+                            alt={item.file.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+
+                          {/* Remove Button Badge */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(item.id)}
+                            title={`Remove ${item.file.name}`}
+                            className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+
+                          {/* Index badge */}
+                          <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-[10px] font-bold text-white rounded-md">
+                            #{index + 1}
+                          </span>
+                        </div>
+
+                        {/* File details with truncated filename */}
+                        <div className="w-full mt-2 text-center">
+                          <p
+                            className="text-xs font-semibold text-slate-800 truncate px-1"
+                            title={item.file.name}
+                          >
+                            {item.file.name}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            {(item.file.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
