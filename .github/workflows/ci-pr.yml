@@ -111,7 +111,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: ./config/Dockerfile.backend
           push: false
           tags: agriconnect-backend:ci
 
@@ -119,6 +119,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.frontend
+          file: ./config/Dockerfile.frontend
           push: false
           tags: agriconnect-frontend:ci

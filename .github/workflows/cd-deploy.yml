@@ -93,7 +93,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: ./config/Dockerfile.backend
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/agriconnect-backend:latest
@@ -103,7 +103,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.frontend
+          file: ./config/Dockerfile.frontend
           push: true
           build-args: |
             VITE_API_URL=${{ secrets.PROD_VITE_API_URL }}
