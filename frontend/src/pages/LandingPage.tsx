@@ -31,7 +31,28 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  // Role-based visibility flags for Home page CTA buttons
+  const userRole = (user?.role || '').trim().toUpperCase();
+  const isFarmer = isAuthenticated && userRole === 'FARMER';
+  const isWorker = isAuthenticated && userRole === 'WORKER';
+
+  // Conditional CTA visibility:
+  // - Unauthenticated: show both Hire Farm Workers & Find Farm Work
+  // - Authenticated FARMER: show Hire Farm Workers only (hide Find Farm Work)
+  // - Authenticated WORKER: show Find Farm Work only (hide Hire Farm Workers)
+  // - Auth loading: wait for auth state to initialize before rendering
+  const showHireButton = !isLoading && (!isAuthenticated || isFarmer);
+  const showFindWorkButton = !isLoading && (!isAuthenticated || isWorker);
+
+  // Click handler for "Hire Farm Workers" ensuring unauthenticated users are directed to login with destination preserved
+  const handleHireWorkersClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      navigate('/login', { state: { from: '/farmer/nearby-workers' } });
+    }
+  };
 
   // Search Bar State
   const [searchQuery, setSearchQuery] = useState('');
@@ -283,37 +304,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 min-h-[52px]"
           >
-            <Link
-              to={isAuthenticated && user?.role?.toLowerCase() === 'farmer' ? '/farmer/nearby-workers' : '/register-farmer'}
-              className="w-full sm:w-auto"
-            >
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                leftIcon={<Tractor className="w-5 h-5" />}
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-                className="shadow-agri-glow"
-              >
-                Hire Farm Workers
-              </Button>
-            </Link>
+            {isLoading ? (
+              <div className="h-12 w-52 bg-slate-200/60 rounded-2xl animate-pulse" />
+            ) : (
+              <>
+                {showHireButton && (
+                  <Link
+                    to="/farmer/nearby-workers"
+                    onClick={handleHireWorkersClick}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      leftIcon={<Tractor className="w-5 h-5" />}
+                      rightIcon={<ArrowRight className="w-4 h-4" />}
+                      className="shadow-agri-glow"
+                    >
+                      Hire Farm Workers
+                    </Button>
+                  </Link>
+                )}
 
-            <Link
-              to="/jobs"
-              className="w-full sm:w-auto"
-            >
-              <Button
-                variant="outline"
-                size="lg"
-                fullWidth
-                leftIcon={<Briefcase className="w-5 h-5 text-agri-primary" />}
-              >
-                Find Farm Work
-              </Button>
-            </Link>
+                {showFindWorkButton && (
+                  <Link
+                    to="/jobs"
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      fullWidth
+                      leftIcon={<Briefcase className="w-5 h-5 text-agri-primary" />}
+                    >
+                      Find Farm Work
+                    </Button>
+                  </Link>
+                )}
+              </>
+            )}
           </motion.div>
 
           {/* Live Metric Banner */}
