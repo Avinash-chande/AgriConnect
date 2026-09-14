@@ -70,7 +70,7 @@ export const FarmerRegistrationPage: React.FC<FarmerRegistrationPageProps> = ({ 
     setIsLoading(true);
 
     try {
-      await registerFarmer({
+      const result = await registerFarmer({
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -81,12 +81,12 @@ export const FarmerRegistrationPage: React.FC<FarmerRegistrationPageProps> = ({ 
       });
 
       addToast({
-        type: 'success',
-        title: 'Farmer Account Created!',
-        message: 'Your account is ready. Proceed to verify your phone number.'
+        type: 'info',
+        title: 'Verification Code Sent',
+        message: 'A 6-digit OTP code has been sent to your email. Please verify to complete your registration.'
       });
 
-      navigate('/verify-otp');
+      navigate('/verify-otp', { state: { email: result.email } });
     } catch (err: any) {
       setErrorMessage(err.message || 'Registration failed. Please try again.');
       addToast({

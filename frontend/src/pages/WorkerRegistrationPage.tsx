@@ -87,7 +87,7 @@ export const WorkerRegistrationPage: React.FC<WorkerRegistrationPageProps> = ({ 
     setIsLoading(true);
 
     try {
-      await registerWorker({
+      const result = await registerWorker({
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -99,12 +99,12 @@ export const WorkerRegistrationPage: React.FC<WorkerRegistrationPageProps> = ({ 
       });
 
       addToast({
-        type: 'success',
-        title: 'Worker Account Created!',
-        message: 'Your profile is live. Proceed to verify your phone number.'
+        type: 'info',
+        title: 'Verification Code Sent',
+        message: 'A 6-digit OTP code has been sent to your email. Please verify to complete your registration.'
       });
 
-      navigate('/verify-otp');
+      navigate('/verify-otp', { state: { email: result.email } });
     } catch (err: any) {
       setErrorMessage(err.message || 'Registration failed. Please try again.');
       addToast({

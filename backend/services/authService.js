@@ -1,10 +1,19 @@
+import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { FarmerProfile } from '../models/FarmerProfile.js';
 import { WorkerProfile } from '../models/WorkerProfile.js';
+import { PendingRegistration, MAX_OTP_ATTEMPTS } from '../models/PendingRegistration.js';
 import { AppError } from '../utils/appError.js';
 import { USER_ROLES } from '../constants/index.js';
 import { OAuth2Client } from 'google-auth-library';
-import { generateAndSaveOTP, verifyOTPCode, clearOTP } from './otpService.js';
+import {
+  generateAndSaveOTP,
+  generateOTPCode,
+  verifyOTPCode,
+  verifyPendingOTPCode,
+  clearOTP,
+} from './otpService.js';
 import { sendOTPEmail } from './emailService.js';
 import { verifyToken, signAccessToken, signRefreshToken } from './jwtService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
@@ -20,46 +29,61 @@ export const registerFarmerService = async (data) => {
   const userName = name || fullName;
   const rawPhone = mobile || phone;
   const userPhone = rawPhone ? normalizePhoneNumber(rawPhone) : rawPhone;
+  const normalizedEmail = email.toLowerCase().trim();
 
-  const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile: userPhone }] });
+  // Check if a real, verified User already exists with this email or mobile
+  const existingUser = await User.findOne({
+    $or: [{ email: normalizedEmail }, { mobile: userPhone }],
+  });
   if (existingUser) {
     throw new AppError('An account with this email address or phone/mobile number already exists.', 409);
   }
 
-  const user = await User.create({
-    name: userName,
-    email,
-    mobile: userPhone,
-    password,
-    role: USER_ROLES.FARMER,
-    profileCompleted: false,
-  });
-  const { otpCode } = await generateAndSaveOTP(user);
-  await sendOTPEmail(user.email, otpCode);
+  // Pre-hash password once with bcrypt (salt rounds: 10)
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
 
-  await FarmerProfile.create({
-    owner: user._id,
-    farmName: farmName || `${userName}'s Organic Farm`,
-    farmType: farmType || 'Grain & Wheat Cultivation',
-    farmSize: totalAcreage || 5,
-    cropTypes: [],
-    livestock: [],
-    equipment: [],
-    farmImages: [],
-    workingDays: [],
-    farmAddress: location
-      ? {
+  // Generate secure 6-digit OTP code & 10-minute expiry
+  const { otpCode, otpExpiresAt } = generateOTPCode();
+
+  const farmAddress = location
+    ? {
         district: location.split(',')[0].trim(),
         state: location.includes(',') ? location.split(',')[1].trim() : '',
         addressLine: location,
         country: 'India',
       }
-      : null,
-    farmDescription: farmDescription || '',
-  });
+    : null;
 
-  const populatedUser = await User.findById(user._id).populate('farmerProfile');
-  return populatedUser;
+  // Upsert PendingRegistration: replace any previous pending registration for this email
+  await PendingRegistration.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      name: userName,
+      email: normalizedEmail,
+      mobile: userPhone,
+      password: hashedPassword,
+      role: USER_ROLES.FARMER,
+      farmName: farmName || `${userName}'s Organic Farm`,
+      farmType: farmType || 'Grain & Wheat Cultivation',
+      farmSize: totalAcreage || 5,
+      farmAddress,
+      farmDescription: farmDescription || '',
+      otpCode,
+      otpExpiresAt,
+      otpAttempts: 0,
+    },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+
+  // Send OTP to user's email
+  await sendOTPEmail(normalizedEmail, otpCode);
+
+  // Invariant: User document, FarmerProfile, JWT MUST NOT EXIST
+  return {
+    requiresOtp: true,
+    email: normalizedEmail,
+  };
 };
 
 export const registerWorkerService = async (data) => {
@@ -68,36 +92,282 @@ export const registerWorkerService = async (data) => {
   const userName = name || fullName;
   const rawPhone = mobile || phone;
   const userPhone = rawPhone ? normalizePhoneNumber(rawPhone) : rawPhone;
+  const normalizedEmail = email.toLowerCase().trim();
 
-  const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile: userPhone }] });
+  // Check if a real, verified User already exists with this email or mobile
+  const existingUser = await User.findOne({
+    $or: [{ email: normalizedEmail }, { mobile: userPhone }],
+  });
   if (existingUser) {
     throw new AppError('An account with this email address or phone/mobile number already exists.', 409);
   }
 
-  const user = await User.create({
-    name: userName,
-    email,
-    mobile: userPhone,
-    password,
-    role: USER_ROLES.WORKER,
-    profileCompleted: false,
+  // Pre-hash password once with bcrypt (salt rounds: 10)
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  // Generate secure 6-digit OTP code & 10-minute expiry
+  const { otpCode, otpExpiresAt } = generateOTPCode();
+
+  // Upsert PendingRegistration: replace any previous pending registration for this email
+  await PendingRegistration.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      name: userName,
+      email: normalizedEmail,
+      mobile: userPhone,
+      password: hashedPassword,
+      role: USER_ROLES.WORKER,
+      title: title || 'Agricultural Specialist',
+      skills: (skills && skills.length > 0) ? skills : ['Tractor Driving', 'Crop Harvesting'],
+      expectedDailyWage: dailyRate || (hourlyRate ? hourlyRate * 8 : 650),
+      experience: experienceYears || 0,
+      preferredDistrict: location ? location.split(',')[0].trim() : 'Amritsar',
+      preferredState: location && location.includes(',') ? location.split(',')[1].trim() : 'Punjab',
+      bio: bio || '',
+      languages: (languages && languages.length > 0) ? languages : ['English', 'Hindi'],
+      otpCode,
+      otpExpiresAt,
+      otpAttempts: 0,
+    },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+
+  // Send OTP to user's email
+  await sendOTPEmail(normalizedEmail, otpCode);
+
+  // Invariant: User document, WorkerProfile, JWT MUST NOT EXIST
+  return {
+    requiresOtp: true,
+    email: normalizedEmail,
+  };
+};
+
+/**
+ * Resend OTP for a pending registration session
+ */
+export const resendRegistrationOTPService = async (email) => {
+  if (!email) {
+    throw new AppError('Email is required to resend verification code.', 400);
+  }
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const pending = await PendingRegistration.findOne({ email: normalizedEmail });
+  if (!pending) {
+    throw new AppError('Registration session not found or expired. Please register again.', 404);
+  }
+
+  const { otpCode, otpExpiresAt } = generateOTPCode();
+  pending.otpCode = otpCode;
+  pending.otpExpiresAt = otpExpiresAt;
+  pending.otpAttempts = 0; // Reset attempts on fresh code
+  await pending.save();
+
+  await sendOTPEmail(normalizedEmail, otpCode);
+
+  return { email: normalizedEmail, expiresAt: otpExpiresAt };
+};
+
+/**
+ * Verify Registration OTP:
+ * 1. Finds PendingRegistration
+ * 2. Validates expiry and max attempts (5)
+ * 3. Verifies OTP match
+ * 4. Protects against duplicate concurrent registration (final duplicate check)
+ * 5. Atomically creates User + Profile
+ * 6. Deletes PendingRegistration
+ * 7. Executes post-verification logic (TrustScore, history, notifications)
+ * 8. Returns fully populated User
+ */
+export const verifyRegistrationOTPService = async (email, otpCode) => {
+  if (!email || !otpCode) {
+    throw new AppError('Please provide email address and 6-digit OTP code.', 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const pending = await PendingRegistration.findOne({ email: normalizedEmail });
+
+  if (!pending) {
+    throw new AppError('Registration session not found or expired. Please register again.', 404);
+  }
+
+  // 1. Check OTP Expiry
+  if (pending.otpExpiresAt < new Date()) {
+    throw new AppError('OTP verification code has expired. Please request a new code.', 400);
+  }
+
+  // 2. Check Failed Attempts Limit
+  if (pending.otpAttempts >= MAX_OTP_ATTEMPTS) {
+    await PendingRegistration.deleteOne({ _id: pending._id });
+    throw new AppError('Too many failed attempts. Please register again.', 429);
+  }
+
+  // 3. Verify OTP Code
+  const isMatch = verifyPendingOTPCode(pending, otpCode.toString().trim());
+  if (!isMatch) {
+    pending.otpAttempts += 1;
+    await pending.save();
+
+    if (pending.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await PendingRegistration.deleteOne({ _id: pending._id });
+      throw new AppError('Too many failed attempts. Please register again.', 429);
+    }
+
+    throw new AppError('Invalid OTP verification code.', 400);
+  }
+
+  // 4. Final Duplicate User Check (race condition protection)
+  const existingUser = await User.findOne({
+    $or: [{ email: pending.email }, { mobile: pending.mobile }],
   });
-  const { otpCode } = await generateAndSaveOTP(user);
-  await sendOTPEmail(user.email, otpCode);
+  if (existingUser) {
+    await PendingRegistration.deleteOne({ _id: pending._id });
+    throw new AppError('An account with this email address or mobile number already exists.', 409);
+  }
 
+  // 5. Atomic Account & Profile Creation
+  // Attempt with MongoDB Transaction if supported by replica set; fallback to safe rollback if not
+  const now = new Date();
+  let user;
+  let session = null;
 
-  await WorkerProfile.create({
-    owner: user._id,
-    title: title || 'Agricultural Specialist',
-    skills: skills || ['Tractor Driving', 'Crop Harvesting'],
-    expectedDailyWage: dailyRate || hourlyRate * 8 || 650,
-    experience: experienceYears || 3,
-    preferredDistrict: location ? location.split(',')[0].trim() : 'Amritsar',
-    preferredState: location && location.includes(',') ? location.split(',')[1].trim() : 'Punjab',
-    bio: bio || '',
-  });
+  // Check whether MongoDB supports transactions (replica set or sharded cluster)
+  const isReplicaSet = mongoose.connection.client?.topology?.description?.type === 'ReplicaSet' ||
+                       mongoose.connection.client?.topology?.description?.type === 'Sharded';
+  if (isReplicaSet) {
+    try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    } catch (sessErr) {
+      session = null;
+    }
+  }
 
-  const populatedUser = await User.findById(user._id).populate('workerProfile');
+  try {
+    const userDoc = new User({
+      name: pending.name,
+      email: pending.email,
+      mobile: pending.mobile,
+      password: pending.password, // Pre-hashed bcrypt hash
+      role: pending.role,
+      isVerified: true,
+      emailVerifiedAt: now,
+      mobileVerified: true,
+      mobileVerifiedAt: now,
+      profileCompleted: false,
+    });
+
+    // Skip password hashing middleware since password is already a valid bcrypt hash
+    userDoc._skipPasswordHash = true;
+
+    if (session) {
+      await userDoc.save({ session });
+    } else {
+      await userDoc.save();
+    }
+
+    user = userDoc;
+
+    if (pending.role === USER_ROLES.FARMER) {
+      const farmerProfileData = {
+        owner: user._id,
+        farmName: pending.farmName || `${pending.name}'s Organic Farm`,
+        farmType: pending.farmType || 'Grain & Wheat Cultivation',
+        farmSize: pending.farmSize || 5,
+        cropTypes: [],
+        livestock: [],
+        equipment: [],
+        farmImages: [],
+        workingDays: [],
+        farmAddress: pending.farmAddress,
+        farmDescription: pending.farmDescription || '',
+      };
+
+      if (session) {
+        await FarmerProfile.create([farmerProfileData], { session });
+      } else {
+        await FarmerProfile.create(farmerProfileData);
+      }
+    } else if (pending.role === USER_ROLES.WORKER) {
+      const workerProfileData = {
+        owner: user._id,
+        title: pending.title || 'Agricultural Specialist',
+        skills: pending.skills && pending.skills.length > 0 ? pending.skills : ['Tractor Driving', 'Crop Harvesting'],
+        expectedDailyWage: pending.expectedDailyWage || 650,
+        experience: pending.experience || 0,
+        preferredDistrict: pending.preferredDistrict || 'Amritsar',
+        preferredState: pending.preferredState || 'Punjab',
+        bio: pending.bio || '',
+        languages: pending.languages && pending.languages.length > 0 ? pending.languages : ['English', 'Hindi'],
+      };
+
+      if (session) {
+        await WorkerProfile.create([workerProfileData], { session });
+      } else {
+        await WorkerProfile.create(workerProfileData);
+      }
+    }
+
+    // Delete the PendingRegistration document so OTP cannot be reused
+    if (session) {
+      await PendingRegistration.deleteOne({ _id: pending._id }, { session });
+      await session.commitTransaction();
+    } else {
+      await PendingRegistration.deleteOne({ _id: pending._id });
+    }
+  } catch (creationErr) {
+    if (session) {
+      await session.abortTransaction();
+    } else if (user && user._id) {
+      // Safe compensating rollback for non-transactional standalone MongoDB
+      await User.deleteOne({ _id: user._id });
+      await FarmerProfile.deleteOne({ owner: user._id });
+      await WorkerProfile.deleteOne({ owner: user._id });
+    }
+    throw creationErr;
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+
+  // 6. Post-verification Logic: Trust Score & Verification History
+  try {
+    const trustProfile = await TrustScoreService.updateTrustScore(
+      user._id,
+      'OTP_VERIFICATION_SUCCESS',
+      { kind: 'User', id: user._id }
+    );
+
+    await VerificationHistory.create({
+      user: user._id,
+      verificationSystem: 'SYSTEM_A_TRUST',
+      entityId: trustProfile._id,
+      previousState: { isVerified: false },
+      newState: {
+        isVerified: true,
+        emailVerifiedAt: user.emailVerifiedAt,
+        mobileVerifiedAt: user.mobileVerifiedAt,
+        trustScore: trustProfile.trustScore,
+        trustLevel: trustProfile.trustLevel,
+      },
+      changedBy: user._id,
+      changeReason: 'Registration OTP verification successful',
+    });
+
+    await createNotificationService({
+      type: NOTIFICATION_TYPE.EMAIL_VERIFIED,
+      recipientId: user._id,
+      payload: { trustScore: trustProfile.trustScore, trustLevel: trustProfile.trustLevel },
+    });
+  } catch (auditErr) {
+    // Non-blocking audit/notification errors
+  }
+
+  const populatedUser = await User.findById(user._id)
+    .populate('farmerProfile')
+    .populate('workerProfile');
+
   return populatedUser;
 };
 
@@ -125,7 +395,7 @@ export const registerGoogleUserService = async ({ email, name, googleId, role })
   if (role === 'farmer') {
     await FarmerProfile.create({
       owner: user._id,
-      farmName: `${name}'s Farm`,   // placeholder, user edits later
+      farmName: `${name}'s Farm`,
       farmType: 'Grain & Wheat Cultivation',
       farmSize: 5,
       cropTypes: [], livestock: [], equipment: [], farmImages: [], workingDays: [],
@@ -150,10 +420,20 @@ export const registerGoogleUserService = async ({ email, name, googleId, role })
 };
 
 export const loginUserService = async (email, password) => {
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password').populate('farmerProfile').populate('workerProfile');
+  const user = await User.findOne({ email: email.toLowerCase() })
+    .select('+password')
+    .populate('farmerProfile')
+    .populate('workerProfile');
+
   if (!user || !(await user.comparePassword(password))) {
     throw new AppError('Invalid email address or password.', 401);
   }
+
+  // Reject login for unverified accounts
+  if (!user.isVerified) {
+    throw new AppError('Your account is not verified. Please verify your email before logging in.', 403);
+  }
+
   return user;
 };
 
@@ -175,13 +455,11 @@ export const refreshAccessTokenService = async (refreshToken) => {
 
   // REUSE DETECTION GUARD: If token signature is valid but doesn't match active stored token
   if (user.refreshToken !== refreshToken) {
-    // Invalidate all tokens for this user to protect against token theft
     user.refreshToken = null;
     await user.save({ validateBeforeSave: false });
     throw new AppError('Security alert: Refresh token reuse detected. All sessions invalidated. Please log in again.', 401);
   }
 
-  // TOKEN ROTATION: Issue brand new access token AND new refresh token
   const newAccessToken = signAccessToken({ id: user._id, role: user.role });
   const newRefreshToken = signRefreshToken({ id: user._id, role: user.role });
 
@@ -215,6 +493,9 @@ export const forgotPasswordService = async (credential) => {
 
 export const sendOTPService = forgotPasswordService;
 
+/**
+ * Legacy OTP verification for already-existing User documents (e.g. forgot-password flow)
+ */
 export const verifyOTPService = async (credential, otp) => {
   if (!credential || !otp) {
     throw new AppError('Please provide mobile number/email and OTP code.', 400);
@@ -320,7 +601,6 @@ export const googleLoginService = async (token, selectedRole = 'farmer') => {
     name = payload.name;
     picture = payload.picture;
   } catch (idTokenErr) {
-    // If ID token verification failed, try fetching profile via Access Token
     try {
       const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${token}` }
@@ -340,7 +620,6 @@ export const googleLoginService = async (token, selectedRole = 'farmer') => {
     throw new AppError('Could not retrieve email address from Google authentication.', 400);
   }
 
-  // Find user by googleId or email
   let user = await User.findOne({
     $or: [{ googleId }, { email: email.toLowerCase() }]
   }).populate('farmerProfile').populate('workerProfile');
@@ -378,7 +657,6 @@ export const googleLoginService = async (token, selectedRole = 'farmer') => {
 
     user = await User.findById(user._id).populate('farmerProfile').populate('workerProfile');
   } else {
-    // Update existing user with googleId if not linked yet
     if (!user.googleId) {
       user.googleId = googleId;
       user.authProvider = 'google';
@@ -388,4 +666,3 @@ export const googleLoginService = async (token, selectedRole = 'farmer') => {
 
   return user;
 };
-

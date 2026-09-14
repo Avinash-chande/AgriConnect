@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { Button } from '../components/common/Button';
-import { verifyOTPApi, sendOTPApi } from '../services/authService';
+import { resendRegistrationOTPApi, sendOTPApi } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import type { ToastMessage } from '../types';
 
@@ -25,7 +25,7 @@ interface OTPVerificationPageProps {
 export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToast }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, checkSession } = useAuth();
+  const { user, verifyRegistrationOTP } = useAuth();
 
   const verificationEmail =
     localStorage.getItem('pending_verification_email') ||
@@ -115,11 +115,16 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
     if (!canResend) return;
 
     try {
-      if (user?.email || user?.phone) {
+      if (verificationEmail) {
+        // Use registration resend endpoint for pending registration session
+        await resendRegistrationOTPApi(verificationEmail);
+      } else if (user?.email || user?.phone) {
         await sendOTPApi({
           email: user?.email,
           phone: user?.phone,
         });
+      } else {
+        throw new Error('No email found to resend verification code. Please register again.');
       }
 
       setTimer(60);
@@ -130,7 +135,7 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
       addToast({
         type: 'success',
         title: 'New Code Dispatched',
-        message: 'A fresh 6-digit OTP code has been sent to your registered device.'
+        message: 'A fresh 6-digit OTP code has been sent to your registered email.'
       });
     } catch (err: any) {
       addToast({
@@ -146,14 +151,12 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
     setIsVerifying(true);
 
     try {
-      await verifyOTPApi({
-        email: verificationEmail,
-        otpCode: data.otpCode,
-      });
+      if (!verificationEmail) {
+        throw new Error('Registration session not found or expired. Please register again.');
+      }
 
-      localStorage.removeItem('pending_verification_email');
-
-      await checkSession();
+      // verifyRegistrationOTP verifies OTP with backend, creates User and establishes auth session
+      await verifyRegistrationOTP(verificationEmail, data.otpCode);
 
       setIsSuccess(true);
       confetti({
@@ -172,11 +175,12 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
         navigate('/');
       }, 2000);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Invalid or expired OTP code. Please try again.');
+      const msg = err.message || 'Invalid or expired OTP code. Please try again.';
+      setErrorMessage(msg);
       addToast({
         type: 'error',
         title: 'Verification Failed',
-        message: err.message || 'Invalid OTP verification code.'
+        message: msg
       });
     } finally {
       setIsVerifying(false);

@@ -7,12 +7,14 @@ import {
   logoutApi,
   getCurrentUserApi,
   googleAuthApi,
+  verifyOTPApi,
 } from '../services/authService';
 import type {
   LoginPayload,
   RegisterFarmerPayload,
   RegisterWorkerPayload,
   GoogleAuthPayload,
+  PendingOtpResult,
 } from '../services/authService';
 
 export interface UserAccount {
@@ -42,8 +44,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<UserAccount>;
   googleLogin: (payload: GoogleAuthPayload) => Promise<UserAccount>;
-  registerFarmer: (payload: RegisterFarmerPayload) => Promise<UserAccount>;
-  registerWorker: (payload: RegisterWorkerPayload) => Promise<UserAccount>;
+  registerFarmer: (payload: RegisterFarmerPayload) => Promise<PendingOtpResult>;
+  registerWorker: (payload: RegisterWorkerPayload) => Promise<PendingOtpResult>;
+  verifyRegistrationOTP: (email: string, otpCode: string) => Promise<UserAccount>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
@@ -61,7 +64,6 @@ const normalizeUser = (rawUser: any): UserAccount => {
     fullName: nameVal,
     phone,
     mobile,
-    role: rawUser.role || 'farmer',
   };
 };
 
@@ -69,37 +71,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<UserAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const setSession = (userData: UserAccount, token?: string, refreshToken?: string) => {
+  const setSession = (userData: any, tokens?: { accessToken?: string; refreshToken?: string }) => {
     const normalized = normalizeUser(userData);
     setUser(normalized);
-    localStorage.setItem('agri_user', JSON.stringify(normalized));
-    if (token) {
-      localStorage.setItem('agri_access_token', token);
-    }
-    if (refreshToken) {
-      localStorage.setItem('agri_refresh_token', refreshToken);
+    try {
+      localStorage.setItem('agri_user', JSON.stringify(normalized));
+      if (tokens?.accessToken) {
+        localStorage.setItem('accessToken', tokens.accessToken);
+      }
+      if (tokens?.refreshToken) {
+        localStorage.setItem('refreshToken', tokens.refreshToken);
+      }
+    } catch {
+      // Ignore localStorage exceptions in private browsing
     }
   };
 
   const clearSession = () => {
     setUser(null);
-    localStorage.removeItem('agri_access_token');
-    localStorage.removeItem('agri_refresh_token');
-    localStorage.removeItem('agri_user');
+    try {
+      localStorage.removeItem('agri_user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } catch {
+      // Ignore localStorage exceptions
+    }
   };
 
   const checkSession = async () => {
-    const token = localStorage.getItem('agri_access_token');
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const data = await getCurrentUserApi();
-      if (data.data && data.data.user) {
-        const normalized = normalizeUser(data.data.user);
+      const response = await getCurrentUserApi();
+      const rawUser = response.data?.user || response.user;
+      if (rawUser) {
+        const normalized = normalizeUser(rawUser);
         setUser(normalized);
         localStorage.setItem('agri_user', JSON.stringify(normalized));
       } else {
@@ -113,103 +117,139 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('agri_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('agri_user');
+      }
+    }
     checkSession();
   }, []);
 
   const login = async (payload: LoginPayload): Promise<UserAccount> => {
-    const data = await loginApi(payload);
+    setIsLoading(true);
+    try {
+      const response = await loginApi(payload);
+      const data = response.data || response;
+      const rawUser = data.user;
+      const tokens = data.tokens;
 
-    const loggedInUser = data.data.user;
+      if (!rawUser) {
+        throw new Error(response.message || 'Login failed. Invalid response structure.');
+      }
 
-    const token =
-      data.data.tokens?.accessToken ||
-      data.data.accessToken ||
-      data.accessToken;
-
-    const refreshToken =
-      data.data.tokens?.refreshToken ||
-      data.data.refreshToken ||
-      data.refreshToken;
-
-    console.log('🔐 Login response:', data);
-    console.log('🔑 Access token received:', !!token);
-
-    setSession(loggedInUser, token, refreshToken);
-
-    return normalizeUser(loggedInUser);
+      setSession(rawUser, tokens);
+      return normalizeUser(rawUser);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || err.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const googleLogin = async (payload: GoogleAuthPayload): Promise<UserAccount> => {
-    const data = await googleAuthApi(payload);
+    setIsLoading(true);
+    try {
+      const response = await googleAuthApi(payload);
+      const data = response.data || response;
+      const rawUser = data.user;
+      const tokens = data.tokens;
 
-    const loggedInUser = data.data.user;
-    const token =
-      data.data.tokens?.accessToken ||
-      data.data.accessToken ||
-      data.accessToken;
+      if (!rawUser) {
+        throw new Error(response.message || 'Google Sign-In failed.');
+      }
 
-    setSession(loggedInUser, token);
-
-    return normalizeUser(loggedInUser);
+      setSession(rawUser, tokens);
+      return normalizeUser(rawUser);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || err.message || 'Google Sign-In failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const registerFarmer = async (
-    payload: RegisterFarmerPayload
-  ): Promise<UserAccount> => {
-    const data = await registerFarmerApi(payload);
+  /**
+   * Register Farmer — OTP Gated:
+   * Returns { requiresOtp: true, email }
+   * Does NOT authenticate or create user session.
+   */
+  const registerFarmer = async (payload: RegisterFarmerPayload): Promise<PendingOtpResult> => {
+    setIsLoading(true);
+    try {
+      const response = await registerFarmerApi(payload);
+      const data = response.data || response;
+      const email = data.email || payload.email.toLowerCase().trim();
 
-    const registeredUser = data.data.user;
-    const token =
-      data.data.tokens?.accessToken ||
-      data.data.accessToken ||
-      data.accessToken;
-
-    const refreshToken =
-      data.data.tokens?.refreshToken ||
-      data.data.refreshToken ||
-      data.refreshToken;
-
-    setSession(registeredUser, token, refreshToken);
-
-    localStorage.setItem(
-      'pending_verification_email',
-      registeredUser.email
-    );
-
-    return normalizeUser(registeredUser);
+      localStorage.setItem('pending_verification_email', email);
+      return {
+        requiresOtp: true,
+        email,
+      };
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || err.message || 'Farmer registration failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const registerWorker = async (
-    payload: RegisterWorkerPayload
-  ): Promise<UserAccount> => {
-    const data = await registerWorkerApi(payload);
+  /**
+   * Register Worker — OTP Gated:
+   * Returns { requiresOtp: true, email }
+   * Does NOT authenticate or create user session.
+   */
+  const registerWorker = async (payload: RegisterWorkerPayload): Promise<PendingOtpResult> => {
+    setIsLoading(true);
+    try {
+      const response = await registerWorkerApi(payload);
+      const data = response.data || response;
+      const email = data.email || payload.email.toLowerCase().trim();
 
-    const registeredUser = data.data.user;
-    const token =
-      data.data.tokens?.accessToken ||
-      data.data.accessToken ||
-      data.accessToken;
-
-    const refreshToken =
-      data.data.tokens?.refreshToken ||
-      data.data.refreshToken ||
-      data.refreshToken;
-
-    setSession(registeredUser, token, refreshToken);
-
-    localStorage.setItem(
-      'pending_verification_email',
-      registeredUser.email
-    );
-
-    return normalizeUser(registeredUser);
+      localStorage.setItem('pending_verification_email', email);
+      return {
+        requiresOtp: true,
+        email,
+      };
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || err.message || 'Worker registration failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = async () => {
+  /**
+   * Verify Registration OTP:
+   * Called on OTP verification screen.
+   * Establishes authentication session ONLY after successful verification.
+   */
+  const verifyRegistrationOTP = async (email: string, otpCode: string): Promise<UserAccount> => {
+    setIsLoading(true);
+    try {
+      const response = await verifyOTPApi({ email, otpCode });
+      const data = response.data || response;
+      const rawUser = data.user;
+      const tokens = data.tokens;
+
+      if (!rawUser) {
+        throw new Error(response.message || 'Verification failed. Could not create account.');
+      }
+
+      setSession(rawUser, tokens);
+      localStorage.removeItem('pending_verification_email');
+      return normalizeUser(rawUser);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message || err.message || 'OTP verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async (): Promise<void> => {
     try {
       await logoutApi();
-    } catch (err) {
-      console.warn('Logout API error:', err);
+    } catch {
+      // Proceed with local logout regardless of network error
     } finally {
       clearSession();
     }
@@ -221,10 +261,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated: !!user,
         isLoading,
-        googleLogin,
         login,
+        googleLogin,
         registerFarmer,
         registerWorker,
+        verifyRegistrationOTP,
         logout,
         checkSession,
       }}
@@ -234,7 +275,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

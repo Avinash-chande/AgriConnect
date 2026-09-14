@@ -10,6 +10,7 @@ import {
   resetPassword,
   sendOTP,
   verifyOTP,
+  resendRegistrationOTP,
   getCurrentUser,
 } from '../controllers/authController.js';
 import {
@@ -30,6 +31,7 @@ router.use(authRateLimiter);
 
 router.post('/register/farmer', validateFarmerRegistration, registerFarmer);
 router.post('/register/worker', validateWorkerRegistration, registerWorker);
+router.post('/resend-registration-otp', resendRegistrationOTP);
 router.post('/google', googleLogin);
 router.post('/login', validateLogin, login);
 router.post('/refresh-token', refreshToken);

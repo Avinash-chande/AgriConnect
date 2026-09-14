@@ -28,6 +28,11 @@ export interface RegisterWorkerPayload {
   bio?: string;
 }
 
+export interface PendingOtpResult {
+  requiresOtp: boolean;
+  email: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -58,6 +63,11 @@ export const registerFarmerApi = async (payload: RegisterFarmerPayload) => {
 
 export const registerWorkerApi = async (payload: RegisterWorkerPayload) => {
   const response = await api.post('/auth/register/worker', payload);
+  return response.data;
+};
+
+export const resendRegistrationOTPApi = async (email: string) => {
+  const response = await api.post('/auth/resend-registration-otp', { email });
   return response.data;
 };
 
