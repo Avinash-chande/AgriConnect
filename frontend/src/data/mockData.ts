@@ -1,4 +1,4 @@
-import type { WorkerProfile, JobCategory, Testimonial, StatisticsMetric } from '../types';
+import type { WorkerProfile, JobCategory, Testimonial } from '../types';
 
 export const MOCK_WORKERS: WorkerProfile[] = [
   {
@@ -204,37 +204,6 @@ export const MOCK_TESTIMONIALS: Testimonial[] = [
     content: 'The background checks and verified ratings give me total peace of mind. AgriConnect is hands down the cleanest, most efficient farm labor platform on the market.',
     rating: 5,
     verifiedBadge: 'Verified Orchard Producer'
-  }
-];
-
-export const MOCK_METRICS: StatisticsMetric[] = [
-  {
-    label: 'Verified Farm Workers',
-    value: '45,800+',
-    change: '+24% this month',
-    isPositive: true,
-    description: 'Skilled, background-checked agricultural labor active across regions.'
-  },
-  {
-    label: 'Active Farm Owners',
-    value: '18,400+',
-    change: '+18% this month',
-    isPositive: true,
-    description: 'Commercial farms, orchards, polyhouses, and cooperatives.'
-  },
-  {
-    label: 'Successful Job Matches',
-    value: '124,500+',
-    change: '99.2% fulfillment',
-    isPositive: true,
-    description: 'Jobs filled seamlessly from emergency harvesting to seasonal contracts.'
-  },
-  {
-    label: 'Average Match Time',
-    value: '< 1.8 Hours',
-    change: '4x faster than traditional agencies',
-    isPositive: true,
-    description: 'AI powered distance & skill matching engine.'
   }
 ];
 
