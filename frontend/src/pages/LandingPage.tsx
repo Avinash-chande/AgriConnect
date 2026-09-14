@@ -17,11 +17,11 @@ import { Modal } from '../components/common/Modal';
 import { 
   MOCK_JOB_CATEGORIES, 
   MOCK_TESTIMONIALS, 
-  MOCK_METRICS,
   MOCK_FARMS_LOCATIONS
 } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 import { getFeaturedWorkersApi } from '../services/profileService';
+import { getHomeStatisticsApi, type HomeStatistics } from '../services/analyticsService';
 import { initiateMobileCall } from '../services/callService';
 import type { WorkerProfile, ToastMessage } from '../types';
 
@@ -79,8 +79,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
     }
   };
 
+  // Real Dynamic Home Statistics from MongoDB
+  const [homeStats, setHomeStats] = useState<HomeStatistics | null>(null);
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  const fetchHomeStats = async () => {
+    setLoadingStats(true);
+    setStatsError(null);
+    try {
+      const data = await getHomeStatisticsApi();
+      setHomeStats(data);
+    } catch (err: any) {
+      console.error('Failed to load real home statistics:', err);
+      setStatsError(err.message || 'Failed to load statistics.');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeaturedWorkers();
+    fetchHomeStats();
   }, []);
 
   // Interactive Worker Detail Modal
@@ -363,7 +383,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
             className="mt-8 inline-flex items-center space-x-2 text-xs font-semibold text-slate-500 bg-slate-100/80 px-4 py-2 rounded-full border border-slate-200"
           >
             <Sparkles className="w-4 h-4 text-agri-primary animate-spin" />
-            <span>Over <strong className="text-agri-text font-bold">12,400+ Farm Jobs</strong> successfully matched this month</span>
+            {loadingStats ? (
+              <span className="inline-flex items-center space-x-1.5">
+                <span className="h-3.5 w-8 bg-slate-200 rounded animate-pulse" />
+                <span>Farm Jobs successfully matched this month</span>
+              </span>
+            ) : (
+              <span>
+                <strong className="text-agri-text font-bold">
+                  {homeStats && typeof homeStats.successfulFarmJobsThisMonth === 'number'
+                    ? new Intl.NumberFormat().format(homeStats.successfulFarmJobsThisMonth)
+                    : statsError
+                    ? '—'
+                    : '0'}{' '}
+                  Farm {homeStats?.successfulFarmJobsThisMonth === 1 ? 'Job' : 'Jobs'}
+                </strong>{' '}
+                successfully matched this month
+              </span>
+            )}
           </motion.div>
 
           {/* ------------------- SEARCH BAR WIDGET ------------------- */}
@@ -438,9 +475,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
       <section className="py-12 bg-white border-y border-agri-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-            {MOCK_METRICS.map((metric, idx) => (
+            {[
+              {
+                id: 'verified-workers',
+                label: 'Verified Farm Workers',
+                value: loadingStats
+                  ? null
+                  : homeStats && typeof homeStats.verifiedFarmWorkers === 'number'
+                  ? new Intl.NumberFormat().format(homeStats.verifiedFarmWorkers)
+                  : statsError ? '—' : '0',
+                badge: homeStats?.badges?.verifiedWorkersBadge || 'Verified KYC',
+                description: 'Skilled, background-checked agricultural labor active across regions.',
+              },
+              {
+                id: 'active-farmers',
+                label: 'Active Farm Owners',
+                value: loadingStats
+                  ? null
+                  : homeStats && typeof homeStats.activeFarmOwners === 'number'
+                  ? new Intl.NumberFormat().format(homeStats.activeFarmOwners)
+                  : statsError ? '—' : '0',
+                badge: homeStats?.badges?.activeFarmersBadge || 'Active Producers',
+                description: 'Commercial farms, orchards, polyhouses, and cooperatives.',
+              },
+              {
+                id: 'successful-matches',
+                label: 'Successful Job Matches',
+                value: loadingStats
+                  ? null
+                  : homeStats && typeof homeStats.successfulJobMatches === 'number'
+                  ? new Intl.NumberFormat().format(homeStats.successfulJobMatches)
+                  : statsError ? '—' : '0',
+                badge: homeStats?.badges?.successfulMatchesBadge || 'Fulfillment',
+                description: 'Jobs filled seamlessly from emergency harvesting to seasonal contracts.',
+              },
+              {
+                id: 'avg-match-time',
+                label: 'Average Match Time',
+                value: loadingStats
+                  ? null
+                  : homeStats?.averageMatchTimeHours != null
+                  ? `${homeStats.averageMatchTimeHours} Hours`
+                  : '—',
+                badge: homeStats?.badges?.averageMatchTimeBadge || 'Direct Dispatch',
+                description: 'AI powered distance & skill matching engine.',
+              },
+            ].map((metric, idx) => (
               <motion.div
-                key={idx}
+                key={metric.id}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -448,12 +530,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
                 className="p-6 rounded-2xl bg-agri-bg border border-slate-200/80 shadow-soft-sm hover:shadow-soft-md transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl sm:text-4xl font-extrabold font-heading text-agri-dark tracking-tight">
-                    {metric.value}
-                  </span>
-                  <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-100 text-agri-dark border border-emerald-200">
-                    {metric.change}
-                  </span>
+                  {loadingStats ? (
+                    <div className="h-9 w-24 bg-slate-200 rounded-lg animate-pulse" />
+                  ) : (
+                    <span className="text-3xl sm:text-4xl font-extrabold font-heading text-agri-dark tracking-tight">
+                      {metric.value}
+                    </span>
+                  )}
+                  {loadingStats ? (
+                    <div className="h-5 w-20 bg-slate-200 rounded-full animate-pulse" />
+                  ) : (
+                    metric.badge && (
+                      <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-100 text-agri-dark border border-emerald-200">
+                        {metric.badge}
+                      </span>
+                    )
+                  )}
                 </div>
                 <h4 className="mt-3 text-sm font-bold text-agri-text font-heading">{metric.label}</h4>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed">{metric.description}</p>

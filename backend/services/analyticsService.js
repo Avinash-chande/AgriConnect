@@ -2,6 +2,9 @@ import { Payment } from '../models/Payment.js';
 import { Refund } from '../models/Refund.js';
 import { User } from '../models/User.js';
 import { Subscription } from '../models/Subscription.js';
+import { WorkerProfile } from '../models/WorkerProfile.js';
+import { Job } from '../models/Job.js';
+import { Application } from '../models/Application.js';
 import { PAYMENT_STATUS, REFUND_STATUS, SUBSCRIPTION_STATUS } from '../constants/index.js';
 
 /**
@@ -149,3 +152,170 @@ export const getAdminPaymentAnalyticsService = async (query = {}) => {
     },
   };
 };
+
+/**
+ * Real MongoDB Public Aggregation Service for /home Landing Statistics
+ * Only aggregate numbers from real existing database records.
+ * No private user information or mock data.
+ */
+export const getHomeStatisticsService = async () => {
+  const now = new Date();
+  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const [
+    verifiedWorkerFacet,
+    totalWorkersCount,
+    activeFarmersCount,
+    totalFarmersCount,
+    successfulMatchesCount,
+    successfulJobsThisMonthCount,
+    totalJobsCount,
+    matchTimeAggregation,
+  ] = await Promise.all([
+    // 1. Verified Farm Workers
+    WorkerProfile.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          as: 'owner',
+        },
+      },
+      { $unwind: '$owner' },
+      {
+        $match: {
+          'owner.isDeleted': { $ne: true },
+          $or: [
+            { aadhaarVerified: true },
+            { 'owner.isVerified': true },
+            { 'owner.identityVerified': true },
+          ],
+        },
+      },
+      { $count: 'count' },
+    ]),
+
+    // Total active workers (for verification ratio badge)
+    WorkerProfile.countDocuments({ isDeleted: { $ne: true } }),
+
+    // 2. Active Farm Owners
+    User.countDocuments({
+      role: { $regex: /^farmer$/i },
+      isActive: { $ne: false },
+      isDeleted: { $ne: true },
+    }),
+
+    // Total farm owners
+    User.countDocuments({
+      role: { $regex: /^farmer$/i },
+      isDeleted: { $ne: true },
+    }),
+
+    // 3. Successful Job Matches (All-time)
+    Application.countDocuments({
+      status: { $in: ['Accepted', 'Hired', 'Completed'] },
+      isDeleted: { $ne: true },
+    }),
+
+    // Successful Farm Job Matches this calendar month
+    Application.countDocuments({
+      status: { $in: ['Accepted', 'Hired', 'Completed'] },
+      isDeleted: { $ne: true },
+      $expr: {
+        $and: [
+          { $gte: [{ $ifNull: ['$hiredDate', '$updatedAt'] }, startOfCurrentMonth] },
+          { $lt: [{ $ifNull: ['$hiredDate', '$updatedAt'] }, startOfNextMonth] },
+        ],
+      },
+    }),
+
+    // Total active jobs
+    Job.countDocuments({ isDeleted: { $ne: true } }),
+
+    // 4. Average Match Time
+    Application.aggregate([
+      {
+        $match: {
+          status: { $in: ['Accepted', 'Hired', 'Completed'] },
+          isDeleted: { $ne: true },
+        },
+      },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'job',
+          foreignField: '_id',
+          as: 'job',
+        },
+      },
+      { $unwind: '$job' },
+      {
+        $project: {
+          matchDurationHours: {
+            $divide: [
+              {
+                $subtract: [
+                  { $ifNull: ['$hiredDate', '$updatedAt'] },
+                  '$job.createdAt',
+                ],
+              },
+              1000 * 60 * 60,
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          matchDurationHours: { $gte: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgHours: { $avg: '$matchDurationHours' },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  const verifiedFarmWorkers = verifiedWorkerFacet[0]?.count || 0;
+  const activeFarmOwners = activeFarmersCount || 0;
+  const successfulJobMatches = successfulMatchesCount || 0;
+  const avgMatchTimeHours =
+    matchTimeAggregation[0]?.avgHours != null
+      ? Number(matchTimeAggregation[0].avgHours.toFixed(1))
+      : null;
+
+  // Real data badges
+  const verifiedPct =
+    totalWorkersCount > 0
+      ? Math.round((verifiedFarmWorkers / totalWorkersCount) * 100)
+      : 100;
+  const activePct =
+    totalFarmersCount > 0
+      ? Math.round((activeFarmOwners / totalFarmersCount) * 100)
+      : 100;
+  const fulfillmentPct =
+    totalJobsCount > 0
+      ? Math.min(100, Math.round((successfulJobMatches / totalJobsCount) * 100))
+      : 100;
+
+  return {
+    verifiedFarmWorkers,
+    activeFarmOwners,
+    successfulJobMatches,
+    successfulFarmJobsThisMonth: successfulJobsThisMonthCount || 0,
+    averageMatchTimeHours: avgMatchTimeHours,
+    badges: {
+      verifiedWorkersBadge: `${verifiedPct}% Verified`,
+      activeFarmersBadge: `${activePct}% Active`,
+      successfulMatchesBadge: `${fulfillmentPct}% fulfillment`,
+      averageMatchTimeBadge: 'Direct Dispatch',
+    },
+  };
+};
+
