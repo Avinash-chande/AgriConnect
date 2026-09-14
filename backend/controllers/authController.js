@@ -8,6 +8,8 @@ import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../config/j
 import {
   registerFarmerService,
   registerWorkerService,
+  verifyRegistrationOTPService,
+  resendRegistrationOTPService,
   loginUserService,
   refreshTokenService,
   logoutUserService,
@@ -43,24 +45,57 @@ const sendAuthTokenResponse = async (user, statusCode, message, res) => {
   });
 };
 
+/**
+ * Register Farmer — OTP Gated:
+ * Creates PendingRegistration and sends OTP.
+ * MUST NOT create User, FarmerProfile, or issue JWT.
+ */
 export const registerFarmer = asyncHandler(async (req, res, next) => {
   const { fullName, name, email, phone, mobile, password, farmName, location } = req.body;
   if ((!fullName && !name) || !email || (!phone && !mobile) || !password || !farmName || !location) {
-    return next(new AppError('Please provide required fields: name/fullName, email, mobile/phone, password, farmName, location', 400));
+    return next(
+      new AppError(
+        'Please provide required fields: name/fullName, email, mobile/phone, password, farmName, location',
+        400
+      )
+    );
   }
 
-  const user = await registerFarmerService(req.body);
-  return await sendAuthTokenResponse(user, 201, 'Farmer registered successfully', res);
+  const result = await registerFarmerService(req.body);
+  return sendResponse(res, 200, 'OTP sent. Please verify your email to complete registration.', result);
 });
 
+/**
+ * Register Worker — OTP Gated:
+ * Creates PendingRegistration and sends OTP.
+ * MUST NOT create User, WorkerProfile, or issue JWT.
+ */
 export const registerWorker = asyncHandler(async (req, res, next) => {
   const { fullName, name, email, phone, mobile, password, location } = req.body;
   if ((!fullName && !name) || !email || (!phone && !mobile) || !password || !location) {
-    return next(new AppError('Please provide required fields: name/fullName, email, mobile/phone, password, location', 400));
+    return next(
+      new AppError(
+        'Please provide required fields: name/fullName, email, mobile/phone, password, location',
+        400
+      )
+    );
   }
 
-  const user = await registerWorkerService(req.body);
-  return await sendAuthTokenResponse(user, 201, 'Worker registered successfully', res);
+  const result = await registerWorkerService(req.body);
+  return sendResponse(res, 200, 'OTP sent. Please verify your email to complete registration.', result);
+});
+
+/**
+ * Resend OTP for Pending Registration
+ */
+export const resendRegistrationOTP = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
+    return next(new AppError('Please provide email address.', 400));
+  }
+
+  const result = await resendRegistrationOTPService(email);
+  return sendResponse(res, 200, 'A new OTP verification code has been sent to your email.', result);
 });
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -179,14 +214,41 @@ export const sendOTP = asyncHandler(async (req, res, next) => {
   });
 });
 
+/**
+ * Verify OTP:
+ * Handles registration OTP verification (creates User and establishes authentication session)
+ * Falls back to legacy User OTP verification if no pending registration exists (e.g. forgot-password)
+ */
 export const verifyOTP = asyncHandler(async (req, res, next) => {
   const { phone, mobile, email, otpCode } = req.body;
-  const credential = phone || mobile || email;
+  const credential = email || phone || mobile;
 
   if (!credential || !otpCode) {
     return next(new AppError('Please provide mobile number/email and 6-digit OTP code.', 400));
   }
 
+  // If email is provided, check PendingRegistration first
+  if (email) {
+    try {
+      const user = await verifyRegistrationOTPService(email, otpCode);
+      // Account created and verified: issue authentication tokens and cookies
+      return await sendAuthTokenResponse(user, 201, 'Account created and verified successfully.', res);
+    } catch (err) {
+      // If error is not 404, re-throw (e.g. invalid OTP, expired, 429, duplicate 409)
+      if (err.statusCode !== 404) {
+        return next(err);
+      }
+      // If 404: check if user already exists and is verified (e.g. OTP reuse or already completed)
+      const existingUser = await findUserByEmailOrGoogleId(email, null);
+      if (existingUser && existingUser.isVerified) {
+        return next(new AppError('This account has already been verified. Please log in.', 400));
+      }
+      // If user doesn't exist at all, return the 404 from PendingRegistration
+      return next(err);
+    }
+  }
+
+  // Legacy verification path for existing user accounts (e.g. phone verification / forgot-password)
   await verifyOTPService(credential, otpCode);
   return sendResponse(res, 200, 'Account verified successfully.', { isVerified: true });
 });
@@ -213,4 +275,4 @@ export const googleLogin = asyncHandler(async (req, res, next) => {
 
   const user = await googleLoginService(authToken, role);
   return await sendAuthTokenResponse(user, 200, 'Google Sign-In successful', res);
-});
+});

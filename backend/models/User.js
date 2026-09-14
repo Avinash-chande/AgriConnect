@@ -220,6 +220,11 @@ userSchema.pre('save', async function (next) {
     }
   }
 
+  // Prevent double-hashing if password was already hashed in PendingRegistration
+  if (this._skipPasswordHash) {
+    return next();
+  }
+
   if (!this.isModified('password')) {
     return next();
   }
