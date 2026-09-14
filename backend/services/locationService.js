@@ -664,19 +664,28 @@ export const findNearbyWorkersService = async (longitude, latitude, radiusKm = 1
 
   // 1. Skill filter
   const skillParam = queryParams.skills || queryParams.skill;
-  if (skillParam) {
-    matchCriteria.skills = { $in: Array.isArray(skillParam) ? skillParam : [skillParam] };
+  if (skillParam && skillParam !== 'All Skills' && skillParam !== 'all') {
+    const rawSkills = Array.isArray(skillParam) ? skillParam : [skillParam];
+    const cleanSkills = rawSkills
+      .map((s) => (typeof s === 'string' ? s.trim() : ''))
+      .filter((s) => s && s.toLowerCase() !== 'all skills' && s.toLowerCase() !== 'all');
+    if (cleanSkills.length > 0) {
+      matchCriteria.skills = {
+        $in: cleanSkills.map((s) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')),
+      };
+    }
   }
 
   // 2. Minimum Experience filter
   const minExp = queryParams.minExperience || queryParams.experience;
-  if (minExp && !isNaN(Number(minExp))) {
+  if (minExp && !isNaN(Number(minExp)) && Number(minExp) > 0) {
     matchCriteria.experience = { $gte: Number(minExp) };
   }
 
   // 3. Availability filter
-  if (queryParams.availability && queryParams.availability !== 'all') {
-    matchCriteria.availability = queryParams.availability;
+  if (queryParams.availability && queryParams.availability !== 'all' && queryParams.availability !== 'All Statuses') {
+    const cleanAvail = String(queryParams.availability).trim();
+    matchCriteria.availability = new RegExp(`^${cleanAvail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
   }
 
   // 4. Maximum Expected Wage filter

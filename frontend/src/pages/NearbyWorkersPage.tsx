@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users,
   Compass,
@@ -28,54 +28,81 @@ import {
   Phone,
   Briefcase,
   Tractor,
+  RotateCcw,
 } from 'lucide-react';
-import { getNearbyWorkersApi } from "../services/locationService";
-import type { NearbyWorkerItem } from "../services/locationService";
+import { Circle } from 'react-leaflet';
+import { getNearbyWorkersApi, reverseGeocodeApi } from '../services/locationService';
+import type { NearbyWorkerItem } from '../services/locationService';
 import { getMyProfileApi } from '../services/profileService';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { LocationMap } from '../components/map/LocationMap';
 import { WorkerMarker } from '../components/map/WorkerMarker';
 import { UserLocationMarker } from '../components/map/UserLocationMarker';
 import { AgriLocationPickerModal } from '../components/location/AgriLocationPickerModal';
+import type { SelectedLocationData } from '../components/location/AgriLocationPicker';
 import { DirectHireWorkerModal } from '../components/farmer/DirectHireWorkerModal';
 import { isValidCoordinate } from '../components/map/mapConfig';
 import type { WorkerProfile } from '../types';
-import axios from 'axios';
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
-const SKILL_OPTIONS = [
+const DEFAULT_SKILL_OPTIONS = [
   'All Skills',
   'Tractor Driving',
   'Harvesting',
+  'Crop Harvesting',
+  'Irrigation',
+  'Sowing',
+  'Pesticide Spraying',
+  'Farm Machinery',
+  'Thresher Operation',
+  'Sugarcane Cutting',
+  'Cotton Picking',
+  'Soybean Farming',
+  'Wheat Harvesting',
+  'Paddy Farming',
+  'Vegetable Farming',
+  'Dairy Farming',
+  'Drone Operation',
   'Crop Sowing',
   'Plowing',
   'Irrigation Pumping',
-  'Pesticide Spraying',
   'Equipment Operation',
   'General Labor',
 ];
-const AVAILABILITY_OPTIONS = ['all', 'Immediate', 'Within 3 Days', 'Seasonal'];
+const AVAILABILITY_OPTIONS = ['all', 'Immediate', 'Within 3 Days', 'Seasonal', 'Unavailable'];
 
 export const NearbyWorkersPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Search Center Location State (Default: Amritsar center 31.634, 75.8573)
-  const [latitude, setLatitude] = useState<number>(31.634);
-  const [longitude, setLongitude] = useState<number>(75.8573);
+  // Search Center Location State (Default: Nagpur, Maharashtra center 21.1458, 79.0882 or initial query params)
+  const initialLat = searchParams.get('lat') ? Number(searchParams.get('lat')) : 21.1458;
+  const initialLng = searchParams.get('lng') ? Number(searchParams.get('lng')) : 79.0882;
+  const initialRadius = searchParams.get('radius') ? Number(searchParams.get('radius')) : 10;
+  const initialSkill = searchParams.get('skill') || 'All Skills';
+  const initialExp = searchParams.get('minExperience') ? Number(searchParams.get('minExperience')) : 0;
+  const initialAvail = searchParams.get('availability') || 'all';
+  const initialWage = searchParams.get('maxWage') ? Number(searchParams.get('maxWage')) : 2000;
+  const initialRating = searchParams.get('minRating') ? Number(searchParams.get('minRating')) : 0;
+  const initialSort = (searchParams.get('sort') as any) || 'distance';
+
+  const [latitude, setLatitude] = useState<number>(initialLat);
+  const [longitude, setLongitude] = useState<number>(initialLng);
   const [addressPreview, setAddressPreview] = useState<string>('Detecting location...');
 
   // Filters State
-  const [radius, setRadius] = useState<number>(10);
-  const [selectedSkill, setSelectedSkill] = useState<string>('All Skills');
-  const [minExperience, setMinExperience] = useState<number>(0);
-  const [availability, setAvailability] = useState<string>('all');
-  const [maxWage, setMaxWage] = useState<number>(2000);
-  const [minRating, setMinRating] = useState<number>(0);
-  const [sort, setSort] = useState<'distance' | 'rating' | 'experience' | 'wage'>('distance');
+  const [radius, setRadius] = useState<number>(RADIUS_OPTIONS.includes(initialRadius) ? initialRadius : 10);
+  const [selectedSkill, setSelectedSkill] = useState<string>(initialSkill);
+  const [minExperience, setMinExperience] = useState<number>(initialExp);
+  const [availability, setAvailability] = useState<string>(initialAvail);
+  const [maxWage, setMaxWage] = useState<number>(initialWage);
+  const [minRating, setMinRating] = useState<number>(initialRating);
+  const [sort, setSort] = useState<'distance' | 'rating' | 'experience' | 'wage'>(initialSort);
   const [page, setPage] = useState<number>(1);
 
   // View Mode: 'split' | 'grid' | 'map'
   const [viewMode, setViewMode] = useState<'split' | 'grid' | 'map'>('split');
+  const [activeWorkerId, setActiveWorkerId] = useState<string | null>(null);
 
   // Data & Loading State
   const [workers, setWorkers] = useState<NearbyWorkerItem[]>([]);
@@ -89,60 +116,132 @@ export const NearbyWorkersPage: React.FC = () => {
   const [selectedHireWorker, setSelectedHireWorker] = useState<WorkerProfile | null>(null);
 
   // Geolocation Hook
-  const { coordinates: userGpsCoords, refetchLocation: getGpsLocation, loading: isGpsLoading } = useCurrentLocation({
+  const { coordinates: userGpsCoords } = useCurrentLocation({
     autoFetch: true,
   });
 
-  // When browser GPS resolves, update position
-  useEffect(() => {
-    if (userGpsCoords) {
-      setLatitude(userGpsCoords.latitude);
-      setLongitude(userGpsCoords.longitude);
-      reverseGeocodeCoords(userGpsCoords.latitude, userGpsCoords.longitude);
-    }
-  }, [userGpsCoords]);
-
-  // Helper: Reverse geocode coords for label
-  const reverseGeocodeCoords = async (lat: number, lng: number) => {
+  // Helper: Reverse geocode coords for human-readable location label
+  const reverseGeocodeCoords = useCallback(async (lat: number, lng: number) => {
     try {
-      const res = await axios.get('/api/v1/location/reverse', {
-        params: { lat, lng },
-        timeout: 4000,
-      });
-      if (res.data?.success && res.data?.data) {
-        const addr = res.data.data;
-        setAddressPreview(
-          [addr.village, addr.district, addr.state].filter(Boolean).join(', ') || 'Custom Location'
-        );
+      const res = await reverseGeocodeApi(lat, lng);
+      const addr = res?.data || res;
+      if (addr) {
+        const parts = [addr.village, addr.district, addr.state].filter(Boolean);
+        setAddressPreview(parts.length > 0 ? parts.join(', ') : `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       }
     } catch {
       setAddressPreview(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
     }
-  };
+  }, []);
 
-  // Option: Use Registered Farm Location from Profile
+  // Initial farm profile location auto-load
+  useEffect(() => {
+    let isMounted = true;
+    const loadFarmerDefaultLocation = async () => {
+      // If URL already had query params, reverse geocode that position
+      if (searchParams.get('lat') && searchParams.get('lng')) {
+        reverseGeocodeCoords(initialLat, initialLng);
+        return;
+      }
+
+      try {
+        const res = await getMyProfileApi();
+        const profile = res?.data?.profile || res?.profile || res;
+        const farmAddr = profile?.farmAddress;
+        let farmLat: number | null = null;
+        let farmLng: number | null = null;
+
+        if (farmAddr && isValidCoordinate(farmAddr.latitude, farmAddr.longitude)) {
+          farmLat = Number(farmAddr.latitude);
+          farmLng = Number(farmAddr.longitude);
+        } else if (
+          profile?.location?.coordinates &&
+          isValidCoordinate(profile.location.coordinates[1], profile.location.coordinates[0])
+        ) {
+          farmLat = Number(profile.location.coordinates[1]);
+          farmLng = Number(profile.location.coordinates[0]);
+        }
+
+        if (farmLat !== null && farmLng !== null && isMounted) {
+          setLatitude(farmLat);
+          setLongitude(farmLng);
+          const parts = [farmAddr?.village, farmAddr?.district, farmAddr?.state].filter(Boolean);
+          setAddressPreview(parts.length > 0 ? parts.join(', ') : 'Registered Farm Location');
+          return;
+        }
+      } catch {
+        // Fallback gracefully to GPS or default
+      }
+
+      if (userGpsCoords && isMounted) {
+        setLatitude(userGpsCoords.latitude);
+        setLongitude(userGpsCoords.longitude);
+        reverseGeocodeCoords(userGpsCoords.latitude, userGpsCoords.longitude);
+      } else {
+        reverseGeocodeCoords(21.1458, 79.0882);
+      }
+    };
+
+    loadFarmerDefaultLocation();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Option: Use Registered Farm Location from Profile ("My Farm" button)
   const handleUseFarmLocation = async () => {
     try {
       setLoadingFarmLoc(true);
+      setError(null);
       const res = await getMyProfileApi();
-      const farmAddr = res.data?.profile?.farmAddress;
+      const profile = res?.data?.profile || res?.profile || res;
+      const farmAddr = profile?.farmAddress;
+      let farmLat: number | null = null;
+      let farmLng: number | null = null;
+
       if (farmAddr && isValidCoordinate(farmAddr.latitude, farmAddr.longitude)) {
-        setLatitude(Number(farmAddr.latitude));
-        setLongitude(Number(farmAddr.longitude));
+        farmLat = Number(farmAddr.latitude);
+        farmLng = Number(farmAddr.longitude);
+      } else if (
+        profile?.location?.coordinates &&
+        isValidCoordinate(profile.location.coordinates[1], profile.location.coordinates[0])
+      ) {
+        farmLat = Number(profile.location.coordinates[1]);
+        farmLng = Number(profile.location.coordinates[0]);
+      }
+
+      if (farmLat !== null && farmLng !== null) {
+        setLatitude(farmLat);
+        setLongitude(farmLng);
         setPage(1);
-        setAddressPreview(
-          [farmAddr.village, farmAddr.district, farmAddr.state].filter(Boolean).join(', ') ||
-            'Profile Farm Location'
-        );
+        const parts = [farmAddr?.village, farmAddr?.district, farmAddr?.state].filter(Boolean);
+        setAddressPreview(parts.length > 0 ? parts.join(', ') : 'Registered Farm Location');
       } else {
-        setError('No valid farm location set in your profile. Please pick location manually.');
+        setError('No farm coordinates configured in your Farmer Profile. Please click "Set Pin" to select your location.');
       }
     } catch {
-      setError('Failed to fetch farm profile location.');
+      setError('Failed to fetch farm coordinates from profile.');
     } finally {
       setLoadingFarmLoc(false);
     }
   };
+
+  // Synchronize filter parameters to URL search params
+  useEffect(() => {
+    const params: Record<string, string> = {
+      lat: latitude.toFixed(4),
+      lng: longitude.toFixed(4),
+      radius: radius.toString(),
+      sort,
+    };
+    if (selectedSkill !== 'All Skills') params.skill = selectedSkill;
+    if (minExperience > 0) params.minExperience = minExperience.toString();
+    if (availability !== 'all') params.availability = availability;
+    if (maxWage < 2000) params.maxWage = maxWage.toString();
+    if (minRating > 0) params.minRating = minRating.toString();
+
+    setSearchParams(params, { replace: true });
+  }, [latitude, longitude, radius, selectedSkill, minExperience, availability, maxWage, minRating, sort, setSearchParams]);
 
   // Fetch Nearby Workers API
   const fetchNearbyWorkers = useCallback(async () => {
@@ -187,15 +286,61 @@ export const NearbyWorkersPage: React.FC = () => {
     fetchNearbyWorkers();
   }, [fetchNearbyWorkers]);
 
-  const handleLocationPick = (selected: { latitude: number; longitude: number; district?: string; state?: string; village?: string }) => {
+  // Location Picker Confirm Handler
+  const handleLocationPick = (selected: SelectedLocationData) => {
     setLatitude(selected.latitude);
     setLongitude(selected.longitude);
     setPage(1);
-    setAddressPreview(
+    const label =
+      selected.formattedAddress ||
       [selected.village, selected.district, selected.state].filter(Boolean).join(', ') ||
-        `${selected.latitude.toFixed(4)}, ${selected.longitude.toFixed(4)}`
-    );
+      `${selected.latitude.toFixed(4)}, ${selected.longitude.toFixed(4)}`;
+    setAddressPreview(label);
   };
+
+  // Reset all filters to defaults
+  const handleResetFilters = () => {
+    setRadius(10);
+    setSelectedSkill('All Skills');
+    setMinExperience(0);
+    setAvailability('all');
+    setMaxWage(2000);
+    setMinRating(0);
+    setSort('distance');
+    setPage(1);
+  };
+
+  // Dynamically calculate next radius for expand radius button
+  const getNextRadius = (current: number) => {
+    const index = RADIUS_OPTIONS.indexOf(current);
+    if (index >= 0 && index < RADIUS_OPTIONS.length - 1) {
+      return RADIUS_OPTIONS[index + 1];
+    }
+    return RADIUS_OPTIONS[RADIUS_OPTIONS.length - 1];
+  };
+  const nextRadius = getNextRadius(radius);
+
+  // Dynamically compute all available skills from standard options + returned workers
+  const allAvailableSkills = useMemo(() => {
+    const skillSet = new Set(DEFAULT_SKILL_OPTIONS);
+    workers.forEach((item) => {
+      item.worker?.skills?.forEach((s) => {
+        if (s && s.trim()) skillSet.add(s.trim());
+      });
+    });
+    return Array.from(skillSet);
+  }, [workers]);
+
+  const isFilterActive =
+    radius !== 10 ||
+    selectedSkill !== 'All Skills' ||
+    minExperience > 0 ||
+    availability !== 'all' ||
+    maxWage < 2000 ||
+    minRating > 0 ||
+    sort !== 'distance';
+
+  const mapZoomLevel = radius <= 5 ? 13 : radius <= 10 ? 12 : radius <= 25 ? 11 : radius <= 50 ? 10 : 9;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-16">
@@ -341,11 +486,14 @@ export const NearbyWorkersPage: React.FC = () => {
             </div>
 
             {/* Filter Bar Row */}
-            <div className="pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+            <div className="pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
               {/* Skill Filter */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Required Skill</label>
+                <label htmlFor="skill-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Required Skill
+                </label>
                 <select
+                  id="skill-filter"
                   value={selectedSkill}
                   onChange={(e) => {
                     setSelectedSkill(e.target.value);
@@ -353,7 +501,7 @@ export const NearbyWorkersPage: React.FC = () => {
                   }}
                   className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  {SKILL_OPTIONS.map((s) => (
+                  {allAvailableSkills.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -363,8 +511,11 @@ export const NearbyWorkersPage: React.FC = () => {
 
               {/* Min Experience */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Min Experience</label>
+                <label htmlFor="experience-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Min Experience
+                </label>
                 <select
+                  id="experience-filter"
                   value={minExperience}
                   onChange={(e) => {
                     setMinExperience(Number(e.target.value));
@@ -374,6 +525,7 @@ export const NearbyWorkersPage: React.FC = () => {
                 >
                   <option value={0}>Any Experience</option>
                   <option value={1}>1+ Years</option>
+                  <option value={2}>2+ Years</option>
                   <option value={3}>3+ Years</option>
                   <option value={5}>5+ Years</option>
                 </select>
@@ -381,8 +533,11 @@ export const NearbyWorkersPage: React.FC = () => {
 
               {/* Availability */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Availability</label>
+                <label htmlFor="availability-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Availability
+                </label>
                 <select
+                  id="availability-filter"
                   value={availability}
                   onChange={(e) => {
                     setAvailability(e.target.value);
@@ -400,8 +555,11 @@ export const NearbyWorkersPage: React.FC = () => {
 
               {/* Max Wage */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Max Daily Wage</label>
+                <label htmlFor="wage-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Max Daily Wage
+                </label>
                 <select
+                  id="wage-filter"
                   value={maxWage}
                   onChange={(e) => {
                     setMaxWage(Number(e.target.value));
@@ -412,14 +570,19 @@ export const NearbyWorkersPage: React.FC = () => {
                   <option value={2000}>Any Wage Rate</option>
                   <option value={500}>Up to ₹500/day</option>
                   <option value={700}>Up to ₹700/day</option>
+                  <option value={800}>Up to ₹800/day</option>
                   <option value={1000}>Up to ₹1000/day</option>
+                  <option value={1500}>Up to ₹1500/day</option>
                 </select>
               </div>
 
               {/* Min Rating */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Min Rating</label>
+                <label htmlFor="rating-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Min Rating
+                </label>
                 <select
+                  id="rating-filter"
                   value={minRating}
                   onChange={(e) => {
                     setMinRating(Number(e.target.value));
@@ -428,6 +591,7 @@ export const NearbyWorkersPage: React.FC = () => {
                   className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value={0}>All Ratings</option>
+                  <option value={3.0}>⭐ 3.0 & Above</option>
                   <option value={4.0}>⭐ 4.0 & Above</option>
                   <option value={4.5}>⭐ 4.5 & Above</option>
                   <option value={4.8}>⭐ 4.8 & Above</option>
@@ -436,8 +600,11 @@ export const NearbyWorkersPage: React.FC = () => {
 
               {/* Sort Order */}
               <div>
-                <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Sort Workers By</label>
+                <label htmlFor="sort-filter" className="text-[10px] text-slate-500 font-bold uppercase block mb-1">
+                  Sort Workers By
+                </label>
                 <select
+                  id="sort-filter"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as any)}
                   className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -449,6 +616,21 @@ export const NearbyWorkersPage: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {/* Quick Reset Link when filters active */}
+            {isFilterActive && (
+              <div className="flex items-center justify-between pt-2 text-xs text-slate-400 border-t border-slate-800/60">
+                <span>Active filters applied</span>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center space-x-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset All Filters</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -456,16 +638,27 @@ export const NearbyWorkersPage: React.FC = () => {
       {/* Main Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {error && (
-          <div className="p-4 mb-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm flex items-center space-x-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span>{error}</span>
+          <div className="p-4 mb-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchNearbyWorkers()}
+              className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg text-xs font-bold transition-colors"
+            >
+              Retry
+            </button>
           </div>
         )}
 
         {loading ? (
           <div className="py-20 text-center space-y-4">
             <Loader2 className="w-10 h-10 animate-spin text-emerald-400 mx-auto" />
-            <p className="text-sm font-semibold text-slate-400">Searching 2dsphere index for workers within {radius}km...</p>
+            <p className="text-sm font-semibold text-slate-400">
+              Searching 2dsphere index for workers within {radius} km...
+            </p>
           </div>
         ) : workers.length === 0 ? (
           <div className="py-16 text-center bg-slate-900/40 border border-slate-800 rounded-3xl p-8 space-y-4 max-w-lg mx-auto">
@@ -474,23 +667,23 @@ export const NearbyWorkersPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-white">No Workers Found Within {radius} km</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              No registered workers match your current skill or distance criteria within {radius}km. Try expanding your search radius.
+              No registered workers match your current skill or distance criteria within {radius} km. Try expanding your search radius or resetting filters.
             </p>
             <div className="flex justify-center space-x-2 pt-2">
               <button
                 type="button"
-                onClick={() => setRadius(25)}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition-colors shadow-lg"
+                onClick={() => {
+                  setRadius(nextRadius);
+                  setPage(1);
+                }}
+                disabled={radius >= 100}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl transition-colors shadow-lg"
               >
-                Expand Radius to 25 km
+                {radius >= 100 ? 'Maximum Radius Reached (100 km)' : `Expand Radius to ${nextRadius} km`}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedSkill('All Skills');
-                  setAvailability('all');
-                  setMinExperience(0);
-                }}
+                onClick={handleResetFilters}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-colors"
               >
                 Reset Filters
@@ -505,7 +698,7 @@ export const NearbyWorkersPage: React.FC = () => {
                 {/* Left Column: Worker Cards List */}
                 <div className="lg:col-span-7 space-y-4">
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-400 px-1">
-                    <span>Found {workers.length} available workers within {radius}km</span>
+                    <span>Found {pagination.total || workers.length} available workers within {radius} km</span>
                     <span>Page {pagination.page} of {pagination.totalPages}</span>
                   </div>
 
@@ -513,6 +706,8 @@ export const NearbyWorkersPage: React.FC = () => {
                     <NearbyWorkerCard
                       key={item.worker._id}
                       item={item}
+                      isSelected={activeWorkerId === item.worker._id}
+                      onSelect={() => setActiveWorkerId(item.worker._id)}
                       onHireWorker={(w) => setSelectedHireWorker(w)}
                     />
                   ))}
@@ -526,12 +721,27 @@ export const NearbyWorkersPage: React.FC = () => {
                         <MapIcon className="w-4 h-4 text-emerald-400" />
                         <span>Interactive Worker Map</span>
                       </span>
-                      <span className="text-[10px] text-slate-400">{workers.length} Worker Pins</span>
+                      <span className="text-[10px] text-slate-400">
+                        {workers.length} Pins in {radius} km Area
+                      </span>
                     </div>
 
                     <div className="rounded-2xl overflow-hidden h-[540px] border border-slate-800">
-                      <LocationMap center={[latitude, longitude]} zoom={11} height="h-[540px]">
-                        <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
+                      <LocationMap center={[latitude, longitude]} zoom={mapZoomLevel} height="h-[540px]">
+                        <UserLocationMarker position={[latitude, longitude]} popupText={`Search Center: ${addressPreview}`} />
+
+                        {/* Search Radius Area Circle */}
+                        <Circle
+                          center={[latitude, longitude]}
+                          radius={radius * 1000}
+                          pathOptions={{
+                            color: '#10B981',
+                            fillColor: '#10B981',
+                            fillOpacity: 0.08,
+                            weight: 1.5,
+                            dashArray: '6, 6',
+                          }}
+                        />
 
                         {workers.map((item) => {
                           const wLat = (item.worker.address as any)?.latitude || item.location?.coordinates[1];
@@ -549,6 +759,7 @@ export const NearbyWorkersPage: React.FC = () => {
                               expectedDailyWage={item.worker.expectedDailyWage}
                               rating={item.worker.rating}
                               availability={item.worker.availability}
+                              onClick={() => setActiveWorkerId(item.worker._id)}
                             />
                           );
                         })}
@@ -566,6 +777,8 @@ export const NearbyWorkersPage: React.FC = () => {
                   <NearbyWorkerCard
                     key={item.worker._id}
                     item={item}
+                    isSelected={activeWorkerId === item.worker._id}
+                    onSelect={() => setActiveWorkerId(item.worker._id)}
                     onHireWorker={(w) => setSelectedHireWorker(w)}
                   />
                 ))}
@@ -575,9 +788,30 @@ export const NearbyWorkersPage: React.FC = () => {
             {/* Fullscreen Map View */}
             {viewMode === 'map' && (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800 text-xs mb-3">
+                  <span className="font-bold text-white flex items-center space-x-1.5">
+                    <MapIcon className="w-4 h-4 text-emerald-400" />
+                    <span>Geographic Worker Map Discovery ({radius} km Radius)</span>
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-bold">{workers.length} Worker Markers</span>
+                </div>
+
                 <div className="rounded-2xl overflow-hidden h-[620px] border border-slate-800">
-                  <LocationMap center={[latitude, longitude]} zoom={11} height="h-[620px]">
-                    <UserLocationMarker position={[latitude, longitude]} popupText="Search Center Location" />
+                  <LocationMap center={[latitude, longitude]} zoom={mapZoomLevel} height="h-[620px]">
+                    <UserLocationMarker position={[latitude, longitude]} popupText={`Search Center: ${addressPreview}`} />
+
+                    {/* Search Radius Area Circle */}
+                    <Circle
+                      center={[latitude, longitude]}
+                      radius={radius * 1000}
+                      pathOptions={{
+                        color: '#10B981',
+                        fillColor: '#10B981',
+                        fillOpacity: 0.08,
+                        weight: 1.5,
+                        dashArray: '6, 6',
+                      }}
+                    />
 
                     {workers.map((item) => {
                       const wLat = (item.worker.address as any)?.latitude || item.location?.coordinates[1];
@@ -595,6 +829,7 @@ export const NearbyWorkersPage: React.FC = () => {
                           expectedDailyWage={item.worker.expectedDailyWage}
                           rating={item.worker.rating}
                           availability={item.worker.availability}
+                          onClick={() => setActiveWorkerId(item.worker._id)}
                         />
                       );
                     })}
@@ -659,8 +894,10 @@ export const NearbyWorkersPage: React.FC = () => {
 // Subcomponent: Individual Nearby Worker Card Component
 const NearbyWorkerCard: React.FC<{
   item: NearbyWorkerItem;
+  isSelected?: boolean;
+  onSelect?: () => void;
   onHireWorker: (worker: WorkerProfile) => void;
-}> = ({ item, onHireWorker }) => {
+}> = ({ item, isSelected, onSelect, onHireWorker }) => {
   const navigate = useNavigate();
   const { worker, distanceKm } = item;
 
@@ -670,23 +907,30 @@ const NearbyWorkerCard: React.FC<{
     _id: worker._id,
     ownerId: worker.ownerId,
     name: worker.name,
-    title: worker.title,
-    skills: worker.skills,
-    experience: worker.experience,
-    experienceYears: worker.experience,
+    title: worker.title || 'Agricultural Specialist',
+    skills: worker.skills || [],
+    experience: worker.experience || 0,
+    experienceYears: worker.experience || 0,
     dailyWage: worker.expectedDailyWage,
     expectedDailyWage: worker.expectedDailyWage,
     rating: worker.rating || 5.0,
+    reviewsCount: 0,
+    completedJobs: worker.totalJobsCompleted || (worker as any).completedJobs || 0,
     location: `${distanceKm} km away`,
-    profileImage: worker.profileImage,
-    avatar: worker.profileImage,
-    isVerified: worker.isVerified,
-    availability: worker.availability,
-    bio: (worker as any).bio || `${worker.experience} years of agricultural expertise. Available for seasonal and contract operations.`,
+    profileImage: worker.profileImage || '',
+    avatar: worker.profileImage || '',
+    isVerified: !!worker.isVerified,
+    availability: worker.availability || 'Immediate',
+    bio: (worker as any).bio || `${worker.experience || 0} years of agricultural expertise. Available for seasonal and contract operations.`,
   };
 
   return (
-    <div className="bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-3xl p-5 shadow-xl transition-all duration-300 space-y-4 group text-left">
+    <div
+      onClick={onSelect}
+      className={`bg-slate-900/80 hover:bg-slate-900 border ${
+        isSelected ? 'border-emerald-400 ring-2 ring-emerald-400/30' : 'border-slate-800 hover:border-emerald-500/40'
+      } rounded-3xl p-5 shadow-xl transition-all duration-300 space-y-4 group text-left cursor-pointer`}
+    >
       {/* Top Profile Header Row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center space-x-3 truncate">
@@ -716,12 +960,12 @@ const NearbyWorkerCard: React.FC<{
 
       {/* Skills Badges Pills */}
       <div className="flex flex-wrap gap-1.5">
-        {worker.skills.slice(0, 4).map((skill, i) => (
+        {worker.skills?.slice(0, 4).map((skill, i) => (
           <span key={i} className="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold">
             {skill}
           </span>
         ))}
-        {worker.skills.length > 4 && (
+        {worker.skills && worker.skills.length > 4 && (
           <span className="px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 text-[10px]">
             +{worker.skills.length - 4} more
           </span>
@@ -761,7 +1005,7 @@ const NearbyWorkerCard: React.FC<{
       </div>
 
       {/* Direct Contact & Hire Action Buttons */}
-      <div className="flex items-center space-x-2 pt-1">
+      <div className="flex items-center space-x-2 pt-1" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
           onClick={() => onHireWorker(workerProfileForModal)}
@@ -790,3 +1034,5 @@ const NearbyWorkerCard: React.FC<{
     </div>
   );
 };
+
+export default NearbyWorkersPage;
