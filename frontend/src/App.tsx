@@ -71,6 +71,9 @@ const MapJobDiscoveryPage = lazy(() =>
 const NearbyWorkersPage = lazy(() =>
   import('./pages/NearbyWorkersPage').then((m) => ({ default: m.NearbyWorkersPage }))
 );
+const WorkerSearchPage = lazy(() =>
+  import('./pages/WorkerSearchPage').then((m) => ({ default: m.WorkerSearchPage }))
+);
 const WorkerDiscoveryMapPage = lazy(() =>
   import('./pages/WorkerDiscoveryMapPage').then((m) => ({ default: m.WorkerDiscoveryMapPage }))
 );
@@ -175,6 +178,9 @@ export function App() {
                     <Routes>
                       {/* Public Authentication & Search Pages */}
                       <Route path="/" element={<LandingPage addToast={addToast} />} />
+                      <Route path="/home" element={<LandingPage addToast={addToast} />} />
+                      <Route path="/workers" element={<WorkerSearchPage addToast={addToast} />} />
+                      <Route path="/workers/search" element={<WorkerSearchPage addToast={addToast} />} />
                       <Route path="/login" element={<LoginPage addToast={addToast} />} />
                       <Route path="/register-farmer" element={<FarmerRegistrationPage addToast={addToast} />} />
                       <Route path="/register-worker" element={<WorkerRegistrationPage addToast={addToast} />} />
