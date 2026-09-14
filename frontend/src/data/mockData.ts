@@ -239,16 +239,18 @@ export const MOCK_METRICS: StatisticsMetric[] = [
 ];
 
 export const MOCK_FARMS_LOCATIONS = [
-  'Punjab, India',
-  'Fresno, California, USA',
+  'Nagpur, Maharashtra',
+  'Pune, Maharashtra',
   'Maharashtra, India',
+  'Punjab, India',
+  'Haryana, India',
+  'Gujarat, India',
+  'Karnataka, India',
+  'Fresno, California, USA',
   'Iowa, USA',
   'Queensland, Australia',
-  'Haryana, India',
   'Ontario, Canada',
-  'Gujarat, India',
-  'Napa Valley, California, USA',
-  'Karnataka, India'
+  'Napa Valley, California, USA'
 ];
 
 export const MOCK_FARM_TYPES = [

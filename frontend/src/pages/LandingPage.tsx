@@ -221,14 +221,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
     workers: WorkerProfile[];
   } | null>(null);
 
-  // Search submit handler
+  // Search submit handler: Navigate to /workers with real query parameters
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    addToast({
-      type: 'info',
-      title: 'Searching Agricultural Talent',
-      message: `Filtering workers for "${searchQuery || 'All Skills'}" in ${selectedLocation || 'All Locations'}`
-    });
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) {
+      params.set('search', searchQuery.trim());
+    }
+    if (selectedLocation && selectedLocation !== 'All Locations') {
+      params.set('location', selectedLocation);
+    }
+    if (selectedCategory && selectedCategory !== 'All Categories') {
+      params.set('category', selectedCategory);
+    }
+    const queryString = params.toString();
+    navigate(queryString ? `/workers?${queryString}` : '/workers');
   };
 
   // Run AgriMatch AI Simulation
