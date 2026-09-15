@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { getFeaturedWorkersApi } from '../services/profileService';
 import { getHomeStatisticsApi, type HomeStatistics } from '../services/analyticsService';
 import { initiateMobileCall } from '../services/callService';
+import { getAgriMatchRecommendationsApi } from '../services/workerService';
 import type { WorkerProfile, ToastMessage } from '../types';
 
 interface LandingPageProps {
@@ -45,6 +46,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
   // - Auth loading: wait for auth state to initialize before rendering
   const showHireButton = !isLoading && (!isAuthenticated || isFarmer);
   const showFindWorkButton = !isLoading && (!isAuthenticated || isWorker);
+
+  // Conditional Features section visibility:
+  // - Unauthenticated: show public landing page Bento-Grid features section
+  // - Authenticated (FARMER, WORKER, ADMIN, or any user): completely hide #features section
+  // - Auth loading: wait for auth state to initialize to prevent flashing
+  const showFeaturesSection = !isLoading && !isAuthenticated;
 
   // Click handler for "Hire Farm Workers" ensuring unauthenticated users are directed to login with destination preserved
   const handleHireWorkersClick = (e: React.MouseEvent) => {
@@ -230,14 +237,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
   };
 
   // AgriMatch AI Interactive Widget State
-  const [aiCrop, setAiCrop] = useState('Wheat Harvesting');
-  const [aiLocation, setAiLocation] = useState('Punjab, India');
-  const aiWorkersCount = 5;
+  const [aiCrop, setAiCrop] = useState('Wheat Combine Harvesting');
+  const [aiLocation, setAiLocation] = useState('Maharashtra, India');
+  const [targetCrewSize, setTargetCrewSize] = useState(5);
   const [isAiMatching, setIsAiMatching] = useState(false);
   const [aiResult, setAiResult] = useState<{
     matchedCount: number;
+    targetCrewSize: number;
     score: number;
-    estimatedArrival: string;
+    estimatedArrival: string | null;
+    crop: string;
+    location: string;
     workers: WorkerProfile[];
   } | null>(null);
 
@@ -258,24 +268,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
     navigate(queryString ? `/workers?${queryString}` : '/workers');
   };
 
-  // Run AgriMatch AI Simulation
-  const handleRunAiMatch = () => {
+  // Run Live AgriMatch AI Query against MongoDB
+  const handleRunAiMatch = async () => {
     setIsAiMatching(true);
     setAiResult(null);
-    setTimeout(() => {
-      setIsAiMatching(false);
-      setAiResult({
-        matchedCount: aiWorkersCount,
-        score: 98.4,
-        estimatedArrival: '1.5 Hours',
-        workers: workers.length > 0 ? workers.slice(0, 3) : [],
+    try {
+      const data = await getAgriMatchRecommendationsApi({
+        crop: aiCrop,
+        location: aiLocation,
+        targetCrewSize,
       });
+      setAiResult(data);
+      if (data.matchedCount > 0) {
+        addToast({
+          type: 'success',
+          title: 'AgriMatch AI Recommendations Ready!',
+          message: `Found ${data.matchedCount} verified worker${data.matchedCount > 1 ? 's' : ''} matching your ${aiCrop} requirement.`
+        });
+      } else {
+        addToast({
+          type: 'info',
+          title: 'No Matching Workers Found',
+          message: `No verified workers found near ${aiLocation} for ${aiCrop}. Try selecting another location or crop operation.`
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to run AgriMatch AI:', err);
       addToast({
-        type: 'success',
-        title: 'AgriMatch AI Recommendation Ready!',
-        message: `Found ${aiWorkersCount} top-rated workers matching your ${aiCrop} job.`
+        type: 'error',
+        title: 'AgriMatch AI Unavailable',
+        message: err.message || 'Could not calculate recommendations from database.'
       });
-    }, 1200);
+    } finally {
+      setIsAiMatching(false);
+    }
   };
 
   return (
@@ -629,115 +655,117 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
       </section>
 
       {/* ------------------- BENTO-GRID FEATURES SECTION ------------------- */}
-      <section id="features" className="py-20 bg-white border-y border-agri-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <Badge variant="green" size="md" className="mb-3">
-              Why Choose AgriConnect
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold font-heading text-agri-text tracking-tight">
-              Built for Modern Agriculture
-            </h2>
-            <p className="mt-3 text-slate-600 text-sm">
-              We combine AI precision matching with bank-grade security and verified worker IDs to transform farm employment.
-            </p>
+      {showFeaturesSection && (
+        <section id="features" className="py-20 bg-white border-y border-agri-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <Badge variant="green" size="md" className="mb-3">
+                Why Choose AgriConnect
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl font-bold font-heading text-agri-text tracking-tight">
+                Built for Modern Agriculture
+              </h2>
+              <p className="mt-3 text-slate-600 text-sm">
+                We combine AI precision matching with bank-grade security and verified worker IDs to transform farm employment.
+              </p>
+            </div>
+
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Bento Card 1 - AI Matching (Wide) */}
+              <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-agri-deep text-white text-left relative overflow-hidden shadow-soft-lg flex flex-col justify-between">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-agri-primary/20 rounded-full blur-3xl pointer-events-none" />
+                <div>
+                  <Badge variant="dark" size="sm" className="bg-emerald-800 text-emerald-200 border-emerald-700 mb-4">
+                    <Sparkles className="w-3.5 h-3.5 mr-1 text-emerald-400" /> AgriMatch AI 2.0
+                  </Badge>
+                  <h3 className="text-2xl sm:text-3xl font-bold font-heading tracking-tight leading-snug">
+                    Smart Geolocation & Crop-Skill Matching
+                  </h3>
+                  <p className="mt-3 text-slate-300 text-sm leading-relaxed max-w-lg">
+                    Our proprietary algorithm evaluates crop harvest cycles, field distance, equipment certifications, and weather forecast windows to deliver worker matches in under 2 hours.
+                  </p>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 pt-6 border-t border-emerald-800/80 text-xs">
+                  <div className="flex items-center space-x-2 text-emerald-300 font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
+                    <span>99.2% Match Accuracy</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-300 font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
+                    <span>Weather-Aware Alerts</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-300 font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
+                    <span>Emergency Dispatch</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bento Card 2 - Verified Profiles */}
+              <div className="p-8 rounded-3xl bg-agri-bg border border-agri-border text-left shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-agri-primary mb-5">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold font-heading text-agri-text">
+                    100% Verified Profiles
+                  </h3>
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    Every agricultural worker and farm owner passes government ID verification, background checks, and skill badge validations.
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-200/80 flex items-center space-x-2 text-xs text-agri-dark font-semibold">
+                  <Award className="w-4 h-4" />
+                  <span>Certified Skill Badges Included</span>
+                </div>
+              </div>
+
+              {/* Bento Card 3 - Instant Daily Payouts */}
+              <div className="p-8 rounded-3xl bg-agri-bg border border-agri-border text-left shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 mb-5">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold font-heading text-agri-text">
+                    Instant Daily Payouts
+                  </h3>
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    Workers receive guaranteed direct payments into their bank accounts upon digital job completion sign-off by farmers.
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-200/80 flex items-center space-x-2 text-xs text-slate-700 font-semibold">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <span>Zero Transfer Fees for Workers</span>
+                </div>
+              </div>
+
+              {/* Bento Card 4 - Seasonal Contracting (Wide) */}
+              <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 text-left shadow-soft-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="space-y-3">
+                  <Badge variant="green" size="sm">
+                    Seasonal & On-Demand
+                  </Badge>
+                  <h3 className="text-2xl font-bold font-heading text-agri-dark">
+                    Flexible Contracting for Every Harvest Season
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed max-w-md">
+                    Book single-day emergency harvesting crews or retain multi-week tractor teams with standardized digital contracts.
+                  </p>
+                </div>
+
+                <Link to="/register-farmer" className="shrink-0 w-full sm:w-auto">
+                  <Button variant="primary" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                    Explore Contracts
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
-
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Bento Card 1 - AI Matching (Wide) */}
-            <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-agri-deep text-white text-left relative overflow-hidden shadow-soft-lg flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-agri-primary/20 rounded-full blur-3xl pointer-events-none" />
-              <div>
-                <Badge variant="dark" size="sm" className="bg-emerald-800 text-emerald-200 border-emerald-700 mb-4">
-                  <Sparkles className="w-3.5 h-3.5 mr-1 text-emerald-400" /> AgriMatch AI 2.0
-                </Badge>
-                <h3 className="text-2xl sm:text-3xl font-bold font-heading tracking-tight leading-snug">
-                  Smart Geolocation & Crop-Skill Matching
-                </h3>
-                <p className="mt-3 text-slate-300 text-sm leading-relaxed max-w-lg">
-                  Our proprietary algorithm evaluates crop harvest cycles, field distance, equipment certifications, and weather forecast windows to deliver worker matches in under 2 hours.
-                </p>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 pt-6 border-t border-emerald-800/80 text-xs">
-                <div className="flex items-center space-x-2 text-emerald-300 font-medium">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
-                  <span>99.2% Match Accuracy</span>
-                </div>
-                <div className="flex items-center space-x-2 text-emerald-300 font-medium">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
-                  <span>Weather-Aware Alerts</span>
-                </div>
-                <div className="flex items-center space-x-2 text-emerald-300 font-medium">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-agri-primary" />
-                  <span>Emergency Dispatch</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bento Card 2 - Verified Profiles */}
-            <div className="p-8 rounded-3xl bg-agri-bg border border-agri-border text-left shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-agri-primary mb-5">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-heading text-agri-text">
-                  100% Verified Profiles
-                </h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  Every agricultural worker and farm owner passes government ID verification, background checks, and skill badge validations.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-200/80 flex items-center space-x-2 text-xs text-agri-dark font-semibold">
-                <Award className="w-4 h-4" />
-                <span>Certified Skill Badges Included</span>
-              </div>
-            </div>
-
-            {/* Bento Card 3 - Instant Daily Payouts */}
-            <div className="p-8 rounded-3xl bg-agri-bg border border-agri-border text-left shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 mb-5">
-                  <DollarSign className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-heading text-agri-text">
-                  Instant Daily Payouts
-                </h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  Workers receive guaranteed direct payments into their bank accounts upon digital job completion sign-off by farmers.
-                </p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-200/80 flex items-center space-x-2 text-xs text-slate-700 font-semibold">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <span>Zero Transfer Fees for Workers</span>
-              </div>
-            </div>
-
-            {/* Bento Card 4 - Seasonal Contracting (Wide) */}
-            <div className="md:col-span-2 p-8 rounded-3xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 text-left shadow-soft-sm flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="space-y-3">
-                <Badge variant="green" size="sm">
-                  Seasonal & On-Demand
-                </Badge>
-                <h3 className="text-2xl font-bold font-heading text-agri-dark">
-                  Flexible Contracting for Every Harvest Season
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed max-w-md">
-                  Book single-day emergency harvesting crews or retain multi-week tractor teams with standardized digital contracts.
-                </p>
-              </div>
-
-              <Link to="/register-farmer" className="shrink-0 w-full sm:w-auto">
-                <Button variant="primary" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Explore Contracts
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ------------------- INTERACTIVE AI SECTION ------------------- */}
       <section id="ai-engine" className="py-20 bg-slate-900 text-white relative overflow-hidden">
@@ -792,10 +820,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
                       onChange={(e) => setAiCrop(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-agri-primary"
                     >
-                      <option value="Wheat Harvesting">Wheat Combine Harvesting</option>
-                      <option value="Agri-Drone Spraying">Pesticide Agri-Drone Spraying</option>
-                      <option value="Organic Greenhouse">Greenhouse Tomato Pickers</option>
-                      <option value="Dairy Milking">Commercial Dairy Milking</option>
+                      <option value="Wheat Combine Harvesting">Wheat Combine Harvesting</option>
+                      <option value="Cotton Harvesting">Cotton Harvesting</option>
+                      <option value="Pesticide Agri-Drone Spraying">Pesticide Agri-Drone Spraying</option>
+                      <option value="Greenhouse Tomato Pickers">Greenhouse Tomato Pickers</option>
+                      <option value="Commercial Dairy Milking">Commercial Dairy Milking</option>
                     </select>
                   </div>
 
@@ -817,8 +846,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="w-full sm:w-auto text-xs text-slate-400">
-                    Target Crew Size: <strong className="text-white">{aiWorkersCount} Workers</strong>
+                  <div className="w-full sm:w-auto flex items-center gap-2 text-xs text-slate-400">
+                    <span>Target Crew Size:</span>
+                    <select
+                      value={targetCrewSize}
+                      onChange={(e) => setTargetCrewSize(Number(e.target.value))}
+                      className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-semibold focus:outline-none focus:border-agri-primary cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 8, 10, 12, 15].map((num) => (
+                        <option key={num} value={num}>{num} Workers</option>
+                      ))}
+                    </select>
                   </div>
                   <Button
                     variant="primary"
@@ -843,39 +881,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({ addToast }) => {
                       <span className="font-bold text-emerald-400 flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4" /> AI Recommendation Generated
                       </span>
-                      <span className="text-emerald-200">
-                        Score: <strong>{aiResult.score}% Match</strong>
-                      </span>
+                      {aiResult.score > 0 && (
+                        <span className="text-emerald-200">
+                          Score: <strong>{aiResult.score}% Match</strong>
+                        </span>
+                      )}
                     </div>
 
-                    <p className="text-xs text-slate-200">
-                      Found <strong>{aiResult.matchedCount} verified workers</strong> near {aiLocation} with proven experience in {aiCrop}. Estimated dispatch ETA: <strong className="text-agri-light">{aiResult.estimatedArrival}</strong>.
-                    </p>
+                    {aiResult.matchedCount > 0 ? (
+                      <>
+                        <p className="text-xs text-slate-200">
+                          Found <strong>{aiResult.matchedCount} verified {aiResult.matchedCount === 1 ? 'worker' : 'workers'}</strong> near {aiLocation} with proven experience in {aiCrop}.
+                          {aiResult.estimatedArrival ? (
+                            <> Estimated dispatch ETA: <strong className="text-agri-light">{aiResult.estimatedArrival}</strong>.</>
+                          ) : (
+                            <> Ready for instant booking.</>
+                          )}
+                        </p>
 
-                    <div className="flex items-center space-x-2 pt-1">
-                      {aiResult.workers.map((w) => (
-                        w.avatar || w.profileImage ? (
-                          <img
-                            key={w.id}
-                            src={w.avatar || w.profileImage}
-                            alt={w.name}
-                            className="w-8 h-8 rounded-full border-2 border-agri-primary object-cover"
-                            title={w.name}
-                          />
-                        ) : (
-                          <div
-                            key={w.id}
-                            className="w-8 h-8 rounded-full border-2 border-agri-primary bg-emerald-800 text-white font-bold text-xs flex items-center justify-center uppercase"
-                            title={w.name}
-                          >
-                            {w.name.charAt(0)}
-                          </div>
-                        )
-                      ))}
-                      <span className="text-[11px] text-emerald-300 font-medium pl-2">
-                        Ready for instant booking
-                      </span>
-                    </div>
+                        <div className="flex items-center space-x-2 pt-1">
+                          {aiResult.workers.map((w) => (
+                            w.avatar || w.profileImage ? (
+                              <img
+                                key={w.id || w._id}
+                                src={w.avatar || w.profileImage}
+                                alt={w.name}
+                                className="w-8 h-8 rounded-full border-2 border-agri-primary object-cover"
+                                title={w.name}
+                              />
+                            ) : (
+                              <div
+                                key={w.id || w._id}
+                                className="w-8 h-8 rounded-full border-2 border-agri-primary bg-emerald-800 text-white font-bold text-xs flex items-center justify-center uppercase"
+                                title={w.name}
+                              >
+                                {w.name ? w.name.charAt(0) : 'W'}
+                              </div>
+                            )
+                          ))}
+                          <span className="text-[11px] text-emerald-300 font-medium pl-2">
+                            Ready for instant booking
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-amber-300">
+                        No matching verified workers found near {aiLocation} with experience in {aiCrop}. Try adjusting your criteria or selecting another location.
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </div>

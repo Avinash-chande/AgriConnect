@@ -62,3 +62,32 @@ export const searchWorkersApi = async (
   const response = await api.get('/workers/search', { params: cleanParams });
   return response.data.data;
 };
+
+export interface AgriMatchParams {
+  crop?: string;
+  operation?: string;
+  location?: string;
+  targetCrewSize?: number;
+  limit?: number;
+}
+
+export interface AgriMatchResponse {
+  matchedCount: number;
+  targetCrewSize: number;
+  score: number;
+  estimatedArrival: string | null;
+  crop: string;
+  location: string;
+  workers: WorkerProfile[];
+}
+
+/**
+ * AgriMatch AI Worker Matching API (queries MongoDB WorkerProfile collection)
+ */
+export const getAgriMatchRecommendationsApi = async (
+  params: AgriMatchParams = {}
+): Promise<AgriMatchResponse> => {
+  const response = await api.get('/workers/agrimatch', { params });
+  return response.data.data;
+};
+

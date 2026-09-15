@@ -2,10 +2,19 @@ import express from 'express';
 import {
   getFeaturedWorkersController,
   searchWorkersController,
+  matchWorkersController,
 } from '../controllers/workerController.js';
 import { publicCacheControl } from './profileRoutes.js';
 
 const router = express.Router();
+
+/**
+ * @route   GET /api/v1/workers/agrimatch
+ * @desc    AgriMatch AI Engine: match verified workers from MongoDB
+ * @access  Public
+ */
+router.get('/agrimatch', publicCacheControl, matchWorkersController);
+router.get('/match', publicCacheControl, matchWorkersController);
 
 /**
  * @route   GET /api/v1/workers/featured
