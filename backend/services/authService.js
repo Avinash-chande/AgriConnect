@@ -14,7 +14,7 @@ import {
   verifyPendingOTPCode,
   clearOTP,
 } from './otpService.js';
-import { sendOTPEmail } from './emailService.js';
+import { sendOTPEmail, sendPasswordResetOTPEmail } from './emailService.js';
 import { verifyToken, signAccessToken, signRefreshToken } from './jwtService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
 import { TrustScoreService } from './TrustScoreService.js';
@@ -477,16 +477,18 @@ export const logoutUserService = async (userId) => {
 };
 
 export const forgotPasswordService = async (credential) => {
-  if (!credential) return true;
+  if (!credential) {
+    throw new AppError('Please provide email address or mobile number.', 400);
+  }
   const isEmail = credential.includes('@');
-  const query = isEmail ? { email: credential.toLowerCase() } : { mobile: credential };
+  const query = isEmail ? { email: credential.toLowerCase().trim() } : { mobile: credential.trim() };
   const user = await User.findOne(query);
   if (!user) {
-    return true; // Return true to prevent account enumeration
+    return { success: true }; // Return silently to prevent account enumeration
   }
-  const { otpCode } = await generateAndSaveOTP(user);
+  const { otpCode } = await generateAndSaveOTP(user, 'password_reset');
   if (isEmail) {
-    await sendOTPEmail(user.email, otpCode);
+    await sendPasswordResetOTPEmail(user.email, otpCode);
   }
   return { otpCode, otpExpiresAt: user.otpExpiresAt };
 };
@@ -494,7 +496,55 @@ export const forgotPasswordService = async (credential) => {
 export const sendOTPService = forgotPasswordService;
 
 /**
- * Legacy OTP verification for already-existing User documents (e.g. forgot-password flow)
+ * Verify Password-Reset OTP for existing User accounts
+ */
+export const verifyPasswordResetOTPService = async (credential, otpCode) => {
+  if (!credential || !otpCode) {
+    throw new AppError('Please provide email/mobile and 6-digit OTP code.', 400);
+  }
+
+  const isEmail = credential.includes('@');
+  const query = isEmail ? { email: credential.toLowerCase().trim() } : { mobile: credential.trim() };
+
+  const user = await User.findOne(query).select('+otpCode +otpExpiresAt +otpAttempts +otpPurpose');
+
+  if (!user || !user.otpCode || user.otpPurpose !== 'password_reset') {
+    throw new AppError('Password reset session not found or expired. Please request a new code.', 404);
+  }
+
+  // 1. Check Expiration
+  if (new Date() > user.otpExpiresAt) {
+    throw new AppError('OTP expired. Please request a new code.', 400);
+  }
+
+  // 2. Check Attempt Limit (5 attempts max)
+  if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+    await clearOTP(user);
+    throw new AppError('Too many failed attempts. Please request a new code.', 429);
+  }
+
+  // 3. Verify Code Match
+  if (user.otpCode !== otpCode.toString().trim()) {
+    user.otpAttempts += 1;
+    await user.save({ validateBeforeSave: false });
+
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await clearOTP(user);
+      throw new AppError('Too many failed attempts. Please request a new code.', 429);
+    }
+
+    throw new AppError('Invalid OTP.', 400);
+  }
+
+  return {
+    verified: true,
+    email: user.email,
+    message: 'OTP verified successfully.',
+  };
+};
+
+/**
+ * Legacy OTP verification for already-existing User documents
  */
 export const verifyOTPService = async (credential, otp) => {
   if (!credential || !otp) {
@@ -568,14 +618,40 @@ export const verifyOTPService = async (credential, otp) => {
 };
 
 export const resetPasswordService = async (credential, otp, newPassword) => {
+  if (!credential || !otp || !newPassword) {
+    throw new AppError('Please provide email/mobile, OTP code, and new password.', 400);
+  }
+
   const isEmail = credential.includes('@');
-  const query = isEmail ? { email: credential.toLowerCase() } : { mobile: credential };
+  const query = isEmail ? { email: credential.toLowerCase().trim() } : { mobile: credential.trim() };
 
-  const user = await User.findOne(query).select('+otpCode +otpExpiresAt');
-  if (!user) throw new AppError('User account not found.', 404);
+  const user = await User.findOne(query).select('+otpCode +otpExpiresAt +otpAttempts +otpPurpose');
+  if (!user || !user.otpCode || user.otpPurpose !== 'password_reset') {
+    throw new AppError('Password reset session not found or expired. Please request a new code.', 404);
+  }
 
-  const isValid = await verifyOTPCode(user, otp);
-  if (!isValid) throw new AppError('Invalid or expired OTP code.', 400);
+  // 1. Check Expiration
+  if (new Date() > user.otpExpiresAt) {
+    throw new AppError('OTP expired. Please request a new code.', 400);
+  }
+
+  // 2. Check Attempt Limit
+  if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+    await clearOTP(user);
+    throw new AppError('Too many failed attempts. Please request a new code.', 429);
+  }
+
+  // 3. Verify Code Match
+  if (user.otpCode !== otp.toString().trim()) {
+    user.otpAttempts += 1;
+    await user.save({ validateBeforeSave: false });
+
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      await clearOTP(user);
+      throw new AppError('Too many failed attempts. Please request a new code.', 429);
+    }
+    throw new AppError('Invalid OTP.', 400);
+  }
 
   user.password = newPassword;
   await clearOTP(user);

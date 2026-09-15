@@ -17,6 +17,7 @@ import {
   resetPasswordService,
   sendOTPService,
   verifyOTPService,
+  verifyPasswordResetOTPService,
   googleLoginService,
 } from '../services/authService.js';
 import { calculateProfileCompletion } from '../utils/profileCalculator.js';
@@ -215,11 +216,9 @@ export const sendOTP = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * Verify OTP:
- * Handles registration OTP verification (creates User and establishes authentication session)
- * Falls back to legacy User OTP verification if no pending registration exists (e.g. forgot-password)
+ * Verify Password-Reset OTP controller
  */
-export const verifyOTP = asyncHandler(async (req, res, next) => {
+export const verifyPasswordResetOTP = asyncHandler(async (req, res, next) => {
   const { phone, mobile, email, otpCode } = req.body;
   const credential = email || phone || mobile;
 
@@ -227,28 +226,56 @@ export const verifyOTP = asyncHandler(async (req, res, next) => {
     return next(new AppError('Please provide mobile number/email and 6-digit OTP code.', 400));
   }
 
-  // If email is provided, check PendingRegistration first
+  const result = await verifyPasswordResetOTPService(credential, otpCode);
+  return sendResponse(res, 200, result.message || 'OTP verified successfully.', { verified: true, email: result.email });
+});
+
+/**
+ * Verify OTP:
+ * Handles registration OTP verification (creates User and establishes authentication session)
+ * or password reset verification based on explicit purpose parameter ('registration' vs 'password_reset')
+ */
+export const verifyOTP = asyncHandler(async (req, res, next) => {
+  const { phone, mobile, email, otpCode, purpose } = req.body;
+  const credential = email || phone || mobile;
+
+  if (!credential || !otpCode) {
+    return next(new AppError('Please provide mobile number/email and 6-digit OTP code.', 400));
+  }
+
+  // Explicit Purpose Handling
+  if (purpose === 'password_reset') {
+    const result = await verifyPasswordResetOTPService(credential, otpCode);
+    return sendResponse(res, 200, result.message || 'OTP verified successfully.', { verified: true, email: result.email });
+  }
+
+  if (purpose === 'registration') {
+    if (!email) {
+      return next(new AppError('Registration verification requires a valid email address.', 400));
+    }
+    const user = await verifyRegistrationOTPService(email, otpCode);
+    return await sendAuthTokenResponse(user, 201, 'Account created and verified successfully.', res);
+  }
+
+  // Fallback if purpose is omitted: Check PendingRegistration first, then existing User
   if (email) {
     try {
       const user = await verifyRegistrationOTPService(email, otpCode);
-      // Account created and verified: issue authentication tokens and cookies
       return await sendAuthTokenResponse(user, 201, 'Account created and verified successfully.', res);
     } catch (err) {
-      // If error is not 404, re-throw (e.g. invalid OTP, expired, 429, duplicate 409)
       if (err.statusCode !== 404) {
         return next(err);
       }
-      // If 404: check if user already exists and is verified (e.g. OTP reuse or already completed)
-      const existingUser = await findUserByEmailOrGoogleId(email, null);
-      if (existingUser && existingUser.isVerified) {
-        return next(new AppError('This account has already been verified. Please log in.', 400));
+      try {
+        const result = await verifyPasswordResetOTPService(credential, otpCode);
+        return sendResponse(res, 200, result.message || 'OTP verified successfully.', { verified: true, email: result.email });
+      } catch {
+        return next(err);
       }
-      // If user doesn't exist at all, return the 404 from PendingRegistration
-      return next(err);
     }
   }
 
-  // Legacy verification path for existing user accounts (e.g. phone verification / forgot-password)
+  // Legacy verification path for existing user accounts
   await verifyOTPService(credential, otpCode);
   return sendResponse(res, 200, 'Account verified successfully.', { isVerified: true });
 });

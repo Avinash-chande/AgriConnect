@@ -14,11 +14,13 @@ export const generateOTPCode = () => {
  * Generate 6-digit OTP code, attach 10-minute expiry to user document, and save
  * (Used for existing user accounts, e.g. forgot-password flow)
  */
-export const generateAndSaveOTP = async (user) => {
+export const generateAndSaveOTP = async (user, purpose = 'password_reset') => {
   const { otpCode, otpExpiresAt } = generateOTPCode();
 
   user.otpCode = otpCode;
   user.otpExpiresAt = otpExpiresAt;
+  user.otpAttempts = 0;
+  user.otpPurpose = purpose;
   await user.save({ validateBeforeSave: false });
 
   return { otpCode, otpExpiresAt };
@@ -29,12 +31,12 @@ export const generateAndSaveOTP = async (user) => {
  */
 export const verifyOTPCode = (user, candidateCode) => {
   if (!user.otpCode || user.otpCode !== candidateCode) {
-    throw new AppError('Invalid OTP verification code.', 400);
+    throw new AppError('Invalid OTP.', 400);
   }
 
   if (new Date() > user.otpExpiresAt) {
     throw new AppError(
-      'OTP verification code has expired. Please request a new code.',
+      'OTP expired. Please request a new code.',
       400
     );
   }
@@ -59,5 +61,7 @@ export const verifyPendingOTPCode = (pending, candidateCode) => {
 export const clearOTP = async (user) => {
   user.otpCode = undefined;
   user.otpExpiresAt = undefined;
+  user.otpAttempts = 0;
+  user.otpPurpose = null;
   await user.save({ validateBeforeSave: false });
 };

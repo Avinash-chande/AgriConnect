@@ -112,6 +112,17 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    otpAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    otpPurpose: {
+      type: String,
+      enum: ['password_reset', 'account_verification', null],
+      default: null,
+      select: false,
+    },
     isPremium: {
       type: Boolean,
       default: false,

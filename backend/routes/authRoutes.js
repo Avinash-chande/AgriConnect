@@ -10,6 +10,7 @@ import {
   resetPassword,
   sendOTP,
   verifyOTP,
+  verifyPasswordResetOTP,
   resendRegistrationOTP,
   getCurrentUser,
 } from '../controllers/authController.js';
@@ -41,6 +42,7 @@ router.post('/forgot-password', validateForgotPassword, forgotPassword);
 router.post('/reset-password', validateResetPassword, resetPassword);
 router.post('/send-otp', sendOTP);
 router.post('/verify-otp', validateOTPVerification, verifyOTP);
+router.post('/verify-password-reset-otp', validateOTPVerification, verifyPasswordResetOTP);
 router.get('/me', protect, getCurrentUser);
 
 export default router;

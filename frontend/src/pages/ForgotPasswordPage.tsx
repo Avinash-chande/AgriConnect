@@ -165,7 +165,17 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ addToast
                 variant="primary"
                 size="lg"
                 fullWidth
-                onClick={() => navigate('/verify-otp')}
+                onClick={() => {
+                  if (submittedValue) {
+                    sessionStorage.setItem('pending_password_reset_email', submittedValue);
+                  }
+                  navigate('/verify-otp', {
+                    state: {
+                      email: submittedValue,
+                      purpose: 'password_reset',
+                    },
+                  });
+                }}
                 rightIcon={<Send className="w-4 h-4" />}
               >
                 Proceed to Enter OTP

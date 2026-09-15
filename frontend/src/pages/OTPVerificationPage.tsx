@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sprout, ShieldCheck, CheckCircle2, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Sprout, ShieldCheck, CheckCircle2, RefreshCw, ArrowRight, ArrowLeft, KeyRound, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -8,7 +8,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { Button } from '../components/common/Button';
-import { resendRegistrationOTPApi, sendOTPApi } from '../services/authService';
+import { Input } from '../components/common/Input';
+import {
+  resendRegistrationOTPApi,
+  sendOTPApi,
+  forgotPasswordApi,
+  verifyPasswordResetOTPApi,
+  resetPasswordApi,
+} from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import type { ToastMessage } from '../types';
 
@@ -27,11 +34,14 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
   const location = useLocation();
   const { user, verifyRegistrationOTP } = useAuth();
 
+  const purpose: 'registration' | 'password_reset' =
+    location.state?.purpose ||
+    (sessionStorage.getItem('pending_password_reset_email') ? 'password_reset' : 'registration');
+
   const verificationEmail =
-    localStorage.getItem('pending_verification_email') ||
-    location.state?.email ||
-    user?.email ||
-    '';
+    purpose === 'password_reset'
+      ? location.state?.email || sessionStorage.getItem('pending_password_reset_email') || ''
+      : localStorage.getItem('pending_verification_email') || location.state?.email || user?.email || '';
 
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
   const [timer, setTimer] = useState<number>(60);
@@ -39,6 +49,14 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // Password reset specific states
+  const [isResetStep2, setIsResetStep2] = useState<boolean>(false);
+  const [verifiedOtpCode, setVerifiedOtpCode] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [passwordError, setPasswordError] = useState<string>('');
+  const [isResettingPassword, setIsResettingPassword] = useState<boolean>(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -67,10 +85,10 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
   }, [timer]);
 
   useEffect(() => {
-    if (inputRefs.current[0]) {
+    if (inputRefs.current[0] && !isResetStep2) {
       inputRefs.current[0]?.focus();
     }
-  }, []);
+  }, [isResetStep2]);
 
   const updateOtpState = (newOtpArr: string[]) => {
     setOtp(newOtpArr);
@@ -115,16 +133,18 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
     if (!canResend) return;
 
     try {
-      if (verificationEmail) {
-        // Use registration resend endpoint for pending registration session
-        await resendRegistrationOTPApi(verificationEmail);
-      } else if (user?.email || user?.phone) {
-        await sendOTPApi({
-          email: user?.email,
-          phone: user?.phone,
-        });
+      if (!verificationEmail) {
+        if (purpose === 'password_reset') {
+          throw new Error('Password reset session not found or expired. Please request a new code.');
+        } else {
+          throw new Error('Registration session not found or expired. Please register again.');
+        }
+      }
+
+      if (purpose === 'password_reset') {
+        await forgotPasswordApi({ email: verificationEmail });
       } else {
-        throw new Error('No email found to resend verification code. Please register again.');
+        await resendRegistrationOTPApi(verificationEmail);
       }
 
       setTimer(60);
@@ -135,29 +155,101 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
       addToast({
         type: 'success',
         title: 'New Code Dispatched',
-        message: 'A fresh 6-digit OTP code has been sent to your registered email.'
+        message: `A fresh 6-digit OTP code has been sent for ${purpose === 'password_reset' ? 'password reset' : 'account registration'}.`
       });
     } catch (err: any) {
       addToast({
         type: 'error',
         title: 'Resend Failed',
-        message: err.message || 'Could not send fresh OTP.'
+        message: err.response?.data?.message || err.message || 'Could not send fresh OTP.'
       });
     }
   };
 
-  const onSubmit = async (data: OTPFormValues) => {
+  const onSubmitOTP = async (data: OTPFormValues) => {
     setErrorMessage('');
     setIsVerifying(true);
 
     try {
       if (!verificationEmail) {
-        throw new Error('Registration session not found or expired. Please register again.');
+        if (purpose === 'password_reset') {
+          throw new Error('Password reset session not found or expired. Please request a new code.');
+        } else {
+          throw new Error('Registration session not found or expired. Please register again.');
+        }
       }
 
-      // verifyRegistrationOTP verifies OTP with backend, creates User and establishes auth session
-      await verifyRegistrationOTP(verificationEmail, data.otpCode);
+      if (purpose === 'password_reset') {
+        // Verify Password-Reset OTP
+        await verifyPasswordResetOTPApi({
+          email: verificationEmail,
+          otpCode: data.otpCode,
+          purpose: 'password_reset',
+        });
 
+        setVerifiedOtpCode(data.otpCode);
+        setIsResetStep2(true);
+        addToast({
+          type: 'success',
+          title: 'OTP Verified!',
+          message: 'Please enter your new password to complete reset.'
+        });
+      } else {
+        // Verify Registration OTP (creates User/Profile & sets session)
+        await verifyRegistrationOTP(verificationEmail, data.otpCode);
+
+        setIsSuccess(true);
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+
+        addToast({
+          type: 'success',
+          title: 'Account Verified Successfully!',
+          message: 'Welcome to AgriConnect. You are ready to explore the platform.'
+        });
+
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Invalid or expired OTP code. Please try again.';
+      setErrorMessage(msg);
+      addToast({
+        type: 'error',
+        title: 'Verification Failed',
+        message: msg
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match. Please check and try again.');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await resetPasswordApi({
+        email: verificationEmail,
+        otpCode: verifiedOtpCode,
+        newPassword,
+      });
+
+      sessionStorage.removeItem('pending_password_reset_email');
       setIsSuccess(true);
       confetti({
         particleCount: 100,
@@ -167,23 +259,23 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
 
       addToast({
         type: 'success',
-        title: 'Account Verified Successfully!',
-        message: 'Welcome to AgriConnect. You are ready to explore the platform.'
+        title: 'Password Reset Successful!',
+        message: 'Your password has been updated. You can now log in.'
       });
 
       setTimeout(() => {
-        navigate('/');
+        navigate('/login');
       }, 2000);
     } catch (err: any) {
-      const msg = err.message || 'Invalid or expired OTP code. Please try again.';
-      setErrorMessage(msg);
+      const msg = err.response?.data?.message || err.message || 'Failed to reset password. Please try again.';
+      setPasswordError(msg);
       addToast({
         type: 'error',
-        title: 'Verification Failed',
+        title: 'Password Reset Failed',
         message: msg
       });
     } finally {
-      setIsVerifying(false);
+      setIsResettingPassword(false);
     }
   };
 
@@ -221,22 +313,75 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                 </div>
 
                 <h2 className="text-2xl font-bold font-heading text-agri-text">
-                  Verification Successful!
+                  {purpose === 'password_reset' ? 'Password Reset Successful!' : 'Verification Successful!'}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  Your phone & email account have been verified. Redirecting you to the platform...
+                  {purpose === 'password_reset'
+                    ? 'Your password has been updated successfully. Redirecting to login...'
+                    : 'Your account has been verified successfully. Redirecting you to the platform...'}
                 </p>
 
                 <Button
                   variant="primary"
                   size="md"
                   fullWidth
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(purpose === 'password_reset' ? '/login' : '/')}
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                   className="mt-4"
                 >
-                  Go to Platform Home
+                  {purpose === 'password_reset' ? 'Go to Sign In' : 'Go to Platform Home'}
                 </Button>
+              </motion.div>
+            ) : isResetStep2 ? (
+              <motion.div key="resetForm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-agri-primary flex items-center justify-center mx-auto mb-4">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+
+                <h1 className="text-2xl font-bold font-heading text-agri-text">
+                  Set New Password
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Enter your new secure password for <strong>{verificationEmail}</strong>.
+                </p>
+
+                {passwordError && (
+                  <p className="mt-3 text-xs text-rose-500 font-semibold bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                    {passwordError}
+                  </p>
+                )}
+
+                <form onSubmit={handleResetPasswordSubmit} className="mt-6 space-y-4 text-left">
+                  <Input
+                    label="New Password"
+                    type="password"
+                    placeholder="Enter at least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    leftIcon={<Lock className="w-4 h-4" />}
+                  />
+
+                  <Input
+                    label="Confirm New Password"
+                    type="password"
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    leftIcon={<Lock className="w-4 h-4" />}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    isLoading={isResettingPassword}
+                    rightIcon={<CheckCircle2 className="w-4 h-4" />}
+                    className="shadow-agri-glow mt-2"
+                  >
+                    Save New Password
+                  </Button>
+                </form>
               </motion.div>
             ) : (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -246,10 +391,12 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                 </div>
 
                 <h1 className="text-2xl font-bold font-heading text-agri-text">
-                  Enter 6-Digit OTP Code
+                  {purpose === 'password_reset' ? 'Password Reset Verification' : 'Enter 6-Digit OTP Code'}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  We've sent a 6-digit security code to{' '}
+                  {purpose === 'password_reset'
+                    ? "We've sent a 6-digit password reset code to "
+                    : "We've sent a 6-digit security code to "}
                   {verificationEmail ? (
                     <strong>{verificationEmail}</strong>
                   ) : (
@@ -263,7 +410,7 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                   </p>
                 )}
 
-                <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+                <form onSubmit={handleSubmit(onSubmitOTP)} className="mt-6 space-y-6">
                   <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                     {otp.map((digit, idx) => (
                       <input
@@ -318,7 +465,7 @@ export const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({ addToa
                     rightIcon={<CheckCircle2 className="w-4 h-4" />}
                     className="shadow-agri-glow"
                   >
-                    Verify & Complete Account
+                    {purpose === 'password_reset' ? 'Verify Password Reset OTP' : 'Verify & Complete Account'}
                   </Button>
                 </form>
 

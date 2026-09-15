@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 
+
 // Suppress console.warn/error during tests unless needed
 const originalWarn = console.warn;
 const originalError = console.error;
@@ -52,16 +53,16 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock IntersectionObserver used by Leaflet / maps
 global.IntersectionObserver = class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 } as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 } as any;
 
 // Mock WebRTC APIs for jsdom

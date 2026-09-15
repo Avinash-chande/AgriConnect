@@ -54,6 +54,7 @@ export interface VerifyOTPPayload {
   email?: string;
   phone?: string;
   otpCode: string;
+  purpose?: 'registration' | 'password_reset';
 }
 
 export const registerFarmerApi = async (payload: RegisterFarmerPayload) => {
@@ -108,6 +109,14 @@ export const sendOTPApi = async (payload: ForgotPasswordPayload) => {
 
 export const verifyOTPApi = async (payload: VerifyOTPPayload) => {
   const response = await api.post('/auth/verify-otp', payload);
+  return response.data;
+};
+
+export const verifyPasswordResetOTPApi = async (payload: VerifyOTPPayload) => {
+  const response = await api.post('/auth/verify-password-reset-otp', {
+    ...payload,
+    purpose: 'password_reset',
+  });
   return response.data;
 };
 
